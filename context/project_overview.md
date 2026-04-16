@@ -319,6 +319,15 @@ B --> F[Redis Cache]
 
 ---
 
+### Screenshots
+
+Reffer to the scrrenshots below as a base for the dashboard UI. It does not have to be exact. Use it as refferance:
+
+- @context/screenshots/dashboard-ui-drawer.png
+- @context/screenshots/dashboard-ui-main.png
+
+---
+
 # ⚠️ Key Decisions
 
 - Single repo (monolith approach)
