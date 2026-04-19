@@ -1,6 +1,6 @@
 "use client";
 
-import { Menu, Plus, Search } from "lucide-react";
+import { FolderPlus, Menu, Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -26,10 +26,16 @@ export function TopBar({ onOpenDrawer }: TopBarProps) {
           <Input placeholder="Search..." className="pl-9" />
         </div>
       </div>
-      <Button>
-        <Plus className="mr-2 h-4 w-4" />
-        New Item
-      </Button>
+      <div className="flex items-center gap-2">
+        <Button variant="outline" className="hidden sm:inline-flex">
+          <FolderPlus className="mr-2 h-4 w-4" />
+          New Collection
+        </Button>
+        <Button>
+          <Plus className="mr-2 h-4 w-4" />
+          New Item
+        </Button>
+      </div>
     </header>
   );
 }
