@@ -1,0 +1,173 @@
+"use client";
+
+import Link from "next/link";
+import { Bookmark, ChevronLeft, ChevronRight, Folder, Star } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { cn } from "@/lib/utils";
+import {
+  ITEM_TYPES,
+  getFavoriteCollections,
+  getRecentCollections,
+} from "@/lib/mock-data";
+import { getTypeSlug } from "@/lib/format";
+import { getTypeIcon } from "@/lib/type-icons";
+import { SidebarNav } from "./SidebarNav";
+import { SidebarSection } from "./SidebarSection";
+import { SidebarLink } from "./SidebarLink";
+import { UserMenu } from "./UserMenu";
+
+interface SidebarInnerProps {
+  collapsed: boolean;
+  onToggleCollapsed: () => void;
+  showToggle?: boolean;
+}
+
+function SidebarInner({ collapsed, onToggleCollapsed, showToggle = true }: SidebarInnerProps) {
+  const favoriteCollections = getFavoriteCollections();
+  const recentCollections = getRecentCollections(5);
+
+  return (
+    <div
+      className={cn(
+        "flex h-full flex-col border-r border-sidebar-border bg-sidebar transition-[width] duration-200 ease-in-out",
+        collapsed ? "w-14" : "w-60"
+      )}
+    >
+      {/* Header */}
+      <div
+        className={cn(
+          "flex h-14 shrink-0 items-center border-b border-sidebar-border px-3",
+          collapsed ? "justify-center" : "justify-between"
+        )}
+      >
+        {!collapsed && (
+          <Link
+            href="/dashboard"
+            className="text-sm font-semibold text-sidebar-foreground hover:text-sidebar-foreground/80 transition-colors"
+          >
+            DevStash
+          </Link>
+        )}
+        {showToggle && (
+          <button
+            onClick={onToggleCollapsed}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            className="rounded-md p-1.5 text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+          >
+            {collapsed ? (
+              <ChevronRight className="h-4 w-4" />
+            ) : (
+              <ChevronLeft className="h-4 w-4" />
+            )}
+          </button>
+        )}
+      </div>
+
+      {/* Scrollable nav */}
+      <ScrollArea className="flex-1">
+        <div className="space-y-4 px-2 py-3">
+          <SidebarNav collapsed={collapsed} />
+
+          <Separator />
+
+          <SidebarSection title="Favorites" collapsed={collapsed}>
+            {favoriteCollections.map(col => (
+              <SidebarLink
+                key={col.id}
+                href={`/collections/${col.id}`}
+                icon={<Bookmark className="h-4 w-4 fill-current text-muted-foreground" />}
+                label={col.name}
+                collapsed={collapsed}
+                trailingIcon={
+                  <Star className="h-3 w-3 shrink-0 fill-current text-amber-400" />
+                }
+              />
+            ))}
+          </SidebarSection>
+
+          <Separator />
+
+          <SidebarSection title="Recent" collapsed={collapsed}>
+            {recentCollections.map(col => (
+              <SidebarLink
+                key={col.id}
+                href={`/collections/${col.id}`}
+                icon={<Folder className="h-4 w-4 text-muted-foreground" />}
+                label={col.name}
+                collapsed={collapsed}
+                trailingIcon={
+                  col.isFavorite ? (
+                    <Star className="h-3 w-3 shrink-0 fill-current text-amber-400" />
+                  ) : undefined
+                }
+              />
+            ))}
+          </SidebarSection>
+
+          <Separator />
+
+          <SidebarSection title="Types" collapsed={collapsed}>
+            {ITEM_TYPES.map(type => {
+              const TypeIcon = getTypeIcon(type.id);
+              return (
+                <SidebarLink
+                  key={type.id}
+                  href={`/items/${getTypeSlug(type.name)}`}
+                  icon={
+                    <TypeIcon
+                      className="h-4 w-4"
+                      style={{ color: type.color }}
+                    />
+                  }
+                  label={type.name}
+                  collapsed={collapsed}
+                />
+              );
+            })}
+          </SidebarSection>
+        </div>
+      </ScrollArea>
+
+      {/* User area */}
+      <div className="shrink-0 border-t border-sidebar-border p-2">
+        <UserMenu collapsed={collapsed} />
+      </div>
+    </div>
+  );
+}
+
+interface SidebarProps {
+  collapsed: boolean;
+  drawerOpen: boolean;
+  onDrawerOpenChange: (open: boolean) => void;
+  onToggleCollapsed: () => void;
+}
+
+export function Sidebar({
+  collapsed,
+  drawerOpen,
+  onDrawerOpenChange,
+  onToggleCollapsed,
+}: SidebarProps) {
+  return (
+    <>
+      {/* Desktop persistent sidebar */}
+      <aside className="hidden h-full md:flex">
+        <SidebarInner collapsed={collapsed} onToggleCollapsed={onToggleCollapsed} />
+      </aside>
+
+      {/* Mobile drawer */}
+      <Sheet open={drawerOpen} onOpenChange={onDrawerOpenChange}>
+        <SheetContent side="left" showCloseButton={false} className="!w-60 p-0">
+          <SidebarInner
+            collapsed={false}
+            onToggleCollapsed={() => onDrawerOpenChange(false)}
+            showToggle={false}
+          />
+        </SheetContent>
+      </Sheet>
+    </>
+  );
+}
