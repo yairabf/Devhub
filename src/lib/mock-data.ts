@@ -363,3 +363,13 @@ export function getRecentItems(limit = 5): Item[] {
     .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
     .slice(0, limit);
 }
+
+export function getFavoriteCollections(): Collection[] {
+  return COLLECTIONS.filter(c => c.isFavorite);
+}
+
+export function getRecentCollections(limit = 5): Collection[] {
+  return [...COLLECTIONS]
+    .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
+    .slice(0, limit);
+}
