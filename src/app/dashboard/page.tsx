@@ -2,14 +2,15 @@ import { CollectionCard } from "@/components/dashboard/CollectionCard";
 import { DashboardSection } from "@/components/dashboard/DashboardSection";
 import { ItemCard } from "@/components/dashboard/ItemCard";
 import { StatsGrid } from "@/components/dashboard/StatsGrid";
-import {
-  getPinnedItems,
-  getRecentCollections,
-  getRecentItems,
-} from "@/lib/mock-data";
+import { getRecentCollections } from "@/lib/db/collections";
+import { getPinnedItems, getRecentItems } from "@/lib/mock-data";
 
-export default function DashboardPage() {
-  const recentCollections = getRecentCollections(5);
+const DEMO_USER_ID = "user_demo";
+
+export const dynamic = "force-dynamic";
+
+export default async function DashboardPage() {
+  const recentCollections = await getRecentCollections(DEMO_USER_ID, 6);
   const pinnedItems = getPinnedItems();
   const recentItems = getRecentItems(10);
 
@@ -18,11 +19,15 @@ export default function DashboardPage() {
       <StatsGrid />
 
       <DashboardSection title="Recent Collections">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {recentCollections.map(collection => (
-            <CollectionCard key={collection.id} collection={collection} />
-          ))}
-        </div>
+        {recentCollections.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No collections yet.</p>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {recentCollections.map(collection => (
+              <CollectionCard key={collection.id} collection={collection} />
+            ))}
+          </div>
+        )}
       </DashboardSection>
 
       <DashboardSection title="Pinned Items">

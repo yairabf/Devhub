@@ -7,21 +7,20 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { type Collection, getItemsByCollection } from "@/lib/mock-data";
+import type { CollectionCardData } from "@/lib/db/collections";
+import { getTypeIcon } from "@/lib/type-icons";
+import { getTypeBorderClass } from "@/lib/type-colors";
 import { cn } from "@/lib/utils";
 
 interface CollectionCardProps {
-  collection: Collection;
+  collection: CollectionCardData;
 }
 
 export function CollectionCard({ collection }: CollectionCardProps) {
-  const items = getItemsByCollection(collection.id);
-  const uniqueTypes = Array.from(
-    new Map(items.map(item => [item.itemType.id, item.itemType])).values()
-  );
+  const borderClass = getTypeBorderClass(collection.dominantTypeId);
 
   return (
-    <Card className="flex flex-col">
+    <Card className={cn("flex flex-col border-2", borderClass)}>
       <CardHeader className="flex-row items-start justify-between gap-2">
         <CardTitle className="leading-tight">{collection.name}</CardTitle>
         <Star
@@ -42,18 +41,23 @@ export function CollectionCard({ collection }: CollectionCardProps) {
       )}
       <CardFooter className="mt-auto">
         <div className="flex flex-wrap items-center gap-1.5">
-          {uniqueTypes.map(type => (
-            <span
-              key={type.id}
-              aria-label={type.name}
-              title={type.name}
-              className="flex size-6 items-center justify-center rounded-md bg-muted text-sm"
-            >
-              {type.icon}
-            </span>
-          ))}
+          {collection.uniqueTypeIds.map(typeId => {
+            const Icon = getTypeIcon(typeId);
+            return (
+              <span
+                key={typeId}
+                aria-label={typeId}
+                title={typeId}
+                className="flex size-6 items-center justify-center rounded-md bg-muted text-muted-foreground"
+              >
+                <Icon className="size-3.5" />
+              </span>
+            );
+          })}
         </div>
-        <p className="text-xs text-muted-foreground">{items.length} items</p>
+        <p className="text-xs text-muted-foreground">
+          {collection.itemCount} {collection.itemCount === 1 ? "item" : "items"}
+        </p>
       </CardFooter>
     </Card>
   );
