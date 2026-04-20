@@ -10,6 +10,10 @@ export interface CollectionCardData {
   dominantTypeId: string | null;
 }
 
+export function getCollectionsCount(userId: string): Promise<number> {
+  return prisma.collection.count({ where: { userId } });
+}
+
 export async function getRecentCollections(
   userId: string,
   limit = 6,

@@ -2,21 +2,31 @@ import { CollectionCard } from "@/components/dashboard/CollectionCard";
 import { DashboardSection } from "@/components/dashboard/DashboardSection";
 import { ItemCard } from "@/components/dashboard/ItemCard";
 import { StatsGrid } from "@/components/dashboard/StatsGrid";
-import { getRecentCollections } from "@/lib/db/collections";
-import { getPinnedItems, getRecentItems } from "@/lib/mock-data";
+import { getCollectionsCount, getRecentCollections } from "@/lib/db/collections";
+import { getItemsCount, getPinnedItems, getRecentItems } from "@/lib/db/items";
 
 const DEMO_USER_ID = "user_demo";
 
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
-  const recentCollections = await getRecentCollections(DEMO_USER_ID, 6);
-  const pinnedItems = getPinnedItems();
-  const recentItems = getRecentItems(10);
+  const [
+    recentCollections,
+    pinnedItems,
+    recentItems,
+    collectionsCount,
+    itemsCount,
+  ] = await Promise.all([
+    getRecentCollections(DEMO_USER_ID, 6),
+    getPinnedItems(DEMO_USER_ID),
+    getRecentItems(DEMO_USER_ID, 10),
+    getCollectionsCount(DEMO_USER_ID),
+    getItemsCount(DEMO_USER_ID),
+  ]);
 
   return (
     <div className="space-y-8">
-      <StatsGrid />
+      <StatsGrid itemsCount={itemsCount} collectionsCount={collectionsCount} />
 
       <DashboardSection title="Recent Collections">
         {recentCollections.length === 0 ? (
@@ -30,24 +40,26 @@ export default async function DashboardPage() {
         )}
       </DashboardSection>
 
-      <DashboardSection title="Pinned Items">
-        {pinnedItems.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No pinned items yet.</p>
-        ) : (
+      {pinnedItems.length > 0 && (
+        <DashboardSection title="Pinned Items">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             {pinnedItems.map(item => (
               <ItemCard key={item.id} item={item} />
             ))}
           </div>
-        )}
-      </DashboardSection>
+        </DashboardSection>
+      )}
 
       <DashboardSection title="Recent Items">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {recentItems.map(item => (
-            <ItemCard key={item.id} item={item} />
-          ))}
-        </div>
+        {recentItems.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No items yet.</p>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {recentItems.map(item => (
+              <ItemCard key={item.id} item={item} />
+            ))}
+          </div>
+        )}
       </DashboardSection>
     </div>
   );

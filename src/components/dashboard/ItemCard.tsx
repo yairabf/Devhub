@@ -8,16 +8,21 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import type { Item } from "@/lib/mock-data";
+import type { ItemCardData } from "@/lib/db/items";
+import { getTypeIcon } from "@/lib/type-icons";
+import { getTypeBorderClass } from "@/lib/type-colors";
 import { cn } from "@/lib/utils";
 
 interface ItemCardProps {
-  item: Item;
+  item: ItemCardData;
 }
 
 export function ItemCard({ item }: ItemCardProps) {
+  const borderClass = getTypeBorderClass(item.itemTypeId);
+  const TypeIcon = getTypeIcon(item.itemTypeId);
+
   return (
-    <Card className="flex flex-col">
+    <Card className={cn("flex flex-col border-2", borderClass)}>
       <CardHeader className="flex-row items-start justify-between gap-2">
         <CardTitle className="leading-tight">{item.title}</CardTitle>
         <Star
@@ -44,16 +49,16 @@ export function ItemCard({ item }: ItemCardProps) {
         ) : null}
       </CardContent>
       <CardFooter className="mt-auto">
-        <div className="flex flex-wrap items-center gap-1">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1">
           {item.tags.map(tag => (
             <Badge key={tag.id} variant="secondary">
               #{tag.name}
             </Badge>
           ))}
         </div>
-        <Badge variant="outline">
-          <span aria-hidden>{item.itemType.icon}</span>
-          {item.itemType.name}
+        <Badge variant="outline" className="shrink-0">
+          <TypeIcon className="size-3.5" aria-hidden />
+          {item.itemTypeName}
         </Badge>
       </CardFooter>
     </Card>
