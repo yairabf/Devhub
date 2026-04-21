@@ -14,6 +14,26 @@ export function getCollectionsCount(userId: string): Promise<number> {
   return prisma.collection.count({ where: { userId } });
 }
 
+export function getFavoriteCollectionsCount(userId: string): Promise<number> {
+  return prisma.collection.count({ where: { userId, isFavorite: true } });
+}
+
+export interface SidebarCollection {
+  id: string;
+  name: string;
+  isFavorite: boolean;
+}
+
+export function getFavoriteCollections(
+  userId: string,
+): Promise<SidebarCollection[]> {
+  return prisma.collection.findMany({
+    where: { userId, isFavorite: true },
+    orderBy: { updatedAt: "desc" },
+    select: { id: true, name: true, isFavorite: true },
+  });
+}
+
 export async function getRecentCollections(
   userId: string,
   limit = 6,

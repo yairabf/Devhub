@@ -2,8 +2,17 @@ import { CollectionCard } from "@/components/dashboard/CollectionCard";
 import { DashboardSection } from "@/components/dashboard/DashboardSection";
 import { ItemCard } from "@/components/dashboard/ItemCard";
 import { StatsGrid } from "@/components/dashboard/StatsGrid";
-import { getCollectionsCount, getRecentCollections } from "@/lib/db/collections";
-import { getItemsCount, getPinnedItems, getRecentItems } from "@/lib/db/items";
+import {
+  getCollectionsCount,
+  getFavoriteCollectionsCount,
+  getRecentCollections,
+} from "@/lib/db/collections";
+import {
+  getFavoriteItemsCount,
+  getItemsCount,
+  getPinnedItems,
+  getRecentItems,
+} from "@/lib/db/items";
 
 const DEMO_USER_ID = "user_demo";
 
@@ -16,17 +25,26 @@ export default async function DashboardPage() {
     recentItems,
     collectionsCount,
     itemsCount,
+    favoriteItemsCount,
+    favoriteCollectionsCount,
   ] = await Promise.all([
     getRecentCollections(DEMO_USER_ID, 6),
     getPinnedItems(DEMO_USER_ID),
     getRecentItems(DEMO_USER_ID, 10),
     getCollectionsCount(DEMO_USER_ID),
     getItemsCount(DEMO_USER_ID),
+    getFavoriteItemsCount(DEMO_USER_ID),
+    getFavoriteCollectionsCount(DEMO_USER_ID),
   ]);
 
   return (
     <div className="space-y-8">
-      <StatsGrid itemsCount={itemsCount} collectionsCount={collectionsCount} />
+      <StatsGrid
+        itemsCount={itemsCount}
+        collectionsCount={collectionsCount}
+        favoriteItemsCount={favoriteItemsCount}
+        favoriteCollectionsCount={favoriteCollectionsCount}
+      />
 
       <DashboardSection title="Recent Collections">
         {recentCollections.length === 0 ? (
