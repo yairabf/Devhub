@@ -15,7 +15,7 @@ import { SidebarNav } from "./SidebarNav";
 import { SidebarSection } from "./SidebarSection";
 import { SidebarLink } from "./SidebarLink";
 import { TypeDot } from "./TypeDot";
-import { UserMenu } from "./UserMenu";
+import { UserMenu, type UserMenuUser } from "./UserMenu";
 import { useCollapsedSections } from "./useCollapsedSections";
 
 export interface SidebarData {
@@ -29,6 +29,7 @@ interface SidebarInnerProps {
   onToggleCollapsed: () => void;
   showToggle?: boolean;
   data: SidebarData;
+  user: UserMenuUser;
 }
 
 const PRO_TYPE_IDS = new Set(["type_file", "type_image"]);
@@ -38,6 +39,7 @@ function SidebarInner({
   onToggleCollapsed,
   showToggle = true,
   data,
+  user,
 }: SidebarInnerProps) {
   const { favoriteCollections, recentCollections, itemTypes } = data;
   const [sectionState, toggleSection] = useCollapsedSections();
@@ -186,7 +188,7 @@ function SidebarInner({
 
       {/* User area */}
       <div className="shrink-0 border-t border-sidebar-border p-2">
-        <UserMenu collapsed={collapsed} />
+        <UserMenu collapsed={collapsed} user={user} />
       </div>
     </div>
   );
@@ -198,6 +200,7 @@ interface SidebarProps {
   onDrawerOpenChange: (open: boolean) => void;
   onToggleCollapsed: () => void;
   data: SidebarData;
+  user: UserMenuUser;
 }
 
 export function Sidebar({
@@ -206,6 +209,7 @@ export function Sidebar({
   onDrawerOpenChange,
   onToggleCollapsed,
   data,
+  user,
 }: SidebarProps) {
   return (
     <>
@@ -215,6 +219,7 @@ export function Sidebar({
           collapsed={collapsed}
           onToggleCollapsed={onToggleCollapsed}
           data={data}
+          user={user}
         />
       </aside>
 
@@ -226,6 +231,7 @@ export function Sidebar({
             onToggleCollapsed={() => onDrawerOpenChange(false)}
             showToggle={false}
             data={data}
+            user={user}
           />
         </SheetContent>
       </Sheet>
