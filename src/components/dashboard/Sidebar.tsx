@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Bookmark, ChevronLeft, ChevronRight, Star } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
@@ -29,6 +30,8 @@ interface SidebarInnerProps {
   showToggle?: boolean;
   data: SidebarData;
 }
+
+const PRO_TYPE_IDS = new Set(["type_file", "type_image"]);
 
 function capitalize(value: string): string {
   if (!value) return value;
@@ -168,6 +171,7 @@ function SidebarInner({
           >
             {itemTypes.map(type => {
               const TypeIcon = getTypeIcon(type.id);
+              const isPro = PRO_TYPE_IDS.has(type.id);
               return (
                 <SidebarLink
                   key={type.id}
@@ -180,6 +184,16 @@ function SidebarInner({
                   }
                   label={capitalize(type.name)}
                   collapsed={collapsed}
+                  trailingIcon={
+                    isPro ? (
+                      <Badge
+                        variant="outline"
+                        className="px-1.5 py-0 text-[10px] font-semibold tracking-wider text-muted-foreground"
+                      >
+                        PRO
+                      </Badge>
+                    ) : undefined
+                  }
                 />
               );
             })}
