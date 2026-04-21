@@ -1,4 +1,4 @@
-# Current Feature: Auth Setup - NextAuth + GitHub Provider (Phase 1)
+# Current Feature
 
 ## Status
 
@@ -6,33 +6,11 @@ In Progress
 
 ## Goals
 
-- Install NextAuth v5 (`next-auth@beta`) and `@auth/prisma-adapter`
-- Set up split auth config pattern for edge compatibility
-- Add GitHub OAuth provider
-- Protect `/dashboard/*` routes via Next.js 16 proxy with redirect to sign-in
-- Use NextAuth's default sign-in page (no custom pages)
-- Create the following files:
-  - `src/auth.config.ts` — edge-compatible config (providers only, no adapter)
-  - `src/auth.ts` — full config with Prisma adapter + JWT strategy
-  - `src/app/api/auth/[...nextauth]/route.ts` — export handlers from `auth.ts`
-  - `src/proxy.ts` — route protection with redirect logic
-  - `src/types/next-auth.d.ts` — extend `Session` type with `user.id`
-- Verify flow: `/dashboard` redirects unauthenticated → GitHub sign-in → lands back on `/dashboard`
+<!-- Describe the feature goals here -->
 
 ## Notes
 
-- Spec: `context/features/auth-spec-files/auth-phase-1-spec.md`
-- Use Context7 to verify the newest NextAuth v5 config and conventions before coding
-- Gotchas:
-  - Install `next-auth@beta` (not `@latest`, which installs v4)
-  - Proxy file must live at `src/proxy.ts` (same level as `app/`)
-  - Named export required: `export const proxy = auth(...)` — not default
-  - Use `session: { strategy: 'jwt' }` with the split config pattern
-  - Do NOT set a custom `pages.signIn` — NextAuth's default page is used for testing
-- Env vars required: `AUTH_SECRET`, `AUTH_GITHUB_ID`, `AUTH_GITHUB_SECRET`
-- References:
-  - Edge compatibility: https://authjs.dev/getting-started/installation#edge-compatibility
-  - Prisma adapter: https://authjs.dev/getting-started/adapters/prisma
+<!-- Keep running notes here -->
 
 ## History
 
@@ -49,3 +27,4 @@ In Progress
 - 2026-04-21: **Sidebar Section Collapse** — Per `context/features/sidebar-section-collapse-spec.md`. Added `src/components/dashboard/useCollapsedSections.ts` using `useSyncExternalStore` for SSR-safe `localStorage` sync under key `devstash:sidebar:sections` (shape `{ favorites, recent, types }`, `true` = collapsed). `SidebarSection` header is now a `<button>` with `aria-expanded`/`aria-controls`; a single `ChevronRight` rotates 90° when expanded; panel uses a `grid-template-rows` 0fr↔1fr transition (200ms ease-out) with `inert` on the collapsed panel so keyboard focus skips hidden links. When the outer sidebar is icon-only, per-section toggles are hidden but state still persists. `Sidebar.tsx` wires the hook and passes `sectionId`/`collapsed`/`onToggle`/`sidebarCollapsed` into each section (Favorites, Recent, Types); "View all collections" collapses with Recent. Also added `min-h-0` to the sidebar `ScrollArea` to fix overflow scrolling when content exceeds the viewport. Completed 2026-04-21.
 - 2026-04-21: **Sidebar PRO Badge** — Per `context/features/add-pro-badge-sidebar.md`. Added a trailing PRO badge to the `File` and `Image` entries in the sidebar Types section. `Sidebar.tsx` defines `PRO_TYPE_IDS = new Set(["type_file", "type_image"])` and renders a subtle ShadCN `Badge` (variant `outline`, uppercase `PRO`, 10px font with `tracking-wider`, `muted-foreground` text) as the `trailingIcon` on matching `SidebarLink`s. Completed 2026-04-21.
 - 2026-04-21: **Codebase Audit Cleanup** — Addressed findings from the 2026-04-21 `nextjs-codebase-auditor` scan (H1, M1, M3–M5, L1–L4). Guarded `DATABASE_URL` with a clear startup error in `src/lib/prisma.ts`; extracted duplicated `DEMO_USER_ID` into `src/lib/constants.ts` and imported from both dashboard layout and page; replaced the full-hydration join in `getRecentCollections` with a `_count` aggregation (kept lightweight `itemTypeId` select for dominant-type computation); added `src/app/dashboard/loading.tsx` skeleton fallback and `src/app/dashboard/error.tsx` client error boundary; moved the inline `capitalize` helper into `src/lib/format.ts`; removed redundant `"use client"` from `SidebarNav.tsx` (SidebarLink already declares its own client boundary); extracted `TypeDot` into `src/components/dashboard/TypeDot.tsx`; made the demo seed password overridable via `SEED_DEMO_PASSWORD` env var with `"12345678"` fallback; and moved `SYSTEM_ITEM_TYPES`/`COLLECTIONS`/`ITEMS` into shared `prisma/seed-data.ts` imported by both `seed.ts` and `scripts/test-db.ts` (fixes pre-existing test-db drift where expected icon/name values no longer matched the seed). M2 (dead `mock-data.ts` helpers) deferred. Completed 2026-04-21.
+- 2026-04-21: **Auth Phase 1 — NextAuth v5 + GitHub OAuth** — Per `context/features/auth-spec-files/auth-phase-1-spec.md`. Installed `next-auth@beta` (v5.0.0-beta.31) and `@auth/prisma-adapter`. Split config for edge safety: `src/auth.config.ts` exports `{ providers: [GitHub] } satisfies NextAuthConfig`; `src/auth.ts` wires `PrismaAdapter(prisma)` + `session: { strategy: "jwt" }` and a session callback that copies `token.sub` → `session.user.id`. Added `src/app/api/auth/[...nextauth]/route.ts` re-exporting `GET/POST` from `handlers`, and `src/types/next-auth.d.ts` extending `Session.user` with `id: string`. Route protection via `src/proxy.ts` (named `proxy = auth(...)`, `matcher: ["/dashboard/:path*"]`) redirects unauthenticated traffic to `/api/auth/signin?callbackUrl=...` (NextAuth default page, no custom `pages.signIn`). Documented `AUTH_SECRET`, `AUTH_GITHUB_ID`, `AUTH_GITHUB_SECRET` in `.env.example`; `AUTH_TRUST_HOST=true` set in local `.env` for `next start` (dev auto-trusts localhost). Completed 2026-04-21.
