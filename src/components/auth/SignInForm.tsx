@@ -17,6 +17,15 @@ function SignInFields() {
     if (searchParams.get("registered") === "1") {
       toast.success("Account created! You can now sign in.");
     }
+    if (searchParams.get("verified") === "1") {
+      toast.success("Email verified! You can now sign in.");
+    }
+    const verifyError = searchParams.get("verify_error");
+    if (verifyError === "expired") {
+      toast.error("Verification link expired. Please register again.");
+    } else if (verifyError === "invalid") {
+      toast.error("Invalid verification link.");
+    }
   }, [searchParams]);
 
   const [email, setEmail] = useState("");
@@ -36,7 +45,11 @@ function SignInFields() {
         redirect: false,
       });
       if (result?.error) {
-        setError("Invalid email or password.");
+        if (result.error === "email_not_verified") {
+          setError("Please verify your email before signing in. Check your inbox.");
+        } else {
+          setError("Invalid email or password.");
+        }
       } else {
         router.push(callbackUrl);
         router.refresh();

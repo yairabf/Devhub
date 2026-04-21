@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import { randomBytes } from "crypto";
 
 import { prisma } from "@/lib/prisma";
+import { sendVerificationEmail } from "@/lib/email";
 
 const registerSchema = z
   .object({
@@ -55,6 +57,18 @@ export async function POST(request: Request) {
     data: { name, email: normalizedEmail, password: passwordHash },
     select: { id: true, name: true, email: true },
   });
+
+  const token = randomBytes(32).toString("hex");
+  const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+  await prisma.verificationToken.deleteMany({
+    where: { identifier: normalizedEmail },
+  });
+  await prisma.verificationToken.create({
+    data: { identifier: normalizedEmail, token, expires },
+  });
+
+  await sendVerificationEmail(normalizedEmail, token);
 
   return NextResponse.json({ success: true, user }, { status: 201 });
 }
