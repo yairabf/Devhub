@@ -2,6 +2,7 @@ import { CollectionCard } from "@/components/dashboard/CollectionCard";
 import { DashboardSection } from "@/components/dashboard/DashboardSection";
 import { ItemCard } from "@/components/dashboard/ItemCard";
 import { StatsGrid } from "@/components/dashboard/StatsGrid";
+import { DEMO_USER_ID } from "@/lib/constants";
 import {
   getCollectionsCount,
   getFavoriteCollectionsCount,
@@ -13,8 +14,6 @@ import {
   getPinnedItems,
   getRecentItems,
 } from "@/lib/db/items";
-
-const DEMO_USER_ID = "user_demo";
 
 export const dynamic = "force-dynamic";
 

@@ -9,12 +9,12 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import type { CollectionCardData, SidebarCollection } from "@/lib/db/collections";
 import type { SidebarItemType } from "@/lib/db/items";
-import { getTypeSlug } from "@/lib/format";
+import { capitalize, getTypeSlug } from "@/lib/format";
 import { getTypeIcon } from "@/lib/type-icons";
-import { getTypeDotClass } from "@/lib/type-colors";
 import { SidebarNav } from "./SidebarNav";
 import { SidebarSection } from "./SidebarSection";
 import { SidebarLink } from "./SidebarLink";
+import { TypeDot } from "./TypeDot";
 import { UserMenu } from "./UserMenu";
 import { useCollapsedSections } from "./useCollapsedSections";
 
@@ -32,23 +32,6 @@ interface SidebarInnerProps {
 }
 
 const PRO_TYPE_IDS = new Set(["type_file", "type_image"]);
-
-function capitalize(value: string): string {
-  if (!value) return value;
-  return value.charAt(0).toUpperCase() + value.slice(1);
-}
-
-function TypeDot({ typeId }: { typeId: string | null }) {
-  return (
-    <span
-      aria-hidden
-      className={cn(
-        "inline-block h-3 w-3 shrink-0 rounded-full",
-        getTypeDotClass(typeId),
-      )}
-    />
-  );
-}
 
 function SidebarInner({
   collapsed,

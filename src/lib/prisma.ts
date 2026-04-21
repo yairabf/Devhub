@@ -7,9 +7,12 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 function createPrismaClient() {
-  const adapter = new PrismaNeon({
-    connectionString: process.env.DATABASE_URL,
-  });
+  const connectionString = process.env.DATABASE_URL;
+  if (!connectionString) {
+    throw new Error("Missing required env var: DATABASE_URL");
+  }
+
+  const adapter = new PrismaNeon({ connectionString });
 
   return new PrismaClient({
     adapter,

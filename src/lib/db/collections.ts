@@ -42,12 +42,15 @@ export async function getRecentCollections(
     where: { userId },
     orderBy: { updatedAt: "desc" },
     take: limit,
-    include: {
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      isFavorite: true,
+      _count: { select: { items: true } },
       items: {
-        include: {
-          item: {
-            select: { itemTypeId: true },
-          },
+        select: {
+          item: { select: { itemTypeId: true } },
         },
       },
     },
@@ -74,7 +77,7 @@ export async function getRecentCollections(
       name: collection.name,
       description: collection.description,
       isFavorite: collection.isFavorite,
-      itemCount: collection.items.length,
+      itemCount: collection._count.items,
       uniqueTypeIds: Array.from(typeCounts.keys()),
       dominantTypeId,
     };
