@@ -1,12 +1,16 @@
 # Current Feature
 
-## 
-
 ## Status
+
+In Progress
 
 ## Goals
 
+<!-- Describe the feature goals here -->
+
 ## Notes
+
+<!-- Keep running notes here -->
 
 ## History
 
@@ -21,3 +25,5 @@
 - 2026-04-21: **Dashboard Items (Real Data)** — Replaced mock Pinned/Recent Items on the dashboard with real data from Neon via Prisma. Added `src/lib/db/items.ts` with `ItemCardData`, `getPinnedItems(userId)`, `getRecentItems(userId, limit)` (deterministic `updatedAt desc, id desc` ordering), and `getItemsCount(userId)`. Added `getCollectionsCount(userId)` in `src/lib/db/collections.ts`. Reworked `ItemCard` to take `ItemCardData`, derive border color via `getTypeBorderClass` and type-badge icon via `getTypeIcon` (matches `CollectionCard` pattern). `StatsGrid` now takes `itemsCount` + `collectionsCount` props (Favorite Items / Favorite Collections remain on mock). Pinned section is omitted entirely when the user has no pinned items. Dashboard page fetches everything in parallel with `Promise.all`. Extended `scripts/test-db.ts` with expected-vs-actual checks for all 5 collections and all 18 items (id, title, itemTypeId, isPinned/isFavorite flags, ItemCollection link). Completed 2026-04-21.
 - 2026-04-21: **Stats & Sidebar (Real Data)** — Wired the last mock-backed dashboard bits to Neon via Prisma. Added `getFavoriteItemsCount`, `getSystemItemTypes` (with `SidebarItemType`) in `src/lib/db/items.ts` and `getFavoriteCollectionsCount`, `getFavoriteCollections` (with `SidebarCollection`) in `src/lib/db/collections.ts`. Added `getTypeDotClass` to `src/lib/type-colors.ts`. `StatsGrid` now takes `favoriteItemsCount` + `favoriteCollectionsCount` (no more `mock-data` imports). Sidebar takes a `SidebarData` prop; `/dashboard` layout fetches `favoriteCollections`, `recentCollections`, and system `itemTypes` in parallel and passes them through `DashboardShell`. Recent section renders a colored dot per `dominantTypeId` (replaces the Folder icon) and keeps the trailing star for favorites; Types section uses real DB rows (capitalized for display) linking to `/items/[typename]`; a "View all collections" link targets `/collections`. Favorites section is omitted when empty. Layout set to `force-dynamic`. Completed 2026-04-21.
 - 2026-04-21: **Sidebar Section Collapse** — Per `context/features/sidebar-section-collapse-spec.md`. Added `src/components/dashboard/useCollapsedSections.ts` using `useSyncExternalStore` for SSR-safe `localStorage` sync under key `devstash:sidebar:sections` (shape `{ favorites, recent, types }`, `true` = collapsed). `SidebarSection` header is now a `<button>` with `aria-expanded`/`aria-controls`; a single `ChevronRight` rotates 90° when expanded; panel uses a `grid-template-rows` 0fr↔1fr transition (200ms ease-out) with `inert` on the collapsed panel so keyboard focus skips hidden links. When the outer sidebar is icon-only, per-section toggles are hidden but state still persists. `Sidebar.tsx` wires the hook and passes `sectionId`/`collapsed`/`onToggle`/`sidebarCollapsed` into each section (Favorites, Recent, Types); "View all collections" collapses with Recent. Also added `min-h-0` to the sidebar `ScrollArea` to fix overflow scrolling when content exceeds the viewport. Completed 2026-04-21.
+- 2026-04-21: **Sidebar PRO Badge** — Per `context/features/add-pro-badge-sidebar.md`. Added a trailing PRO badge to the `File` and `Image` entries in the sidebar Types section. `Sidebar.tsx` defines `PRO_TYPE_IDS = new Set(["type_file", "type_image"])` and renders a subtle ShadCN `Badge` (variant `outline`, uppercase `PRO`, 10px font with `tracking-wider`, `muted-foreground` text) as the `trailingIcon` on matching `SidebarLink`s. Completed 2026-04-21.
+- 2026-04-21: **Codebase Audit Cleanup** — Addressed findings from the 2026-04-21 `nextjs-codebase-auditor` scan (H1, M1, M3–M5, L1–L4). Guarded `DATABASE_URL` with a clear startup error in `src/lib/prisma.ts`; extracted duplicated `DEMO_USER_ID` into `src/lib/constants.ts` and imported from both dashboard layout and page; replaced the full-hydration join in `getRecentCollections` with a `_count` aggregation (kept lightweight `itemTypeId` select for dominant-type computation); added `src/app/dashboard/loading.tsx` skeleton fallback and `src/app/dashboard/error.tsx` client error boundary; moved the inline `capitalize` helper into `src/lib/format.ts`; removed redundant `"use client"` from `SidebarNav.tsx` (SidebarLink already declares its own client boundary); extracted `TypeDot` into `src/components/dashboard/TypeDot.tsx`; made the demo seed password overridable via `SEED_DEMO_PASSWORD` env var with `"12345678"` fallback; and moved `SYSTEM_ITEM_TYPES`/`COLLECTIONS`/`ITEMS` into shared `prisma/seed-data.ts` imported by both `seed.ts` and `scripts/test-db.ts` (fixes pre-existing test-db drift where expected icon/name values no longer matched the seed). M2 (dead `mock-data.ts` helpers) deferred. Completed 2026-04-21.
