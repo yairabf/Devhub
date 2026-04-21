@@ -15,6 +15,7 @@ import { SidebarNav } from "./SidebarNav";
 import { SidebarSection } from "./SidebarSection";
 import { SidebarLink } from "./SidebarLink";
 import { UserMenu } from "./UserMenu";
+import { useCollapsedSections } from "./useCollapsedSections";
 
 export interface SidebarData {
   favoriteCollections: SidebarCollection[];
@@ -53,6 +54,7 @@ function SidebarInner({
   data,
 }: SidebarInnerProps) {
   const { favoriteCollections, recentCollections, itemTypes } = data;
+  const [sectionState, toggleSection] = useCollapsedSections();
 
   return (
     <div
@@ -92,14 +94,20 @@ function SidebarInner({
       </div>
 
       {/* Scrollable nav */}
-      <ScrollArea className="flex-1">
+      <ScrollArea className="min-h-0 flex-1">
         <div className="space-y-4 px-2 py-3">
           <SidebarNav collapsed={collapsed} />
 
           {favoriteCollections.length > 0 && (
             <>
               <Separator />
-              <SidebarSection title="Favorites" collapsed={collapsed}>
+              <SidebarSection
+                sectionId="favorites"
+                title="Favorites"
+                sidebarCollapsed={collapsed}
+                collapsed={sectionState.favorites}
+                onToggle={toggleSection}
+              >
                 {favoriteCollections.map(col => (
                   <SidebarLink
                     key={col.id}
@@ -118,7 +126,13 @@ function SidebarInner({
 
           <Separator />
 
-          <SidebarSection title="Recent" collapsed={collapsed}>
+          <SidebarSection
+            sectionId="recent"
+            title="Recent"
+            sidebarCollapsed={collapsed}
+            collapsed={sectionState.recent}
+            onToggle={toggleSection}
+          >
             {recentCollections.map(col => (
               <SidebarLink
                 key={col.id}
@@ -145,7 +159,13 @@ function SidebarInner({
 
           <Separator />
 
-          <SidebarSection title="Types" collapsed={collapsed}>
+          <SidebarSection
+            sectionId="types"
+            title="Types"
+            sidebarCollapsed={collapsed}
+            collapsed={sectionState.types}
+            onToggle={toggleSection}
+          >
             {itemTypes.map(type => {
               const TypeIcon = getTypeIcon(type.id);
               return (
