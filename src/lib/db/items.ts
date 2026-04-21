@@ -80,3 +80,21 @@ export async function getRecentItems(
 export function getItemsCount(userId: string): Promise<number> {
   return prisma.item.count({ where: { userId } });
 }
+
+export function getFavoriteItemsCount(userId: string): Promise<number> {
+  return prisma.item.count({ where: { userId, isFavorite: true } });
+}
+
+export interface SidebarItemType {
+  id: string;
+  name: string;
+  color: string;
+}
+
+export function getSystemItemTypes(): Promise<SidebarItemType[]> {
+  return prisma.itemType.findMany({
+    where: { isSystem: true },
+    orderBy: { name: "asc" },
+    select: { id: true, name: true, color: true },
+  });
+}

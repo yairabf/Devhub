@@ -1,32 +1,58 @@
 "use client";
 
 import Link from "next/link";
-import { Bookmark, ChevronLeft, ChevronRight, Folder, Star } from "lucide-react";
+import { Bookmark, ChevronLeft, ChevronRight, Star } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
-import {
-  ITEM_TYPES,
-  getFavoriteCollections,
-  getRecentCollections,
-} from "@/lib/mock-data";
+import type { CollectionCardData, SidebarCollection } from "@/lib/db/collections";
+import type { SidebarItemType } from "@/lib/db/items";
 import { getTypeSlug } from "@/lib/format";
 import { getTypeIcon } from "@/lib/type-icons";
+import { getTypeDotClass } from "@/lib/type-colors";
 import { SidebarNav } from "./SidebarNav";
 import { SidebarSection } from "./SidebarSection";
 import { SidebarLink } from "./SidebarLink";
 import { UserMenu } from "./UserMenu";
 
+export interface SidebarData {
+  favoriteCollections: SidebarCollection[];
+  recentCollections: CollectionCardData[];
+  itemTypes: SidebarItemType[];
+}
+
 interface SidebarInnerProps {
   collapsed: boolean;
   onToggleCollapsed: () => void;
   showToggle?: boolean;
+  data: SidebarData;
 }
 
-function SidebarInner({ collapsed, onToggleCollapsed, showToggle = true }: SidebarInnerProps) {
-  const favoriteCollections = getFavoriteCollections();
-  const recentCollections = getRecentCollections(5);
+function capitalize(value: string): string {
+  if (!value) return value;
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+function TypeDot({ typeId }: { typeId: string | null }) {
+  return (
+    <span
+      aria-hidden
+      className={cn(
+        "inline-block h-3 w-3 shrink-0 rounded-full",
+        getTypeDotClass(typeId),
+      )}
+    />
+  );
+}
+
+function SidebarInner({
+  collapsed,
+  onToggleCollapsed,
+  showToggle = true,
+  data,
+}: SidebarInnerProps) {
+  const { favoriteCollections, recentCollections, itemTypes } = data;
 
   return (
     <div
@@ -70,22 +96,25 @@ function SidebarInner({ collapsed, onToggleCollapsed, showToggle = true }: Sideb
         <div className="space-y-4 px-2 py-3">
           <SidebarNav collapsed={collapsed} />
 
-          <Separator />
-
-          <SidebarSection title="Favorites" collapsed={collapsed}>
-            {favoriteCollections.map(col => (
-              <SidebarLink
-                key={col.id}
-                href={`/collections/${col.id}`}
-                icon={<Bookmark className="h-4 w-4 fill-current text-muted-foreground" />}
-                label={col.name}
-                collapsed={collapsed}
-                trailingIcon={
-                  <Star className="h-3 w-3 shrink-0 fill-current text-amber-400" />
-                }
-              />
-            ))}
-          </SidebarSection>
+          {favoriteCollections.length > 0 && (
+            <>
+              <Separator />
+              <SidebarSection title="Favorites" collapsed={collapsed}>
+                {favoriteCollections.map(col => (
+                  <SidebarLink
+                    key={col.id}
+                    href={`/collections/${col.id}`}
+                    icon={<Bookmark className="h-4 w-4 fill-current text-muted-foreground" />}
+                    label={col.name}
+                    collapsed={collapsed}
+                    trailingIcon={
+                      <Star className="h-3 w-3 shrink-0 fill-current text-amber-400" />
+                    }
+                  />
+                ))}
+              </SidebarSection>
+            </>
+          )}
 
           <Separator />
 
@@ -94,7 +123,7 @@ function SidebarInner({ collapsed, onToggleCollapsed, showToggle = true }: Sideb
               <SidebarLink
                 key={col.id}
                 href={`/collections/${col.id}`}
-                icon={<Folder className="h-4 w-4 text-muted-foreground" />}
+                icon={<TypeDot typeId={col.dominantTypeId} />}
                 label={col.name}
                 collapsed={collapsed}
                 trailingIcon={
@@ -104,12 +133,20 @@ function SidebarInner({ collapsed, onToggleCollapsed, showToggle = true }: Sideb
                 }
               />
             ))}
+            {!collapsed && (
+              <Link
+                href="/collections"
+                className="block px-3 pt-1 text-xs text-muted-foreground hover:text-sidebar-foreground transition-colors"
+              >
+                View all collections
+              </Link>
+            )}
           </SidebarSection>
 
           <Separator />
 
           <SidebarSection title="Types" collapsed={collapsed}>
-            {ITEM_TYPES.map(type => {
+            {itemTypes.map(type => {
               const TypeIcon = getTypeIcon(type.id);
               return (
                 <SidebarLink
@@ -121,7 +158,7 @@ function SidebarInner({ collapsed, onToggleCollapsed, showToggle = true }: Sideb
                       style={{ color: type.color }}
                     />
                   }
-                  label={type.name}
+                  label={capitalize(type.name)}
                   collapsed={collapsed}
                 />
               );
@@ -143,6 +180,7 @@ interface SidebarProps {
   drawerOpen: boolean;
   onDrawerOpenChange: (open: boolean) => void;
   onToggleCollapsed: () => void;
+  data: SidebarData;
 }
 
 export function Sidebar({
@@ -150,12 +188,17 @@ export function Sidebar({
   drawerOpen,
   onDrawerOpenChange,
   onToggleCollapsed,
+  data,
 }: SidebarProps) {
   return (
     <>
       {/* Desktop persistent sidebar */}
       <aside className="hidden h-full md:flex">
-        <SidebarInner collapsed={collapsed} onToggleCollapsed={onToggleCollapsed} />
+        <SidebarInner
+          collapsed={collapsed}
+          onToggleCollapsed={onToggleCollapsed}
+          data={data}
+        />
       </aside>
 
       {/* Mobile drawer */}
@@ -165,6 +208,7 @@ export function Sidebar({
             collapsed={false}
             onToggleCollapsed={() => onDrawerOpenChange(false)}
             showToggle={false}
+            data={data}
           />
         </SheetContent>
       </Sheet>

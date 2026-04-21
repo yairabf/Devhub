@@ -2,13 +2,14 @@
 
 import { useState } from "react";
 import { TopBar } from "./TopBar";
-import { Sidebar } from "./Sidebar";
+import { Sidebar, type SidebarData } from "./Sidebar";
 
 interface DashboardShellProps {
   children: React.ReactNode;
+  sidebarData: SidebarData;
 }
 
-export function DashboardShell({ children }: DashboardShellProps) {
+export function DashboardShell({ children, sidebarData }: DashboardShellProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -21,6 +22,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
           drawerOpen={drawerOpen}
           onDrawerOpenChange={setDrawerOpen}
           onToggleCollapsed={() => setCollapsed(c => !c)}
+          data={sidebarData}
         />
         <main className="flex-1 overflow-auto bg-background p-6">
           {children}

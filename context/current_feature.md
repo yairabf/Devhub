@@ -1,6 +1,6 @@
 # Current Feature
 
-## Dashboard Items
+## Stats & Sidebar
 
 ## Status
 
@@ -8,22 +8,23 @@ Completed
 
 ## Goals
 
-Replace the mock item data currently rendered in the dashboard main area (Pinned Items + Recent Items) with real data fetched from Neon via Prisma. Preserve the existing layout and visual design — only the data source and derived presentation bits change.
+Replace remaining mock data on the dashboard — StatsGrid values and the Sidebar — with real data fetched from Neon via Prisma. Preserve the existing layout and visual design; only the data source and a few derived presentation bits change.
 
-- Fetch pinned and recent items for the current user directly in the dashboard server component (no client fetching).
-- Derive each item card's icon and border color from its `ItemType` (same mapping used by collection cards).
-- Continue to display item type tags and any other metadata that the current mock-driven cards show.
-- If the user has no pinned items, render nothing in the Pinned section (no empty-state placeholder for this iteration).
-- Update the Collection stat(s) on the dashboard so counts reflect real data.
+- StatsGrid shows real counts from the database (items, collections, favorite items, favorite collections), keeping the current design/layout.
+- Sidebar renders the 7 system `ItemType` rows with their icons, each linking to `/items/[typename]`.
+- Sidebar renders real collections from the database in place of the mock Favorites/Recent lists.
+  - Favorite collections keep their star icon.
+  - Recent (non-favorite) collections show a colored circle whose color is derived from the dominant (most-used) `ItemType` in that collection.
+- Add a "View all collections" link under the collections list, targeting `/collections`.
+- Add the required data-fetching functions in `src/lib/db/items.ts` (mirror the `src/lib/db/collections.ts` pattern); extend `src/lib/db/collections.ts` as needed.
 
 ## Notes
 
-- Spec: `context/features/dashboard-items-spec.md`.
-- Add data-fetching functions in `src/lib/db/items.ts` (mirrors the `src/lib/db/collections.ts` pattern established in Phase 3 dashboard work).
-- Reuse `src/lib/type-colors.ts` for border/accent colors; reuse the Lucide icon mapping already wired for `ItemType`.
-- Dashboard page already runs with `force-dynamic` and queries for demo user `user_demo` until auth lands — follow the same approach here.
-- Out of scope: StatsGrid rewrite beyond the collection stat update, Sidebar data, pinned empty-state UI, auth wiring.
-- Reference screenshot if needed: `context/screenshots/dashboard-ui-main.png`.
+- Spec: `context/features/stats-sidebar-spec.md`.
+- Reuse `src/lib/type-colors.ts` for circle/accent colors; reuse the existing Lucide icon mapping for `ItemType`.
+- Dashboard page already runs with `force-dynamic` and queries for demo user `user_demo` until auth lands — follow the same approach.
+- Out of scope: `/items/[typename]` and `/collections` pages themselves (links only), auth wiring, sidebar interaction changes beyond data wiring.
+- Reference: `src/lib/db/collections.ts`.
 
 ## History
 
@@ -36,3 +37,4 @@ Replace the mock item data currently rendered in the dashboard main area (Pinned
 - 2026-04-20: **Database Seed Script** — Implemented `prisma/seed.ts` per `context/features/seed-spec.md`. Added `bcryptjs` + `@types/bcryptjs`. Seeds demo user (`demo@devstash.io` / password `12345678`, bcrypt 12 rounds, `isPro: false`, `emailVerified` now), aligned 7 system `ItemType` rows with spec colors/Lucide icons, and created 5 collections (React Patterns, AI Workflows, DevOps, Terminal Commands, Design Resources) with their items linked via `ItemCollection` and tagged with the correct system `ItemType`. Idempotent via upsert on stable ids. Completed 2026-04-20.
 - 2026-04-20: **Dashboard Collections (Real Data)** — Replaced mock Recent Collections on the dashboard main area with real data from Neon via Prisma. Added `src/lib/db/collections.ts#getRecentCollections(userId, limit)` (single query with ItemCollection → Item.itemTypeId include; computes item count, unique type ids, and dominant type id). Added `src/lib/type-colors.ts` mapping system type ids to Tailwind border classes. Updated `CollectionCard` to take `CollectionCardData`, render Lucide icons per unique type, and apply dominant-type border color. Dashboard page (`/dashboard`) now server-renders per request (`force-dynamic`) fetching for demo user `user_demo` until auth is wired. StatsGrid, Pinned/Recent Items, and Sidebar remain on mock data (out of scope). Completed 2026-04-20.
 - 2026-04-21: **Dashboard Items (Real Data)** — Replaced mock Pinned/Recent Items on the dashboard with real data from Neon via Prisma. Added `src/lib/db/items.ts` with `ItemCardData`, `getPinnedItems(userId)`, `getRecentItems(userId, limit)` (deterministic `updatedAt desc, id desc` ordering), and `getItemsCount(userId)`. Added `getCollectionsCount(userId)` in `src/lib/db/collections.ts`. Reworked `ItemCard` to take `ItemCardData`, derive border color via `getTypeBorderClass` and type-badge icon via `getTypeIcon` (matches `CollectionCard` pattern). `StatsGrid` now takes `itemsCount` + `collectionsCount` props (Favorite Items / Favorite Collections remain on mock). Pinned section is omitted entirely when the user has no pinned items. Dashboard page fetches everything in parallel with `Promise.all`. Extended `scripts/test-db.ts` with expected-vs-actual checks for all 5 collections and all 18 items (id, title, itemTypeId, isPinned/isFavorite flags, ItemCollection link). Completed 2026-04-21.
+- 2026-04-21: **Stats & Sidebar (Real Data)** — Wired the last mock-backed dashboard bits to Neon via Prisma. Added `getFavoriteItemsCount`, `getSystemItemTypes` (with `SidebarItemType`) in `src/lib/db/items.ts` and `getFavoriteCollectionsCount`, `getFavoriteCollections` (with `SidebarCollection`) in `src/lib/db/collections.ts`. Added `getTypeDotClass` to `src/lib/type-colors.ts`. `StatsGrid` now takes `favoriteItemsCount` + `favoriteCollectionsCount` (no more `mock-data` imports). Sidebar takes a `SidebarData` prop; `/dashboard` layout fetches `favoriteCollections`, `recentCollections`, and system `itemTypes` in parallel and passes them through `DashboardShell`. Recent section renders a colored dot per `dominantTypeId` (replaces the Folder icon) and keeps the trailing star for favorites; Types section uses real DB rows (capitalized for display) linking to `/items/[typename]`; a "View all collections" link targets `/collections`. Favorites section is omitted when empty. Layout set to `force-dynamic`. Completed 2026-04-21.
