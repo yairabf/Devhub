@@ -1,30 +1,12 @@
 # Current Feature
 
-## Stats & Sidebar
+## 
 
 ## Status
 
-Completed
-
 ## Goals
 
-Replace remaining mock data on the dashboard — StatsGrid values and the Sidebar — with real data fetched from Neon via Prisma. Preserve the existing layout and visual design; only the data source and a few derived presentation bits change.
-
-- StatsGrid shows real counts from the database (items, collections, favorite items, favorite collections), keeping the current design/layout.
-- Sidebar renders the 7 system `ItemType` rows with their icons, each linking to `/items/[typename]`.
-- Sidebar renders real collections from the database in place of the mock Favorites/Recent lists.
-  - Favorite collections keep their star icon.
-  - Recent (non-favorite) collections show a colored circle whose color is derived from the dominant (most-used) `ItemType` in that collection.
-- Add a "View all collections" link under the collections list, targeting `/collections`.
-- Add the required data-fetching functions in `src/lib/db/items.ts` (mirror the `src/lib/db/collections.ts` pattern); extend `src/lib/db/collections.ts` as needed.
-
 ## Notes
-
-- Spec: `context/features/stats-sidebar-spec.md`.
-- Reuse `src/lib/type-colors.ts` for circle/accent colors; reuse the existing Lucide icon mapping for `ItemType`.
-- Dashboard page already runs with `force-dynamic` and queries for demo user `user_demo` until auth lands — follow the same approach.
-- Out of scope: `/items/[typename]` and `/collections` pages themselves (links only), auth wiring, sidebar interaction changes beyond data wiring.
-- Reference: `src/lib/db/collections.ts`.
 
 ## History
 
@@ -38,3 +20,4 @@ Replace remaining mock data on the dashboard — StatsGrid values and the Sideba
 - 2026-04-20: **Dashboard Collections (Real Data)** — Replaced mock Recent Collections on the dashboard main area with real data from Neon via Prisma. Added `src/lib/db/collections.ts#getRecentCollections(userId, limit)` (single query with ItemCollection → Item.itemTypeId include; computes item count, unique type ids, and dominant type id). Added `src/lib/type-colors.ts` mapping system type ids to Tailwind border classes. Updated `CollectionCard` to take `CollectionCardData`, render Lucide icons per unique type, and apply dominant-type border color. Dashboard page (`/dashboard`) now server-renders per request (`force-dynamic`) fetching for demo user `user_demo` until auth is wired. StatsGrid, Pinned/Recent Items, and Sidebar remain on mock data (out of scope). Completed 2026-04-20.
 - 2026-04-21: **Dashboard Items (Real Data)** — Replaced mock Pinned/Recent Items on the dashboard with real data from Neon via Prisma. Added `src/lib/db/items.ts` with `ItemCardData`, `getPinnedItems(userId)`, `getRecentItems(userId, limit)` (deterministic `updatedAt desc, id desc` ordering), and `getItemsCount(userId)`. Added `getCollectionsCount(userId)` in `src/lib/db/collections.ts`. Reworked `ItemCard` to take `ItemCardData`, derive border color via `getTypeBorderClass` and type-badge icon via `getTypeIcon` (matches `CollectionCard` pattern). `StatsGrid` now takes `itemsCount` + `collectionsCount` props (Favorite Items / Favorite Collections remain on mock). Pinned section is omitted entirely when the user has no pinned items. Dashboard page fetches everything in parallel with `Promise.all`. Extended `scripts/test-db.ts` with expected-vs-actual checks for all 5 collections and all 18 items (id, title, itemTypeId, isPinned/isFavorite flags, ItemCollection link). Completed 2026-04-21.
 - 2026-04-21: **Stats & Sidebar (Real Data)** — Wired the last mock-backed dashboard bits to Neon via Prisma. Added `getFavoriteItemsCount`, `getSystemItemTypes` (with `SidebarItemType`) in `src/lib/db/items.ts` and `getFavoriteCollectionsCount`, `getFavoriteCollections` (with `SidebarCollection`) in `src/lib/db/collections.ts`. Added `getTypeDotClass` to `src/lib/type-colors.ts`. `StatsGrid` now takes `favoriteItemsCount` + `favoriteCollectionsCount` (no more `mock-data` imports). Sidebar takes a `SidebarData` prop; `/dashboard` layout fetches `favoriteCollections`, `recentCollections`, and system `itemTypes` in parallel and passes them through `DashboardShell`. Recent section renders a colored dot per `dominantTypeId` (replaces the Folder icon) and keeps the trailing star for favorites; Types section uses real DB rows (capitalized for display) linking to `/items/[typename]`; a "View all collections" link targets `/collections`. Favorites section is omitted when empty. Layout set to `force-dynamic`. Completed 2026-04-21.
+- 2026-04-21: **Sidebar Section Collapse** — Per `context/features/sidebar-section-collapse-spec.md`. Added `src/components/dashboard/useCollapsedSections.ts` using `useSyncExternalStore` for SSR-safe `localStorage` sync under key `devstash:sidebar:sections` (shape `{ favorites, recent, types }`, `true` = collapsed). `SidebarSection` header is now a `<button>` with `aria-expanded`/`aria-controls`; a single `ChevronRight` rotates 90° when expanded; panel uses a `grid-template-rows` 0fr↔1fr transition (200ms ease-out) with `inert` on the collapsed panel so keyboard focus skips hidden links. When the outer sidebar is icon-only, per-section toggles are hidden but state still persists. `Sidebar.tsx` wires the hook and passes `sectionId`/`collapsed`/`onToggle`/`sidebarCollapsed` into each section (Favorites, Recent, Types); "View all collections" collapses with Recent. Also added `min-h-0` to the sidebar `ScrollArea` to fix overflow scrolling when content exceeds the viewport. Completed 2026-04-21.
