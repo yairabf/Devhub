@@ -1,3 +1,4 @@
+import { auth } from "@/auth";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { DEMO_USER_ID } from "@/lib/constants";
 import {
@@ -13,6 +14,13 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const session = await auth();
+  const user = {
+    name: session?.user?.name ?? null,
+    email: session?.user?.email ?? null,
+    image: session?.user?.image ?? null,
+  };
+
   const [favoriteCollections, recentCollections, itemTypes] = await Promise.all([
     getFavoriteCollections(DEMO_USER_ID),
     getRecentCollections(DEMO_USER_ID, 5),
@@ -22,6 +30,7 @@ export default async function DashboardLayout({
   return (
     <DashboardShell
       sidebarData={{ favoriteCollections, recentCollections, itemTypes }}
+      user={user}
     >
       {children}
     </DashboardShell>

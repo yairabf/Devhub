@@ -1,4 +1,4 @@
-# Current Feature
+# Current Feature: Auth Phase 3 — Custom Sign In, Register & Sidebar User
 
 ## Status
 
@@ -6,11 +6,19 @@ In Progress
 
 ## Goals
 
-<!-- Describe the feature goals here -->
+- Create custom `/sign-in` page replacing the NextAuth default: email/password fields, "Sign in with GitHub" button, link to `/register`, form validation with error display.
+- Create custom `/register` page: name, email, password, confirm password fields, validates passwords match + email format, submits to `/api/auth/register`, redirects to `/sign-in` on success.
+- Update NextAuth to use the custom pages (`pages.signIn: "/sign-in"`).
+- Update the bottom of the sidebar to show the signed-in user: avatar (GitHub `image` if present, otherwise initials from name), user name, dropdown on click with "Sign out" link, clicking icon navigates to `/profile`.
+- Create a reusable `UserAvatar` component handling both image and initials cases.
 
 ## Notes
 
-<!-- Keep running notes here -->
+- Initials logic: take first letter of each word in name (e.g. "Brad Traversy" → "BT"); fallback to "?" if name is empty.
+- Sidebar currently has a hardcoded "AR" initials placeholder at the bottom — replace with real session data.
+- Session is JWT-based (`strategy: "jwt"`); use `auth()` server-side or `useSession` client-side to get `session.user.{id, name, email, image}`.
+- Keep sign-in and register pages as server-rendered forms (use Server Actions or client form with `signIn()` / fetch).
+- Follow dark-mode-first Tailwind styling and match existing dashboard visual language.
 
 ## History
 
