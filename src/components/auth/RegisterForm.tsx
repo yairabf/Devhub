@@ -1,20 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import { Loader2, MailCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 export function RegisterForm() {
-  const router = useRouter();
-
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [sent, setSent] = useState(false);
 
   async function handleSubmit(e: { preventDefault(): void }) {
     e.preventDefault();
@@ -37,12 +35,26 @@ export function RegisterForm() {
         setError(data.error ?? "Registration failed.");
         return;
       }
-      router.push("/sign-in?registered=1");
+      setSent(true);
     } catch {
       setError("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
+  }
+
+  if (sent) {
+    return (
+      <div className="flex flex-col items-center gap-3 py-4 text-center">
+        <MailCheck className="h-10 w-10 text-primary" />
+        <p className="font-medium text-foreground">Check your inbox</p>
+        <p className="text-sm text-muted-foreground">
+          We sent a verification link to <span className="font-medium text-foreground">{email}</span>.
+          Click it to activate your account.
+        </p>
+        <p className="text-xs text-muted-foreground">The link expires in 24 hours.</p>
+      </div>
+    );
   }
 
   return (

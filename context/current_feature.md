@@ -1,16 +1,31 @@
-# Current Feature
+# Current Feature: Email Verification on Register
 
 ## Status
 
-Not Started
+In Progress
 
 ## Goals
 
-<!-- List goals here -->
+- After a user registers via credentials, send a verification email via Resend with a unique one-time link
+- The link routes to `/verify-email?token=<token>` which validates the token, sets `emailVerified` on the User, and redirects to `/sign-in?verified=1`
+- Block credentials sign-in for users who have not verified their email (show a clear error message)
+- GitHub OAuth users skip email verification (they are considered verified)
+- Tokens expire after 24 hours
+- Resend is already configured — use the `RESEND_API_KEY` from `.env`
 
 ## Notes
 
-<!-- Add notes here -->
+- Schema already has `User.emailVerified` (DateTime?) and `VerificationToken` model — no migration needed
+- `VerificationToken` uses `(identifier, token)` composite unique — `identifier` = user email
+- Token generation: `crypto.randomUUID()` or `crypto.randomBytes(32).toString("hex")`
+- Resend `FROM` address: use a valid sender (e.g. `noreply@devstash.io` or similar — confirm with user if domain isn't set up)
+- Flow:
+  1. `POST /api/auth/register` → hash password → create User → generate token → upsert VerificationToken → send email via Resend
+  2. `GET /verify-email?token=<token>` → look up token, check expiry, set `user.emailVerified = now()`, delete token → redirect
+  3. `src/auth.ts` credentials `authorize` → after validating password, check `user.emailVerified !== null`, return null + surface error if not verified
+- `RegisterForm` should already handle the API response — add a new state for "check your email" after successful registration instead of redirecting to sign-in immediately
+- Add `?verified=1` toast in `SignInForm` (similar to existing `?registered=1` toast pattern)
+- Add `?unverified=1` error hint on sign-in page for blocked unverified attempts
 
 ## History
 
@@ -28,5 +43,5 @@ Not Started
 - 2026-04-21: **Sidebar PRO Badge** — Per `context/features/add-pro-badge-sidebar.md`. Added a trailing PRO badge to the `File` and `Image` entries in the sidebar Types section. `Sidebar.tsx` defines `PRO_TYPE_IDS = new Set(["type_file", "type_image"])` and renders a subtle ShadCN `Badge` (variant `outline`, uppercase `PRO`, 10px font with `tracking-wider`, `muted-foreground` text) as the `trailingIcon` on matching `SidebarLink`s. Completed 2026-04-21.
 - 2026-04-21: **Codebase Audit Cleanup** — Addressed findings from the 2026-04-21 `nextjs-codebase-auditor` scan (H1, M1, M3–M5, L1–L4). Guarded `DATABASE_URL` with a clear startup error in `src/lib/prisma.ts`; extracted duplicated `DEMO_USER_ID` into `src/lib/constants.ts` and imported from both dashboard layout and page; replaced the full-hydration join in `getRecentCollections` with a `_count` aggregation (kept lightweight `itemTypeId` select for dominant-type computation); added `src/app/dashboard/loading.tsx` skeleton fallback and `src/app/dashboard/error.tsx` client error boundary; moved the inline `capitalize` helper into `src/lib/format.ts`; removed redundant `"use client"` from `SidebarNav.tsx` (SidebarLink already declares its own client boundary); extracted `TypeDot` into `src/components/dashboard/TypeDot.tsx`; made the demo seed password overridable via `SEED_DEMO_PASSWORD` env var with `"12345678"` fallback; and moved `SYSTEM_ITEM_TYPES`/`COLLECTIONS`/`ITEMS` into shared `prisma/seed-data.ts` imported by both `seed.ts` and `scripts/test-db.ts` (fixes pre-existing test-db drift where expected icon/name values no longer matched the seed). M2 (dead `mock-data.ts` helpers) deferred. Completed 2026-04-21.
 - 2026-04-21: **Auth Phase 1 — NextAuth v5 + GitHub OAuth** — Per `context/features/auth-spec-files/auth-phase-1-spec.md`. Installed `next-auth@beta` (v5.0.0-beta.31) and `@auth/prisma-adapter`. Split config for edge safety: `src/auth.config.ts` exports `{ providers: [GitHub] } satisfies NextAuthConfig`; `src/auth.ts` wires `PrismaAdapter(prisma)` + `session: { strategy: "jwt" }` and a session callback that copies `token.sub` → `session.user.id`. Added `src/app/api/auth/[...nextauth]/route.ts` re-exporting `GET/POST` from `handlers`, and `src/types/next-auth.d.ts` extending `Session.user` with `id: string`. Route protection via `src/proxy.ts` (named `proxy = auth(...)`, `matcher: ["/dashboard/:path*"]`) redirects unauthenticated traffic to `/api/auth/signin?callbackUrl=...` (NextAuth default page, no custom `pages.signIn`). Documented `AUTH_SECRET`, `AUTH_GITHUB_ID`, `AUTH_GITHUB_SECRET` in `.env.example`; `AUTH_TRUST_HOST=true` set in local `.env` for `next start` (dev auto-trusts localhost). Completed 2026-04-21.
-- 2026-04-21: **Auth Phase 2 — Credentials Provider (Email/Password)** — Per `context/features/auth-spec-files/auth-phase-2-spec.md`. Added `Credentials` provider with `authorize: () => null` placeholder in `src/auth.config.ts`; overrode it in `src/auth.ts` (Node runtime) with real bcryptjs validation (zod-parses email + password, looks up user via Prisma, `bcrypt.compare`). Created `POST /api/auth/register` at `src/app/api/auth/register/route.ts` — Zod schema validates `{ name, email, password ≥8, confirmPassword }` with match refinement; returns 201 with `{ success, user }`, 400 for invalid input, 409 for duplicate email; bcrypt hashes at 12 rounds. Installed `zod ^4.3.6` as direct dep (first use of Zod in the project per coding standards). `User.password` field already present from Phase 1 seed setup — no migration required. GitHub OAuth from Phase 1 preserved unchanged. Completed 2026-04-21.
+- 2026-04-21: **Auth Phase 2 — Credentials Provider (Email/Password)** — Per `context/features/auth-spec-files/auth-phase-2-spec.md`. Added `Credentials` provider with `authorize: () => null` placeholder in `src/auth.config.ts`; overrode it in `src/auth.ts` (Node runtime) with real bcryptjs validation (zod-parses email + password, looks up user via Prisma, `bcrypt.compare`). Created `POST /api/auth/register` at `src/app/api/auth/register/route.ts` — Zod schema validates `{ name, email, password ≥8, confirmPassword }` with match refinement; returns 201 with `{ success, user }`, 400 for invalid input, 409 for duplicate email; bcrypt hashes at 12 rounds. Installed `zod ^4.3.6` as direct dep (first use of Zod in the project per coding standards). `User.password` field already present from Phase 1 seed setup — no migration needed. GitHub OAuth from Phase 1 preserved unchanged. Completed 2026-04-21.
 - 2026-04-21: **Auth Phase 3 — Custom Auth Pages & Real Sidebar User** — Per `context/features/auth-spec-files/auth-phase-3-spec.md`. Created `(auth)` route group with centered layout; server-component pages for `/sign-in` and `/register` with extracted client form components (`SignInForm`, `RegisterForm`) for the `"use client"` boundary. `SignInForm` handles GitHub OAuth + credentials sign-in with loading states; `RegisterForm` POSTs to `/api/auth/register` and redirects to `/sign-in?registered=1`. Added `useEffect` in `SignInForm` to detect `?registered=1` param and fire a sonner toast — avoids cross-navigation toast loss. Installed `sonner ^2.0.7`; added `<Toaster>` to root layout. Updated `src/auth.config.ts` with `pages: { signIn: "/sign-in" }`. Created `UserAvatar` component (GitHub image or initials fallback). Wired `auth()` session data from dashboard layout through `DashboardShell` → `Sidebar` → `UserMenu` props; `UserMenu` shows real name/avatar with click-toggle dropdown (Profile link + Sign out). Completed 2026-04-21.
