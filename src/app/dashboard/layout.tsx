@@ -1,11 +1,10 @@
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
+import { DEMO_USER_ID } from "@/lib/constants";
 import {
   getFavoriteCollections,
   getRecentCollections,
 } from "@/lib/db/collections";
 import { getSystemItemTypes } from "@/lib/db/items";
-
-const DEMO_USER_ID = "user_demo";
 
 export const dynamic = "force-dynamic";
 

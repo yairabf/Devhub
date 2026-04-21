@@ -1,5 +1,3 @@
-"use client";
-
 import { Clock, Heart, LayoutGrid } from "lucide-react";
 import { SidebarLink } from "./SidebarLink";
 

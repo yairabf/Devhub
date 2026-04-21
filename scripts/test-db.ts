@@ -2,26 +2,9 @@ import "dotenv/config";
 
 import { PrismaNeon } from "@prisma/adapter-neon";
 
+import { COLLECTIONS, ITEMS, SYSTEM_ITEM_TYPES } from "../prisma/seed-data";
 import { PrismaClient } from "../src/generated/prisma/client";
-
-const DEMO_USER_ID = "user_demo";
-
-interface ExpectedItemType {
-  id: string;
-  name: string;
-  icon: string;
-  color: string;
-}
-
-const EXPECTED_SYSTEM_TYPES: ExpectedItemType[] = [
-  { id: "type_snippet", name: "Snippet", icon: "</>", color: "#3b82f6" },
-  { id: "type_prompt", name: "Prompt", icon: "✨", color: "#8b5cf6" },
-  { id: "type_command", name: "Command", icon: "⌘", color: "#f97316" },
-  { id: "type_note", name: "Note", icon: "📝", color: "#fde047" },
-  { id: "type_link", name: "Link", icon: "🔗", color: "#10b981" },
-  { id: "type_file", name: "File", icon: "📄", color: "#6b7280" },
-  { id: "type_image", name: "Image", icon: "🖼️", color: "#ec4899" },
-];
+import { DEMO_USER_ID } from "../src/lib/constants";
 
 interface ExpectedCollection {
   id: string;
@@ -29,39 +12,6 @@ interface ExpectedCollection {
   description: string;
   isFavorite: boolean;
 }
-
-const EXPECTED_COLLECTIONS: ExpectedCollection[] = [
-  {
-    id: "col_react_patterns",
-    name: "React Patterns",
-    description: "Reusable React patterns and hooks",
-    isFavorite: true,
-  },
-  {
-    id: "col_ai_workflows",
-    name: "AI Workflows",
-    description: "AI prompts and workflow automations",
-    isFavorite: true,
-  },
-  {
-    id: "col_devops",
-    name: "DevOps",
-    description: "Infrastructure and deployment resources",
-    isFavorite: false,
-  },
-  {
-    id: "col_terminal_commands",
-    name: "Terminal Commands",
-    description: "Useful shell commands for everyday development",
-    isFavorite: false,
-  },
-  {
-    id: "col_design_resources",
-    name: "Design Resources",
-    description: "UI/UX resources and references",
-    isFavorite: false,
-  },
-];
 
 interface ExpectedItem {
   id: string;
@@ -72,26 +22,21 @@ interface ExpectedItem {
   isPinned: boolean;
 }
 
-const EXPECTED_ITEMS: ExpectedItem[] = [
-  { id: "item_use_debounce",          title: "useDebounce Hook",            itemTypeId: "type_snippet", collectionId: "col_react_patterns",    isFavorite: true,  isPinned: true  },
-  { id: "item_theme_provider",        title: "Theme Context Provider",      itemTypeId: "type_snippet", collectionId: "col_react_patterns",    isFavorite: false, isPinned: false },
-  { id: "item_cn_utility",            title: "cn() Class Merger",           itemTypeId: "type_snippet", collectionId: "col_react_patterns",    isFavorite: false, isPinned: false },
-  { id: "item_prompt_code_review",    title: "Senior Code Review",          itemTypeId: "type_prompt",  collectionId: "col_ai_workflows",      isFavorite: true,  isPinned: false },
-  { id: "item_prompt_docs_generation",title: "Generate Module Docs",        itemTypeId: "type_prompt",  collectionId: "col_ai_workflows",      isFavorite: false, isPinned: false },
-  { id: "item_prompt_refactor",       title: "Refactoring Assistant",       itemTypeId: "type_prompt",  collectionId: "col_ai_workflows",      isFavorite: false, isPinned: false },
-  { id: "item_dockerfile_node",       title: "Multi-stage Node Dockerfile", itemTypeId: "type_snippet", collectionId: "col_devops",            isFavorite: false, isPinned: false },
-  { id: "item_deploy_vercel",         title: "Deploy to Vercel (prod)",     itemTypeId: "type_command", collectionId: "col_devops",            isFavorite: false, isPinned: false },
-  { id: "item_link_docker_docs",      title: "Docker Documentation",        itemTypeId: "type_link",    collectionId: "col_devops",            isFavorite: false, isPinned: false },
-  { id: "item_link_gh_actions",       title: "GitHub Actions Docs",         itemTypeId: "type_link",    collectionId: "col_devops",            isFavorite: false, isPinned: false },
-  { id: "item_cmd_git_log_graph",     title: "Pretty git log graph",        itemTypeId: "type_command", collectionId: "col_terminal_commands", isFavorite: false, isPinned: false },
-  { id: "item_cmd_docker_prune",      title: "Nuke dangling Docker state",  itemTypeId: "type_command", collectionId: "col_terminal_commands", isFavorite: false, isPinned: false },
-  { id: "item_cmd_kill_port",         title: "Kill whatever is on :3000",   itemTypeId: "type_command", collectionId: "col_terminal_commands", isFavorite: false, isPinned: false },
-  { id: "item_cmd_npm_outdated",      title: "List outdated npm packages",  itemTypeId: "type_command", collectionId: "col_terminal_commands", isFavorite: false, isPinned: false },
-  { id: "item_link_tailwind",         title: "Tailwind CSS Docs",           itemTypeId: "type_link",    collectionId: "col_design_resources",  isFavorite: false, isPinned: false },
-  { id: "item_link_shadcn",           title: "shadcn/ui",                   itemTypeId: "type_link",    collectionId: "col_design_resources",  isFavorite: false, isPinned: false },
-  { id: "item_link_material_design",  title: "Material Design 3",           itemTypeId: "type_link",    collectionId: "col_design_resources",  isFavorite: false, isPinned: false },
-  { id: "item_link_lucide",           title: "Lucide Icons",                itemTypeId: "type_link",    collectionId: "col_design_resources",  isFavorite: false, isPinned: false },
-];
+const EXPECTED_COLLECTIONS: ExpectedCollection[] = COLLECTIONS.map(c => ({
+  id: c.id,
+  name: c.name,
+  description: c.description,
+  isFavorite: c.isFavorite ?? false,
+}));
+
+const EXPECTED_ITEMS: ExpectedItem[] = ITEMS.map(i => ({
+  id: i.id,
+  title: i.title,
+  itemTypeId: i.itemTypeId,
+  collectionId: i.collectionId,
+  isFavorite: i.isFavorite ?? false,
+  isPinned: i.isPinned ?? false,
+}));
 
 async function main() {
   if (!process.env.DATABASE_URL) {
@@ -132,7 +77,7 @@ async function main() {
       orderBy: { name: "asc" },
     });
 
-    for (const expected of EXPECTED_SYSTEM_TYPES) {
+    for (const expected of SYSTEM_ITEM_TYPES) {
       const actual = systemTypes.find(t => t.id === expected.id);
       if (!actual) {
         console.log(`  ✗ ${expected.name.padEnd(8)} missing (expected id=${expected.id})`);
@@ -155,7 +100,7 @@ async function main() {
     }
 
     const unexpected = systemTypes.filter(
-      t => !EXPECTED_SYSTEM_TYPES.some(e => e.id === t.id)
+      t => !SYSTEM_ITEM_TYPES.some(e => e.id === t.id)
     );
     if (unexpected.length > 0) {
       console.log(`\n  ✗ ${unexpected.length} unexpected system type(s): ${unexpected.map(u => u.name).join(", ")}`);
