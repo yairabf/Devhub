@@ -1,0 +1,2 @@
+- [DevStash project conventions](project_conventions.md) — auth not implemented, demo user hardcoded, mock-data.ts mostly dead code, DEMO_USER_ID duplicated, Tailwind v4 correct
+- [False positive traps](false_positive_traps.md) — .env gitignored, mock-data intentional, inline color style justified, inert attribute intentional, SidebarNav "use client" is a real (low) finding
