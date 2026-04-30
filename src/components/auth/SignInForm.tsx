@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -19,6 +20,9 @@ function SignInFields() {
     }
     if (searchParams.get("verified") === "1") {
       toast.success("Email verified! You can now sign in.");
+    }
+    if (searchParams.get("password_reset") === "1") {
+      toast.success("Password updated! You can now sign in.");
     }
     const verifyError = searchParams.get("verify_error");
     if (verifyError === "expired") {
@@ -108,9 +112,17 @@ function SignInFields() {
         </div>
 
         <div className="space-y-1.5">
-          <label htmlFor="password" className="block font-mono text-xs font-medium text-muted-foreground">
-            PASSWORD
-          </label>
+          <div className="flex items-center justify-between">
+            <label htmlFor="password" className="block font-mono text-xs font-medium text-muted-foreground">
+              PASSWORD
+            </label>
+            <Link
+              href="/forgot-password"
+              className="text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground transition-colors"
+            >
+              Forgot password?
+            </Link>
+          </div>
           <Input
             id="password"
             type="password"
