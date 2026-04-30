@@ -52,23 +52,31 @@ export async function POST(request: Request) {
   }
 
   const passwordHash = await bcrypt.hash(password, 12);
+  const verificationEnabled = process.env.EMAIL_VERIFICATION_ENABLED === "true";
 
   const user = await prisma.user.create({
-    data: { name, email: normalizedEmail, password: passwordHash },
+    data: {
+      name,
+      email: normalizedEmail,
+      password: passwordHash,
+      emailVerified: verificationEnabled ? null : new Date(),
+    },
     select: { id: true, name: true, email: true },
   });
 
-  const token = randomBytes(32).toString("hex");
-  const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  if (verificationEnabled) {
+    const token = randomBytes(32).toString("hex");
+    const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
-  await prisma.verificationToken.deleteMany({
-    where: { identifier: normalizedEmail },
-  });
-  await prisma.verificationToken.create({
-    data: { identifier: normalizedEmail, token, expires },
-  });
+    await prisma.verificationToken.deleteMany({
+      where: { identifier: normalizedEmail },
+    });
+    await prisma.verificationToken.create({
+      data: { identifier: normalizedEmail, token, expires },
+    });
 
-  await sendVerificationEmail(normalizedEmail, token);
+    await sendVerificationEmail(normalizedEmail, token);
+  }
 
   return NextResponse.json({ success: true, user }, { status: 201 });
 }

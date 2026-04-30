@@ -1,16 +1,23 @@
-# Current Feature
+# Current Feature: Email Verification Toggle Flag
 
 ## Status
 
-Not Started
+In Progress
 
 ## Goals
 
-<!-- List goals here -->
+- Add a flag (env variable `EMAIL_VERIFICATION_ENABLED`) to toggle email verification on/off without code changes
+- When disabled: registration completes immediately with `emailVerified` stamped, no email is sent, no check blocks sign-in
+- When enabled: current behavior — send verification email, block unverified sign-in (existing behavior)
+- Default to `false` (disabled) so development works without a Resend domain configured
+- Keep the flag easy to flip for production when a real domain is linked
 
 ## Notes
 
-<!-- Add notes here -->
+- Currently only the Resend account email can receive verification emails (no custom domain linked yet)
+- An env var is the preferred approach — clean, no UI needed, works across environments
+- Flag should be read in: `src/app/api/auth/register/route.ts` (skip email send + stamp `emailVerified`) and `src/auth.ts` (skip `EmailNotVerifiedError` check)
+- When disabled, `User.emailVerified` should be set to `new Date()` at registration time so the user is immediately considered verified
 
 ## History
 
