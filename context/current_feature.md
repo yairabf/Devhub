@@ -1,16 +1,26 @@
-# Current Feature
+# Current Feature: Forgot Password
 
 ## Status
 
-Not Started
+In Progress
 
 ## Goals
 
-<!-- List goals here -->
+- Add a "Forgot Password" link on the login page
+- Create a forgot password page with an email input form
+- Generate a password reset token using the existing `VerificationToken` model
+- Send a password reset email containing a unique reset link
+- Create a reset password page where users can set a new password using the token
+- Validate token expiry and single-use enforcement
+- Update the user's password in the database upon successful reset
+- Show appropriate success/error feedback to the user throughout the flow
 
 ## Notes
 
-<!-- Add notes here -->
+- Reuse the existing `VerificationToken` model for storing reset tokens (identifier = email, token = unique UUID, expires = short TTL)
+- Follow existing email-sending patterns in the codebase (e.g., verification email flow)
+- Passwords must be hashed before saving (use existing bcrypt/hash utility)
+- Token should be invalidated after use
 
 ## History
 
