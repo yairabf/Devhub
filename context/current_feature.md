@@ -1,26 +1,16 @@
-# Current Feature: Forgot Password
+# Current Feature
 
 ## Status
 
-In Progress
+Not Started
 
 ## Goals
 
-- Add a "Forgot Password" link on the login page
-- Create a forgot password page with an email input form
-- Generate a password reset token using the existing `VerificationToken` model
-- Send a password reset email containing a unique reset link
-- Create a reset password page where users can set a new password using the token
-- Validate token expiry and single-use enforcement
-- Update the user's password in the database upon successful reset
-- Show appropriate success/error feedback to the user throughout the flow
+<!-- List goals here -->
 
 ## Notes
 
-- Reuse the existing `VerificationToken` model for storing reset tokens (identifier = email, token = unique UUID, expires = short TTL)
-- Follow existing email-sending patterns in the codebase (e.g., verification email flow)
-- Passwords must be hashed before saving (use existing bcrypt/hash utility)
-- Token should be invalidated after use
+<!-- Add notes here -->
 
 ## History
 
@@ -42,3 +32,4 @@ In Progress
 - 2026-04-21: **Auth Phase 3 — Custom Auth Pages & Real Sidebar User** — Per `context/features/auth-spec-files/auth-phase-3-spec.md`. Created `(auth)` route group with centered layout; server-component pages for `/sign-in` and `/register` with extracted client form components (`SignInForm`, `RegisterForm`) for the `"use client"` boundary. `SignInForm` handles GitHub OAuth + credentials sign-in with loading states; `RegisterForm` POSTs to `/api/auth/register` and redirects to `/sign-in?registered=1`. Added `useEffect` in `SignInForm` to detect `?registered=1` param and fire a sonner toast — avoids cross-navigation toast loss. Installed `sonner ^2.0.7`; added `<Toaster>` to root layout. Updated `src/auth.config.ts` with `pages: { signIn: "/sign-in" }`. Created `UserAvatar` component (GitHub image or initials fallback). Wired `auth()` session data from dashboard layout through `DashboardShell` → `Sidebar` → `UserMenu` props; `UserMenu` shows real name/avatar with click-toggle dropdown (Profile link + Sign out). Completed 2026-04-21.
 - 2026-04-21: **Email Verification on Register** — Installed `resend`. After credentials registration, `POST /api/auth/register` generates a `randomBytes(32)` token, stores it in `VerificationToken` (24h expiry), and sends a verification email via Resend. `GET /verify-email` (under `(auth)` route group) validates the token, stamps `User.emailVerified`, deletes the token, and redirects to `/sign-in?verified=1` (or `?verify_error=expired/invalid`). `src/auth.ts` throws `EmailNotVerifiedError extends CredentialsSignin` (code `"email_not_verified"`) instead of returning null for unverified users. `RegisterForm` shows a "check your inbox" state on success. `SignInForm` handles `?verified=1` success toast and the `email_not_verified` error code with a targeted message. Added `scripts/purge-users.ts` (`npm run db:purge-users`) to delete all non-demo users and their content. Completed 2026-04-21.
 - 2026-04-30: **Email Verification Toggle Flag** — Added `EMAIL_VERIFICATION_ENABLED` env var (default off). When unset or `"false"`: registration stamps `emailVerified: new Date()` immediately and skips the Resend token+send; `src/auth.ts` bypasses the `EmailNotVerifiedError` check so unverified users can sign in. When `"true"`: full verification flow preserved unchanged. Documented in `.env.example`. Completed 2026-04-30.
+- 2026-04-30: **Forgot Password** — Added full password reset flow. "Forgot password?" link added to `SignInForm` (next to PASSWORD label). `/forgot-password` page with `ForgotPasswordForm` calls `forgotPassword` Server Action: validates email exists (explicit error if not), creates a `VerificationToken` with `reset:email` prefix identifier (24h TTL), sends reset email via Resend. `/reset-password?token=...` server page pre-validates token and renders `ResetPasswordForm` or an invalid-link error card. `resetPassword` Server Action re-validates token, hashes new password with bcrypt, updates user, deletes token (single-use). Redirects to `/sign-in?password_reset=1` on success; `SignInForm` fires Sonner toast. Spec at `docs/superpowers/specs/2026-04-30-forgot-password-design.md`. Completed 2026-04-30.
