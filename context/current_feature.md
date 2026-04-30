@@ -1,23 +1,16 @@
-# Current Feature: Email Verification Toggle Flag
+# Current Feature
 
 ## Status
 
-In Progress
+Not Started
 
 ## Goals
 
-- Add a flag (env variable `EMAIL_VERIFICATION_ENABLED`) to toggle email verification on/off without code changes
-- When disabled: registration completes immediately with `emailVerified` stamped, no email is sent, no check blocks sign-in
-- When enabled: current behavior — send verification email, block unverified sign-in (existing behavior)
-- Default to `false` (disabled) so development works without a Resend domain configured
-- Keep the flag easy to flip for production when a real domain is linked
+<!-- List goals here -->
 
 ## Notes
 
-- Currently only the Resend account email can receive verification emails (no custom domain linked yet)
-- An env var is the preferred approach — clean, no UI needed, works across environments
-- Flag should be read in: `src/app/api/auth/register/route.ts` (skip email send + stamp `emailVerified`) and `src/auth.ts` (skip `EmailNotVerifiedError` check)
-- When disabled, `User.emailVerified` should be set to `new Date()` at registration time so the user is immediately considered verified
+<!-- Add notes here -->
 
 ## History
 
@@ -38,3 +31,4 @@ In Progress
 - 2026-04-21: **Auth Phase 2 — Credentials Provider (Email/Password)** — Per `context/features/auth-spec-files/auth-phase-2-spec.md`. Added `Credentials` provider with `authorize: () => null` placeholder in `src/auth.config.ts`; overrode it in `src/auth.ts` (Node runtime) with real bcryptjs validation (zod-parses email + password, looks up user via Prisma, `bcrypt.compare`). Created `POST /api/auth/register` at `src/app/api/auth/register/route.ts` — Zod schema validates `{ name, email, password ≥8, confirmPassword }` with match refinement; returns 201 with `{ success, user }`, 400 for invalid input, 409 for duplicate email; bcrypt hashes at 12 rounds. Installed `zod ^4.3.6` as direct dep (first use of Zod in the project per coding standards). `User.password` field already present from Phase 1 seed setup — no migration needed. GitHub OAuth from Phase 1 preserved unchanged. Completed 2026-04-21.
 - 2026-04-21: **Auth Phase 3 — Custom Auth Pages & Real Sidebar User** — Per `context/features/auth-spec-files/auth-phase-3-spec.md`. Created `(auth)` route group with centered layout; server-component pages for `/sign-in` and `/register` with extracted client form components (`SignInForm`, `RegisterForm`) for the `"use client"` boundary. `SignInForm` handles GitHub OAuth + credentials sign-in with loading states; `RegisterForm` POSTs to `/api/auth/register` and redirects to `/sign-in?registered=1`. Added `useEffect` in `SignInForm` to detect `?registered=1` param and fire a sonner toast — avoids cross-navigation toast loss. Installed `sonner ^2.0.7`; added `<Toaster>` to root layout. Updated `src/auth.config.ts` with `pages: { signIn: "/sign-in" }`. Created `UserAvatar` component (GitHub image or initials fallback). Wired `auth()` session data from dashboard layout through `DashboardShell` → `Sidebar` → `UserMenu` props; `UserMenu` shows real name/avatar with click-toggle dropdown (Profile link + Sign out). Completed 2026-04-21.
 - 2026-04-21: **Email Verification on Register** — Installed `resend`. After credentials registration, `POST /api/auth/register` generates a `randomBytes(32)` token, stores it in `VerificationToken` (24h expiry), and sends a verification email via Resend. `GET /verify-email` (under `(auth)` route group) validates the token, stamps `User.emailVerified`, deletes the token, and redirects to `/sign-in?verified=1` (or `?verify_error=expired/invalid`). `src/auth.ts` throws `EmailNotVerifiedError extends CredentialsSignin` (code `"email_not_verified"`) instead of returning null for unverified users. `RegisterForm` shows a "check your inbox" state on success. `SignInForm` handles `?verified=1` success toast and the `email_not_verified` error code with a targeted message. Added `scripts/purge-users.ts` (`npm run db:purge-users`) to delete all non-demo users and their content. Completed 2026-04-21.
+- 2026-04-30: **Email Verification Toggle Flag** — Added `EMAIL_VERIFICATION_ENABLED` env var (default off). When unset or `"false"`: registration stamps `emailVerified: new Date()` immediately and skips the Resend token+send; `src/auth.ts` bypasses the `EmailNotVerifiedError` check so unverified users can sign in. When `"true"`: full verification flow preserved unchanged. Documented in `.env.example`. Completed 2026-04-30.
