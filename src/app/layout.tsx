@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Inter, Geist_Mono } from "next/font/google";
-import { Toaster } from "sonner";
 import "./globals.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
@@ -31,7 +30,6 @@ export default function RootLayout({
     >
       <body className="h-full">
         <TooltipProvider>{children}</TooltipProvider>
-        <Toaster theme="dark" richColors position="top-center" />
       </body>
     </html>
   );
