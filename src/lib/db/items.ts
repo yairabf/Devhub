@@ -98,3 +98,24 @@ export function getSystemItemTypes(): Promise<SidebarItemType[]> {
     select: { id: true, name: true, color: true },
   });
 }
+
+export interface ItemTypeBreakdown {
+  id: string;
+  name: string;
+  count: number;
+}
+
+export async function getItemsCountByType(
+  userId: string,
+): Promise<ItemTypeBreakdown[]> {
+  const rows = await prisma.itemType.findMany({
+    where: { isSystem: true },
+    orderBy: { name: "asc" },
+    select: {
+      id: true,
+      name: true,
+      _count: { select: { items: { where: { userId } } } },
+    },
+  });
+  return rows.map((t) => ({ id: t.id, name: t.name, count: t._count.items }));
+}
