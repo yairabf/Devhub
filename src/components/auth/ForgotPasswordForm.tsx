@@ -5,7 +5,6 @@ import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { forgotPassword } from "@/actions/auth";
 
 export function ForgotPasswordForm() {
   const [email, setEmail] = useState("");
@@ -18,11 +17,16 @@ export function ForgotPasswordForm() {
     setError("");
     setLoading(true);
     try {
-      const result = await forgotPassword(email);
-      if (result.success) {
+      const response = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data: { success: boolean; error?: string } = await response.json();
+      if (data.success) {
         setSent(true);
       } else {
-        setError(result.error ?? "Something went wrong. Please try again.");
+        setError(data.error ?? "Something went wrong. Please try again.");
       }
     } catch {
       setError("Something went wrong. Please try again.");

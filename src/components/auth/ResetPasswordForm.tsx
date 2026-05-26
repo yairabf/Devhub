@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { resetPassword } from "@/actions/auth";
 
 interface Props {
   token: string;
@@ -23,11 +22,16 @@ export function ResetPasswordForm({ token }: Props) {
     setError("");
     setLoading(true);
     try {
-      const result = await resetPassword(token, password, confirmPassword);
-      if (result.success) {
+      const response = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, password, confirmPassword }),
+      });
+      const data: { success: boolean; error?: string } = await response.json();
+      if (data.success) {
         router.push("/sign-in?password_reset=1");
       } else {
-        setError(result.error ?? "Something went wrong. Please try again.");
+        setError(data.error ?? "Something went wrong. Please try again.");
       }
     } catch {
       setError("Something went wrong. Please try again.");
