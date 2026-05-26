@@ -4,8 +4,8 @@ import { z } from "zod";
 
 import { prisma } from "@/lib/prisma";
 import { sendPasswordResetEmail } from "@/lib/email";
+import { PASSWORD_RESET_TOKEN_PREFIX } from "@/lib/constants";
 
-const RESET_PREFIX = "reset:";
 const TTL_MS = 24 * 60 * 60 * 1000;
 
 const forgotPasswordSchema = z.object({
@@ -43,7 +43,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const identifier = RESET_PREFIX + normalizedEmail;
+  const identifier = PASSWORD_RESET_TOKEN_PREFIX + normalizedEmail;
   await prisma.verificationToken.deleteMany({ where: { identifier } });
 
   const token = randomBytes(32).toString("hex");

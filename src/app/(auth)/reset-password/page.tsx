@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { PASSWORD_RESET_TOKEN_PREFIX } from "@/lib/constants";
 import { ResetPasswordForm } from "@/components/auth/ResetPasswordForm";
 
 interface Props {
@@ -58,5 +59,5 @@ export default async function ResetPasswordPage({ searchParams }: Props) {
 
 async function isValidResetToken(token: string): Promise<boolean> {
   const record = await prisma.verificationToken.findUnique({ where: { token } });
-  return !!record && record.identifier.startsWith("reset:") && record.expires > new Date();
+  return !!record && record.identifier.startsWith(PASSWORD_RESET_TOKEN_PREFIX) && record.expires > new Date();
 }

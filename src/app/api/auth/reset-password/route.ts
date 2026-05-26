@@ -3,8 +3,7 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 
 import { prisma } from "@/lib/prisma";
-
-const RESET_PREFIX = "reset:";
+import { PASSWORD_RESET_TOKEN_PREFIX } from "@/lib/constants";
 
 const resetPasswordSchema = z
   .object({
@@ -40,7 +39,7 @@ export async function POST(request: Request) {
   const { token, password } = parsed.data;
   const record = await prisma.verificationToken.findUnique({ where: { token } });
 
-  if (!record || !record.identifier.startsWith(RESET_PREFIX)) {
+  if (!record || !record.identifier.startsWith(PASSWORD_RESET_TOKEN_PREFIX)) {
     return NextResponse.json(
       { success: false, error: "Invalid or expired reset link." },
       { status: 400 },
@@ -58,7 +57,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const email = record.identifier.slice(RESET_PREFIX.length);
+  const email = record.identifier.slice(PASSWORD_RESET_TOKEN_PREFIX.length);
   const passwordHash = await bcrypt.hash(password, 12);
 
   await prisma.user.update({ where: { email }, data: { password: passwordHash } });
