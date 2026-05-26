@@ -1,9 +1,8 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
-import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -13,24 +12,6 @@ function SignInFields() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") ?? "/dashboard";
-
-  useEffect(() => {
-    if (searchParams.get("registered") === "1") {
-      toast.success("Account created! You can now sign in.");
-    }
-    if (searchParams.get("verified") === "1") {
-      toast.success("Email verified! You can now sign in.");
-    }
-    if (searchParams.get("password_reset") === "1") {
-      toast.success("Password updated! You can now sign in.");
-    }
-    const verifyError = searchParams.get("verify_error");
-    if (verifyError === "expired") {
-      toast.error("Verification link expired. Please register again.");
-    } else if (verifyError === "invalid") {
-      toast.error("Invalid verification link.");
-    }
-  }, [searchParams]);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
