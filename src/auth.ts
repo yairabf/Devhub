@@ -6,9 +6,14 @@ import { z } from "zod";
 
 import authConfig from "./auth.config";
 import { prisma } from "@/lib/prisma";
+import { getClientIp, rateLimit } from "@/lib/rate-limit";
 
 class EmailNotVerifiedError extends CredentialsSignin {
   code = "email_not_verified";
+}
+
+class RateLimitError extends CredentialsSignin {
+  code = "rate_limited";
 }
 
 const credentialsSchema = z.object({
@@ -39,12 +44,20 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
           email: { label: "Email", type: "email" },
           password: { label: "Password", type: "password" },
         },
-        authorize: async (credentials) => {
+        authorize: async (credentials, request) => {
           const parsed = credentialsSchema.safeParse(credentials);
           if (!parsed.success) return null;
 
           const { email, password } = parsed.data;
-          const user = await prisma.user.findUnique({ where: { email } });
+          const normalizedEmail = email.toLowerCase();
+
+          const limit = await rateLimit(
+            "login",
+            `${getClientIp(request)}:${normalizedEmail}`,
+          );
+          if (!limit.success) throw new RateLimitError();
+
+          const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
           if (!user || !user.password) return null;
 
           const valid = await bcrypt.compare(password, user.password);

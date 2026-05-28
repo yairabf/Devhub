@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Loader2, MailCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 export function RegisterForm() {
+  const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -13,6 +15,28 @@ export function RegisterForm() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const [resendStatus, setResendStatus] = useState<
+    { kind: "idle" } | { kind: "loading" } | { kind: "success" } | { kind: "error"; message: string }
+  >({ kind: "idle" });
+
+  async function handleResend() {
+    setResendStatus({ kind: "loading" });
+    try {
+      const res = await fetch("/api/auth/resend-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json() as { success: boolean; error?: string };
+      if (!data.success) {
+        setResendStatus({ kind: "error", message: data.error ?? "Failed to resend." });
+        return;
+      }
+      setResendStatus({ kind: "success" });
+    } catch {
+      setResendStatus({ kind: "error", message: "Something went wrong. Please try again." });
+    }
+  }
 
   async function handleSubmit(e: { preventDefault(): void }) {
     e.preventDefault();
@@ -30,12 +54,20 @@ export function RegisterForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, email, password, confirmPassword }),
       });
-      const data = await res.json() as { success: boolean; error?: string };
+      const data = await res.json() as {
+        success: boolean;
+        error?: string;
+        verificationEmailSent?: boolean;
+      };
       if (!data.success) {
         setError(data.error ?? "Registration failed.");
         return;
       }
-      setSent(true);
+      if (data.verificationEmailSent) {
+        setSent(true);
+      } else {
+        router.push("/sign-in?registered=1");
+      }
     } catch {
       setError("Something went wrong. Please try again.");
     } finally {
@@ -53,6 +85,25 @@ export function RegisterForm() {
           Click it to activate your account.
         </p>
         <p className="text-xs text-muted-foreground">The link expires in 24 hours.</p>
+
+        <div className="mt-2 flex flex-col items-center gap-2">
+          <button
+            type="button"
+            onClick={handleResend}
+            disabled={resendStatus.kind === "loading" || resendStatus.kind === "success"}
+            className="text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground transition-colors disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {resendStatus.kind === "loading" ? "Resending…" : "Didn't get the email? Resend"}
+          </button>
+          {resendStatus.kind === "success" && (
+            <p className="text-xs text-muted-foreground">Verification email sent.</p>
+          )}
+          {resendStatus.kind === "error" && (
+            <p className="rounded-md bg-destructive/10 px-3 py-1.5 text-xs text-destructive">
+              {resendStatus.message}
+            </p>
+          )}
+        </div>
       </div>
     );
   }
