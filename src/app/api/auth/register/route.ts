@@ -5,6 +5,7 @@ import { randomBytes } from "crypto";
 
 import { prisma } from "@/lib/prisma";
 import { sendVerificationEmail } from "@/lib/email";
+import { getClientIp, rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
 const registerSchema = z
   .object({
@@ -19,6 +20,11 @@ const registerSchema = z
   });
 
 export async function POST(request: Request) {
+  const limit = await rateLimit("register", getClientIp(request));
+  if (!limit.success) {
+    return rateLimitResponse(limit.retryAfterSeconds);
+  }
+
   let payload: unknown;
   try {
     payload = await request.json();
@@ -78,5 +84,8 @@ export async function POST(request: Request) {
     await sendVerificationEmail(normalizedEmail, token);
   }
 
-  return NextResponse.json({ success: true, user }, { status: 201 });
+  return NextResponse.json(
+    { success: true, user, verificationEmailSent: verificationEnabled },
+    { status: 201 },
+  );
 }

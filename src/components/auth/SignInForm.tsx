@@ -32,6 +32,8 @@ function SignInFields() {
       if (result?.error) {
         if (result.error === "email_not_verified") {
           setError("Please verify your email before signing in. Check your inbox.");
+        } else if (result.error === "rate_limited") {
+          setError("Too many sign-in attempts. Please try again in a few minutes.");
         } else {
           setError("Invalid email or password.");
         }

@@ -3,20 +3,21 @@ import { randomBytes } from "crypto";
 import { z } from "zod";
 
 import { prisma } from "@/lib/prisma";
-import { sendPasswordResetEmail } from "@/lib/email";
-import { PASSWORD_RESET_TOKEN_PREFIX } from "@/lib/constants";
+import { sendVerificationEmail } from "@/lib/email";
 import { getClientIp, rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
 const TTL_MS = 24 * 60 * 60 * 1000;
 
-const forgotPasswordSchema = z.object({
+const resendSchema = z.object({
   email: z.email(),
 });
 
 export async function POST(request: Request) {
-  const limit = await rateLimit("forgotPassword", getClientIp(request));
-  if (!limit.success) {
-    return rateLimitResponse(limit.retryAfterSeconds);
+  if (process.env.EMAIL_VERIFICATION_ENABLED !== "true") {
+    return NextResponse.json(
+      { success: false, error: "Email verification is not enabled." },
+      { status: 400 },
+    );
   }
 
   let payload: unknown;
@@ -29,7 +30,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const parsed = forgotPasswordSchema.safeParse(payload);
+  const parsed = resendSchema.safeParse(payload);
   if (!parsed.success) {
     return NextResponse.json(
       { success: false, error: "Please enter a valid email." },
@@ -37,32 +38,43 @@ export async function POST(request: Request) {
     );
   }
 
-  const normalizedEmail = parsed.data.email.trim().toLowerCase();
+  const email = parsed.data.email.trim().toLowerCase();
 
-  const user = await prisma.user.findUnique({
-    where: { email: normalizedEmail },
-  });
+  const limit = await rateLimit("resendVerification", `${getClientIp(request)}:${email}`);
+  if (!limit.success) {
+    return rateLimitResponse(limit.retryAfterSeconds);
+  }
+
+  const user = await prisma.user.findUnique({ where: { email } });
   if (!user) {
     return NextResponse.json(
       { success: false, error: "No account found with that email." },
       { status: 404 },
     );
   }
-
-  const identifier = PASSWORD_RESET_TOKEN_PREFIX + normalizedEmail;
-  await prisma.verificationToken.deleteMany({ where: { identifier } });
+  if (user.emailVerified) {
+    return NextResponse.json(
+      { success: false, error: "Your email is already verified." },
+      { status: 400 },
+    );
+  }
 
   const token = randomBytes(32).toString("hex");
   const expires = new Date(Date.now() + TTL_MS);
+
+  await prisma.verificationToken.deleteMany({ where: { identifier: email } });
   await prisma.verificationToken.create({
-    data: { identifier, token, expires },
+    data: { identifier: email, token, expires },
   });
 
   try {
-    await sendPasswordResetEmail(normalizedEmail, token);
+    await sendVerificationEmail(email, token);
   } catch {
     return NextResponse.json(
-      { success: false, error: "Failed to send reset email. Please try again." },
+      {
+        success: false,
+        error: "Failed to send verification email. Please try again.",
+      },
       { status: 502 },
     );
   }
