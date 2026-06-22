@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/card";
 import type { ItemCardData } from "@/lib/db/items";
 import { getTypeIcon } from "@/lib/type-icons";
-import { getTypeBorderClass } from "@/lib/type-colors";
+import { getTypeLeftBorderClass } from "@/lib/type-colors";
 import { cn } from "@/lib/utils";
 
 interface ItemCardProps {
@@ -18,11 +18,11 @@ interface ItemCardProps {
 }
 
 export function ItemCard({ item }: ItemCardProps) {
-  const borderClass = getTypeBorderClass(item.itemTypeId);
+  const borderClass = getTypeLeftBorderClass(item.itemTypeId);
   const TypeIcon = getTypeIcon(item.itemTypeId);
 
   return (
-    <Card className={cn("flex flex-col border-2", borderClass)}>
+    <Card className={cn("flex flex-col border-l-4", borderClass)}>
       <CardHeader className="flex-row items-start justify-between gap-2">
         <CardTitle className="leading-tight">{item.title}</CardTitle>
         <Star

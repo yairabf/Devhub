@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/card";
 import type { CollectionCardData } from "@/lib/db/collections";
 import { getTypeIcon } from "@/lib/type-icons";
-import { getTypeBorderClass } from "@/lib/type-colors";
+import { getTypeLeftBorderClass } from "@/lib/type-colors";
 import { cn } from "@/lib/utils";
 
 interface CollectionCardProps {
@@ -17,10 +17,10 @@ interface CollectionCardProps {
 }
 
 export function CollectionCard({ collection }: CollectionCardProps) {
-  const borderClass = getTypeBorderClass(collection.dominantTypeId);
+  const borderClass = getTypeLeftBorderClass(collection.dominantTypeId);
 
   return (
-    <Card className={cn("flex flex-col border-2", borderClass)}>
+    <Card className={cn("flex flex-col border-l-4", borderClass)}>
       <CardHeader className="flex-row items-start justify-between gap-2">
         <CardTitle className="leading-tight">{collection.name}</CardTitle>
         <Star
