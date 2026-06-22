@@ -1,16 +1,24 @@
-# Current Feature
+# Current Feature: Items List View
 
 ## Status
 
-Not Started
+In Progress
 
 ## Goals
 
-<!-- List goals here -->
+- Create a dynamic route `/items/[type]` (e.g., `/items/snippets`, `/items/notes`) that lists type-filtered items
+- Fetch and display items filtered by the type from the route param
+- Render a responsive grid of `ItemCard` components — two columns on medium screens and up
+- Each card keeps its left-border accent colored by item type (existing `getTypeLeftBorderClass` pattern)
+- Follow existing codebase patterns (server components, `src/lib/db/items.ts` query helpers, auth/session scoping)
 
 ## Notes
 
-<!-- Add notes here -->
+- Spec: `context/features/item-list-view-spec.md`
+- Sidebar Types section already links to `/items/[typename]`, but those routes don't exist yet — this feature fills that gap.
+- Type slugs in the sidebar links use the type name (e.g., `snippet`); confirm singular vs plural slug convention against the existing sidebar `href` during planning.
+- `ItemCard` and `getTypeLeftBorderClass` already exist and render the left-border accent; a new type-filtered query helper (e.g., `getItemsByType`) will likely be needed in `src/lib/db/items.ts`.
+- Items belong to a `userId` — scope queries to the session user (demo user until auth-on-this-page is confirmed).
 
 ## History
 
