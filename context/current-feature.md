@@ -1,16 +1,25 @@
-# Current Feature
+# Current Feature: Quick Copy on Items
 
 ## Status
 
-Not Started
+In Progress
 
 ## Goals
 
-<!-- List goals here -->
+- Add a copy icon/button to each item card (`ItemCard`).
+- Clicking it copies the item's primary value to the clipboard:
+  - For snippet / command / note items → copy `content`.
+  - For link items → copy `url`.
+- Give visual feedback on copy success (e.g. icon swaps to a checkmark briefly).
+- Don't break the card layout or interfere with the existing favorite star / type badge.
 
 ## Notes
 
-<!-- Add notes here -->
+- `ItemCard` (`src/components/dashboard/ItemCard.tsx`) is currently a **server component**. Clipboard access (`navigator.clipboard.writeText`) and the click handler need a client boundary — extract a small `"use client"` `CopyButton` component rather than converting the whole card to a client component.
+- `ItemCardData` exposes `content` (snippets/commands/notes) and `url` (links). Copy `content` when present, otherwise fall back to `url`; render nothing to copy if both are empty.
+- Reuse Lucide icons already in the project (`Copy` → `Check` on success). Match existing icon sizing (`size-4` / `size-3.5`) and `text-muted-foreground` styling.
+- Place the button in the card header next to the favorite `Star`, or as a small footer action — keep it unobtrusive and consistent across all item types.
+- Used in the `/items/[type]` grid and the dashboard Pinned/Recent sections, so the change applies everywhere `ItemCard` renders.
 
 ## History
 
