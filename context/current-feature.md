@@ -1,25 +1,16 @@
-# Current Feature: Quick Copy on Items
+# Current Feature
 
 ## Status
 
-In Progress
+<!-- Not started -->
 
 ## Goals
 
-- Add a copy icon/button to each item card (`ItemCard`).
-- Clicking it copies the item's primary value to the clipboard:
-  - For snippet / command / note items → copy `content`.
-  - For link items → copy `url`.
-- Give visual feedback on copy success (e.g. icon swaps to a checkmark briefly).
-- Don't break the card layout or interfere with the existing favorite star / type badge.
+<!-- What are we building? -->
 
 ## Notes
 
-- `ItemCard` (`src/components/dashboard/ItemCard.tsx`) is currently a **server component**. Clipboard access (`navigator.clipboard.writeText`) and the click handler need a client boundary — extract a small `"use client"` `CopyButton` component rather than converting the whole card to a client component.
-- `ItemCardData` exposes `content` (snippets/commands/notes) and `url` (links). Copy `content` when present, otherwise fall back to `url`; render nothing to copy if both are empty.
-- Reuse Lucide icons already in the project (`Copy` → `Check` on success). Match existing icon sizing (`size-4` / `size-3.5`) and `text-muted-foreground` styling.
-- Place the button in the card header next to the favorite `Star`, or as a small footer action — keep it unobtrusive and consistent across all item types.
-- Used in the `/items/[type]` grid and the dashboard Pinned/Recent sections, so the change applies everywhere `ItemCard` renders.
+<!-- Implementation notes, constraints, decisions -->
 
 ## History
 
@@ -47,3 +38,4 @@ In Progress
 - 2026-05-28: **Rate Limiting for Auth** — Per `context/features/rate-limiting-spec.md`. Installed `@upstash/redis` + `@upstash/ratelimit`. Built `src/lib/rate-limit.ts` with a lazy Upstash client (three-state cache: `undefined`/`null`/`Redis`), per-key cached `Ratelimit.slidingWindow` instances, `getClientIp(request)` honoring `x-forwarded-for` (first hop) → `x-real-ip` → `"unknown"`, a typed `rateLimit(key, identifier)` returning `{ success } | { success, retryAfterSeconds }` that **fails open** on missing env or transport errors, `rateLimitMessage(seconds)` for consistent copy, and `rateLimitResponse(seconds)` returning a 429 `NextResponse` with `Retry-After` header. Applied limits: `/api/auth/register` 3/1h IP, `/api/auth/forgot-password` 3/1h IP, `/api/auth/reset-password` 5/15m IP, `/api/auth/resend-verification` (new endpoint, gated by `EMAIL_VERIFICATION_ENABLED`) 3/15m IP+email, and credentials login 5/15m IP+email enforced inside `authorize()` (NextAuth v5 hands the Request as the 2nd arg). Login surfaces the limit as `RateLimitError extends CredentialsSignin` with `code: "rate_limited"` — `SignInForm` maps that code to a friendly inline message; the other four routes return JSON `{ error }` with semantic copy and a `Retry-After` header. Side effect in `authorize()`: emails are now `.toLowerCase()`'d before lookup (needed for limit-key stability with the lowercased canonical storage form; also fixes a latent case-sensitivity sign-in bug). `RegisterForm` gained a "Resend verification email" button on the inbox screen and the register route now returns `verificationEmailSent: boolean` so the form redirects to `/sign-in?registered=1` when `EMAIL_VERIFICATION_ENABLED=false` instead of showing the misleading "Check your inbox" screen. Documented `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` in `.env.example`. Completed 2026-05-28.
 - 2026-06-22: **Fix GitHub OAuth Redirect** — Per `context/fixes/github-oatuh-redirect-fix.md`. Fixed the two-click GitHub sign-in bug (first click authenticated but bounced back to `/sign-in` instead of redirecting to `/dashboard`) by switching from client-side `signIn` (`next-auth/react`) to the NextAuth v5 server-side pattern. Re-created `src/actions/auth.ts` (deleted in the 2026-05-26 refactor) with a `"use server"` `signInWithGitHub(formData)` action calling `signIn("github", { redirectTo })` from `@/auth`. In `SignInForm.tsx`, replaced the GitHub `<Button onClick={handleGitHub}>` with a `<form action={signInWithGitHub}>` carrying a hidden `callbackUrl` input (preserves the existing `?callbackUrl=` param behavior, defaulting to `/dashboard`); removed `githubLoading` state and `handleGitHub`. Credentials login unchanged (still `signIn("credentials", { redirect: false })`). `npm run build` passes; the pre-existing unrelated `ItemCard.tsx` lint error remains. Completed 2026-06-22.
 - 2026-06-22: **Items List View** — Per `context/features/item-list-view-spec.md`. Added dynamic route `/items/[type]` (`src/app/items/[type]/page.tsx`, server component, `force-dynamic`) that resolves the URL slug against the system item types via `getTypeSlug(name)` (lowercase + `"s"`, matching the existing sidebar `href`) and calls `notFound()` for unknown slugs. Added `getItemsByType(userId, itemTypeId)` to `src/lib/db/items.ts` (reuses `ITEM_SELECT`/`toCardData` and the standard `updatedAt desc, id desc` ordering). Items render in a responsive `ItemCard` grid (`grid-cols-1 md:grid-cols-2`) with a per-type count heading and an empty state. Added `src/app/items/layout.tsx` mirroring the dashboard layout so the page renders inside `DashboardShell` (sidebar Types links now resolve to a real, navigable page instead of a 404). Also restyled `ItemCard` and `CollectionCard` from a full `border-2` to a left-only `border-l-4` accent via new `getTypeLeftBorderClass` (replacing the now-removed `getTypeBorderClass`/`TYPE_BORDER_CLASS`), and switched the command type icon from `Command` (⌘) to `Terminal` (bash-style `>_`). Scoped to the demo user (`DEMO_USER_ID`) until per-page auth is wired. `npm run build` passes; verified end-to-end with the dev server (`/items/snippets` → 200 with items, `/items/links` → links, `/items/bogus` → 404). Completed 2026-06-22.
+- 2026-06-25: **Quick Copy on Items** — Added a one-click copy action to every item card. New `"use client"` `CopyButton` (`src/components/dashboard/CopyButton.tsx`) calls `navigator.clipboard.writeText`, swaps the Lucide `Copy` icon to a green `Check` for 2s on success (auto-reset via `useEffect` timeout), and exposes accessible `aria-label`/`title` that flip to "Copied". `ItemCard` (kept a server component) renders it in the card header next to the favorite `Star`, passing `item.content ?? item.url` as the value with a type-aware label (`Copy <type>`) and showing nothing when both are empty — so snippets/commands/notes copy `content` and links copy `url`. Uses the existing `Button` `size="icon-xs"` ghost variant and `size-3.5` icon sizing for consistency. Applies everywhere `ItemCard` renders (`/items/[type]` grid + dashboard Pinned/Recent). `npm run build` passes. Completed 2026-06-25.
