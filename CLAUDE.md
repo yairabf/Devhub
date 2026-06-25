@@ -17,6 +17,7 @@ Read the following to get the full context of the project:
 - **Build**: `npm run build`
 - **Production server**: `npm run start`
 - **Lint**: `npm run lint`
+- **Test**: `npm test` (unit tests via Vitest; `npm run test:coverage` for coverage)
 
 **IMPORTANT:** Do not add Claude to any commit messages
 

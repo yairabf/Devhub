@@ -2,15 +2,23 @@
 
 ## Status
 
-<!-- Not started -->
+In Progress
 
 ## Goals
 
-<!-- What are we building? -->
+Set up Vitest for unit testing, scoped to **server-side utilities and `lib/db` helpers only** (not React components). Wire testing into the documented feature workflow.
 
 ## Notes
 
-<!-- Implementation notes, constraints, decisions -->
+Full design: `docs/superpowers/specs/2026-06-25-vitest-setup-design.md`.
+
+- Deps: `vitest`, `@vitest/coverage-v8`, `vite-tsconfig-paths` (dev).
+- `vitest.config.ts` at root: `environment: "node"`, `include: ["src/**/*.test.ts"]`, v8 coverage over `src/lib/**`.
+- Scripts: `test`, `test:watch`, `test:coverage`.
+- Colocated `*.test.ts`; explicit Vitest imports (no globals).
+- Initial tests: `format`, `type-colors`, `rate-limit`, `db/collections`, `db/items` (Prisma mocked via `vi.mock`).
+- Doc updates: `context/ai-interaction.md` (workflow step 4 + Testing subsection), `context/coding-standards.md` (Testing section), `CLAUDE.md` (Commands).
+- Out of scope: component tests, API route tests, the trivial `signInWithGitHub` action.
 
 ## History
 

@@ -90,6 +90,17 @@ Example v4 configuration:
 - Return `{ success, data, error }` pattern from actions
 - Display user-friendly error messages via toast
 
+## Testing
+
+- Use **Vitest** for unit tests (`environment: "node"`)
+- Scope: server-side logic and utilities only — **not** React components
+  - Test: pure utilities (`src/lib/*`), `lib/db` data-shaping helpers, server actions, and (later) API route handlers
+  - Skip: React components, thin pass-through wrappers with no logic
+- Colocate test files next to their source as `*.test.ts` (e.g. `src/lib/format.test.ts`)
+- Use explicit imports (`import { describe, it, expect, vi } from "vitest"`) — no Vitest globals
+- Mock the Prisma singleton with `vi.mock("@/lib/prisma", ...)` when testing `lib/db`
+- Commands: `npm test`, `npm run test:watch`, `npm run test:coverage`
+
 ## Code Quality
 
 - No commented-out code unless specified
