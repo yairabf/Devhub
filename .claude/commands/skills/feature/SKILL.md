@@ -31,6 +31,7 @@ Execute the requested action: $ARGUMENTS
 | `load` | Load a feature spec or inline description |
 | `start` | Begin implementation, create branch |
 | `review` | Check goals met, code quality |
+| `test` | check for testable logic or server actions and utilites |
 | `explain` | Document what changed and why | 
 | `complete` | Commit, push, merge, reset |
 
