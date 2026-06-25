@@ -1,16 +1,19 @@
-# Current Feature
+# Current Feature: Item List 3-Column Grid
 
 ## Status
 
-<!-- Not started -->
+In Progress
 
 ## Goals
 
-<!-- What are we building? -->
+- Change the items list view (`/items/[type]`) grid from a 2-column max to a 3-column max on larger screens/viewports.
+- Keep the layout responsive: single column on small screens, scaling up to 3 columns on large screens.
 
 ## Notes
 
-<!-- Implementation notes, constraints, decisions -->
+- Target: the `ItemCard` grid in `src/app/items/[type]/page.tsx`, currently `grid-cols-1 md:grid-cols-2`.
+- Use Tailwind responsive breakpoints to step up to 3 columns (e.g. `grid-cols-1 md:grid-cols-2 lg:grid-cols-3` or similar), keeping intermediate breakpoints sensible.
+- Scope is the items-by-type list view only; dashboard Pinned/Recent grids are out of scope unless they share the same wrapper.
 
 ## History
 
