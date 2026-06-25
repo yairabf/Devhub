@@ -15,15 +15,24 @@ This is the common workflow that we will use for every single feature/fix:
 1. **Document** - Document the feature in @context/current-feature.md.
 2. **Branch** - Create new branch for feature, fix, etc
 3. **Implement** - Implement the feature/fix that I create in @context/current-feature.md
-4. **Test** - Verify it works in the browser. Implement unit testing later. Run `npm run build` and fix any errors
+4. **Test** - Verify it works in the browser. Add or update unit tests for any utility, `lib/db`, or server-action logic you touched, and run `npm test`. Run `npm run build` and fix any errors.
 5. **Iterate** - Iterate and change things if needed
-6. **Commit** - Only after build passes and everything works
+6. **Commit** - Only after build passes, tests pass, and everything works
 7. **Merge** - Merge to main
 8. **Delete Branch** - Delete branch after merge
 9. **Review** - Review AI-generated code periodically and on demand.
 10. Mark as completed in @context/current-feature.md and add to history
 
-Do NOT commit without permission and until the build passes. If build fails, fix the issues first.
+Do NOT commit without permission and until the build and tests pass. If the build or tests fail, fix the issues first.
+
+## Testing
+
+We use **Vitest** for unit tests. Scope is **server-side logic and utilities only** — not React components.
+
+- Test what we test: pure utilities (`src/lib/*`), `lib/db` data-shaping helpers (mock the Prisma singleton with `vi.mock("@/lib/prisma", ...)`), server actions, and — when added — API route handlers.
+- Don't test: React components (no jsdom / React Testing Library), thin pass-through wrappers with no logic.
+- Test files are **colocated** next to their source as `*.test.ts` (e.g. `src/lib/format.test.ts`).
+- Run `npm test` (single run), `npm run test:watch` (watch mode), or `npm run test:coverage` (with coverage).
 
 ## Branching
 
