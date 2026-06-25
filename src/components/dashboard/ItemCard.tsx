@@ -1,5 +1,6 @@
 import { Star } from "lucide-react";
 
+import { CopyButton } from "@/components/dashboard/CopyButton";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -20,17 +21,23 @@ interface ItemCardProps {
 export function ItemCard({ item }: ItemCardProps) {
   const borderClass = getTypeLeftBorderClass(item.itemTypeId);
   const TypeIcon = getTypeIcon(item.itemTypeId);
+  const copyValue = item.content ?? item.url;
 
   return (
     <Card className={cn("flex flex-col border-l-4", borderClass)}>
       <CardHeader className="flex-row items-start justify-between gap-2">
         <CardTitle className="leading-tight">{item.title}</CardTitle>
-        <Star
-          className={cn(
-            "size-4 shrink-0",
-            item.isFavorite ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground"
+        <div className="flex shrink-0 items-center gap-1">
+          {copyValue && (
+            <CopyButton value={copyValue} label={`Copy ${item.itemTypeName.toLowerCase()}`} />
           )}
-        />
+          <Star
+            className={cn(
+              "size-4",
+              item.isFavorite ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground"
+            )}
+          />
+        </div>
       </CardHeader>
       <CardContent className="space-y-3 pt-0">
         {item.description && (
