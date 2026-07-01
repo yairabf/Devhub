@@ -1,21 +1,16 @@
-# Current Feature: Theme Switch
+# Current Feature
 
 ## Status
 
-In Progress
+<!-- Not started -->
 
 ## Goals
 
-- Add a theme switch control that lets users toggle between light and dark themes.
-- Persist the selected theme so it remains consistent across page reloads.
-- Place the switch in an appropriate existing app surface without disrupting navigation or dashboard layout.
-- Keep the implementation consistent with the current Next.js 16, React 19, Tailwind CSS v4, and ShadCN UI patterns.
+<!-- What are we building? -->
 
 ## Notes
 
-- Inline feature request: "Let's add a switch button for dark theme and light theme."
-- Inspect the existing theme/styling setup before implementation; do not add Tailwind v3 config files.
-- Verify in the browser after implementation and run the required checks before completion.
+<!-- Implementation notes, constraints, decisions -->
 
 ## History
 
@@ -46,3 +41,4 @@ In Progress
 - 2026-06-25: **Quick Copy on Items** — Added a one-click copy action to every item card. New `"use client"` `CopyButton` (`src/components/dashboard/CopyButton.tsx`) calls `navigator.clipboard.writeText`, swaps the Lucide `Copy` icon to a green `Check` for 2s on success (auto-reset via `useEffect` timeout), and exposes accessible `aria-label`/`title` that flip to "Copied". `ItemCard` (kept a server component) renders it in the card header next to the favorite `Star`, passing `item.content ?? item.url` as the value with a type-aware label (`Copy <type>`) and showing nothing when both are empty — so snippets/commands/notes copy `content` and links copy `url`. Uses the existing `Button` `size="icon-xs"` ghost variant and `size-3.5` icon sizing for consistency. Applies everywhere `ItemCard` renders (`/items/[type]` grid + dashboard Pinned/Recent). `npm run build` passes. Completed 2026-06-25.
 - 2026-06-25: **Vitest Unit Testing Setup** — Per `docs/superpowers/specs/2026-06-25-vitest-setup-design.md`. Introduced Vitest for unit testing, scoped to server-side utilities and `lib/db` helpers (not React components). Installed `vitest` + `@vitest/coverage-v8`; `vitest.config.ts` at root uses `environment: "node"`, `include: ["src/**/*.test.ts"]`, native `resolve.tsconfigPaths` (Vitest 4 resolves the `@/*` alias from `tsconfig.json` without a plugin — `vite-tsconfig-paths` was installed then dropped on the runtime's own recommendation), and v8 coverage over `src/lib/**` (excluding `prisma.ts`, `mock-data.ts`, `type-icons.tsx`). Added `test` (`vitest run`), `test:watch`, and `test:coverage` scripts. Wrote 5 colocated test files (27 tests) with explicit Vitest imports (no globals): `format`, `type-colors`, `rate-limit` (pure utilities), and `db/collections` + `db/items` (data-shaping with the Prisma singleton mocked via `vi.mock("@/lib/prisma")`). Documented the workflow change in `context/ai-interaction.md` (rewrote step 4 to require `npm test` + tests for touched utility/`lib/db`/action logic, added a Testing section), `context/coding-standards.md` (Testing section), and `CLAUDE.md` (Commands). `npm test` 27/27, `npm run test:coverage`, and `npm run build` all pass; the pre-existing unrelated `ItemCard.tsx` lint error remains. Completed 2026-06-25.
 - 2026-06-25: **Item List 3-Column Grid** — Stepped the items-by-type list view (`src/app/items/[type]/page.tsx`) grid up from a 2-column max to a 3-column max on large viewports by changing the `ItemCard` grid wrapper from `grid-cols-1 md:grid-cols-2` to `grid-cols-1 md:grid-cols-2 lg:grid-cols-3`. Stays responsive: 1 column on mobile, 2 at `md`, 3 at `lg`+. Scope limited to this list view — dashboard Pinned/Recent grids use their own `DashboardSection` wrappers and were untouched. No server-action or utility logic changed, so no new unit tests were warranted; existing suite stays green (27/27). Completed 2026-06-25.
+- 2026-07-01: **Theme Switch** — Added a dashboard top-bar theme switch with Sun/Moon icons, persisted the selected light/dark theme in `localStorage` under `devstash:theme`, and applied the stored theme before hydration from the root layout to avoid a theme flash. Verified with `npm test`, `npm run build`, and browser flow sign-in/toggle/reload checks. Completed 2026-07-01.
