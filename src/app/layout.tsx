@@ -13,6 +13,20 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const themeScript = `
+(() => {
+  try {
+    const storedTheme = localStorage.getItem("devstash:theme");
+    const theme = storedTheme === "light" || storedTheme === "dark" ? storedTheme : "dark";
+    document.documentElement.classList.toggle("dark", theme === "dark");
+    document.documentElement.style.colorScheme = theme;
+  } catch {
+    document.documentElement.classList.add("dark");
+    document.documentElement.style.colorScheme = "dark";
+  }
+})();
+`;
+
 export const metadata: Metadata = {
   title: "DevHub",
   description: "Developer knowledge hub for snippets, commands, prompts, notes, files, images, links and custom types.",
@@ -26,8 +40,12 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${geistMono.variable} h-full antialiased dark`}
+      suppressHydrationWarning
+      className={`${inter.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body className="h-full">
         <TooltipProvider>{children}</TooltipProvider>
       </body>

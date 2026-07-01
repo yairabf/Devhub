@@ -3,6 +3,7 @@
 import { FolderPlus, Menu, Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
 interface TopBarProps {
   onOpenDrawer: () => void;
@@ -27,6 +28,7 @@ export function TopBar({ onOpenDrawer }: TopBarProps) {
         </div>
       </div>
       <div className="flex items-center gap-2">
+        <ThemeToggle />
         <Button variant="outline" className="hidden sm:inline-flex">
           <FolderPlus className="mr-2 h-4 w-4" />
           New Collection

@@ -1,16 +1,21 @@
-# Current Feature
+# Current Feature: Theme Switch
 
 ## Status
 
-<!-- Not started -->
+In Progress
 
 ## Goals
 
-<!-- What are we building? -->
+- Add a theme switch control that lets users toggle between light and dark themes.
+- Persist the selected theme so it remains consistent across page reloads.
+- Place the switch in an appropriate existing app surface without disrupting navigation or dashboard layout.
+- Keep the implementation consistent with the current Next.js 16, React 19, Tailwind CSS v4, and ShadCN UI patterns.
 
 ## Notes
 
-<!-- Implementation notes, constraints, decisions -->
+- Inline feature request: "Let's add a switch button for dark theme and light theme."
+- Inspect the existing theme/styling setup before implementation; do not add Tailwind v3 config files.
+- Verify in the browser after implementation and run the required checks before completion.
 
 ## History
 
