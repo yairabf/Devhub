@@ -1,6 +1,12 @@
 import { describe, it, expect } from "vitest";
 
-import { buildUpdatePayload, getEditableFields } from "@/lib/item-form";
+import {
+  buildCreatePayload,
+  buildUpdatePayload,
+  getEditableFields,
+  isCreatableType,
+  orderCreatableTypes,
+} from "@/lib/item-form";
 import type { ItemDetailData } from "@/lib/db/items";
 
 function makeItem(overrides: Partial<ItemDetailData> = {}): ItemDetailData {
@@ -130,5 +136,113 @@ describe("buildUpdatePayload", () => {
     const payload = buildUpdatePayload(makeItem(), { ...DRAFT, tags: "" });
 
     expect(payload.tags).toEqual([""]);
+  });
+});
+
+describe("isCreatableType", () => {
+  it("accepts the five types the dialog offers", () => {
+    for (const id of [
+      "type_snippet",
+      "type_prompt",
+      "type_command",
+      "type_note",
+      "type_link",
+    ]) {
+      expect(isCreatableType(id)).toBe(true);
+    }
+  });
+
+  it("rejects the Pro upload types and anything unknown", () => {
+    for (const id of ["type_file", "type_image", "nonsense", ""]) {
+      expect(isCreatableType(id)).toBe(false);
+    }
+  });
+});
+
+describe("buildCreatePayload", () => {
+  const DRAFT = {
+    title: "useDebounce",
+    description: "A debounce hook",
+    content: "const x = 1;",
+    language: "typescript",
+    url: "https://example.com",
+    tags: "react, hooks",
+  };
+
+  it("keeps content and language for a snippet and nulls the url", () => {
+    expect(buildCreatePayload("type_snippet", DRAFT)).toEqual({
+      itemTypeId: "type_snippet",
+      title: "useDebounce",
+      description: "A debounce hook",
+      content: "const x = 1;",
+      language: "typescript",
+      url: null,
+      tags: ["react", " hooks"],
+    });
+  });
+
+  it("keeps content but not language for a prompt", () => {
+    const payload = buildCreatePayload("type_prompt", DRAFT);
+
+    expect(payload.content).toBe("const x = 1;");
+    expect(payload.language).toBeNull();
+    expect(payload.url).toBeNull();
+  });
+
+  it("keeps only the url for a link", () => {
+    const payload = buildCreatePayload("type_link", DRAFT);
+
+    expect(payload.url).toBe("https://example.com");
+    expect(payload.content).toBeNull();
+    expect(payload.language).toBeNull();
+  });
+
+  // Unlike buildUpdatePayload there is no stored item to fall back on, so
+  // hidden fields must be null rather than carried over.
+  it("never carries a value into a field the type does not use", () => {
+    const payload = buildCreatePayload("type_note", DRAFT);
+
+    expect(payload).toMatchObject({ language: null, url: null });
+    expect(payload.content).toBe("const x = 1;");
+  });
+});
+
+describe("orderCreatableTypes", () => {
+  // The DB returns types alphabetically; the selector wants spec order.
+  const FROM_DB = [
+    { id: "type_command" },
+    { id: "type_file" },
+    { id: "type_image" },
+    { id: "type_link" },
+    { id: "type_note" },
+    { id: "type_prompt" },
+    { id: "type_snippet" },
+  ];
+
+  it("drops Pro types and returns the rest in selector order", () => {
+    expect(orderCreatableTypes(FROM_DB).map(t => t.id)).toEqual([
+      "type_snippet",
+      "type_prompt",
+      "type_command",
+      "type_note",
+      "type_link",
+    ]);
+  });
+
+  it("puts snippet first so it becomes the default selection", () => {
+    expect(orderCreatableTypes(FROM_DB)[0].id).toBe("type_snippet");
+  });
+
+  it("omits types missing from the database without breaking the order", () => {
+    const partial = [{ id: "type_link" }, { id: "type_command" }];
+
+    expect(orderCreatableTypes(partial).map(t => t.id)).toEqual([
+      "type_command",
+      "type_link",
+    ]);
+  });
+
+  it("returns an empty list when nothing is creatable", () => {
+    expect(orderCreatableTypes([{ id: "type_file" }])).toEqual([]);
   });
 });

@@ -4,10 +4,12 @@ import { z } from "zod";
 
 import { auth } from "@/auth";
 import {
+  createItem as createItemInDb,
   deleteItem as deleteItemInDb,
   updateItem as updateItemInDb,
   type ItemDetailData,
 } from "@/lib/db/items";
+import { getEditableFields, isCreatableType, LINK_TYPE_ID } from "@/lib/item-form";
 
 /** Empty strings from the form mean "cleared", which the DB stores as null. */
 const nullableText = z
@@ -28,22 +30,108 @@ const nullableBody = z
   .nullable()
   .default(null);
 
-const updateItemSchema = z.object({
+const tagList = z
+  .array(z.string())
+  .default([])
+  .transform(names => [
+    ...new Set(names.map(name => name.trim()).filter(Boolean)),
+  ]);
+
+const isValidUrl = (value: string) => z.string().url().safeParse(value).success;
+
+/** Fields both the create and update forms submit identically. */
+const sharedItemFields = {
   title: z.string().trim().min(1, "Title is required"),
   description: nullableText,
   content: nullableBody,
   language: nullableText,
+  tags: tagList,
+};
+
+const updateItemSchema = z.object({
+  ...sharedItemFields,
   url: nullableText.refine(
-    value => value === null || z.string().url().safeParse(value).success,
+    value => value === null || isValidUrl(value),
     "Enter a valid URL",
   ),
-  tags: z
-    .array(z.string())
-    .default([])
-    .transform(names => [
-      ...new Set(names.map(name => name.trim()).filter(Boolean)),
-    ]),
 });
+
+const createItemSchema = z
+  .object({
+    ...sharedItemFields,
+    itemTypeId: z.string(),
+    url: nullableText,
+  })
+  .superRefine((value, ctx) => {
+    if (!isCreatableType(value.itemTypeId)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["itemTypeId"],
+        message: "Choose an item type.",
+      });
+    }
+
+    // Links are the one type whose URL carries the whole item.
+    if (value.itemTypeId === LINK_TYPE_ID && value.url === null) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["url"],
+        message: "URL is required for links",
+      });
+      return;
+    }
+
+    if (value.url !== null && !isValidUrl(value.url)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["url"],
+        message: "Enter a valid URL",
+      });
+    }
+  });
+
+export type CreateItemPayload = z.input<typeof createItemSchema>;
+
+export type CreateItemResult =
+  | { success: true; data: ItemDetailData }
+  | { success: false; error: string };
+
+export async function createItem(
+  payload: CreateItemPayload,
+): Promise<CreateItemResult> {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return { success: false, error: "You must be signed in to create items." };
+    }
+
+    const parsed = createItemSchema.safeParse(payload);
+    if (!parsed.success) {
+      const firstIssue = parsed.error.issues[0];
+      return { success: false, error: firstIssue?.message ?? "Invalid input" };
+    }
+
+    // Drop anything the chosen type does not use, so a client sending content
+    // for a link (or a URL for a note) cannot store an unreachable field.
+    const fields = getEditableFields(parsed.data.itemTypeId);
+    const item = await createItemInDb(session.user.id, {
+      itemTypeId: parsed.data.itemTypeId,
+      title: parsed.data.title,
+      description: parsed.data.description,
+      content: fields.content ? parsed.data.content : null,
+      language: fields.language ? parsed.data.language : null,
+      url: fields.url ? parsed.data.url : null,
+      tags: parsed.data.tags,
+    });
+
+    return { success: true, data: item };
+  } catch {
+    return {
+      success: false,
+      error: "Could not create this item. Please try again.",
+    };
+  }
+}
 
 export type UpdateItemPayload = z.input<typeof updateItemSchema>;
 

@@ -47,3 +47,34 @@ export async function itemExists(id: string): Promise<boolean> {
   const { exists } = await fixture<{ exists: boolean }>("exists", id);
   return exists;
 }
+
+/** A row as stored, for asserting what the create dialog actually persisted. */
+export interface StoredItem {
+  id: string;
+  title: string;
+  contentType: string;
+  content: string | null;
+  description: string | null;
+  language: string | null;
+  url: string | null;
+  itemTypeId: string;
+  userId: string;
+  tags: { name: string }[];
+}
+
+/** Items created through the UI get cuid ids, so they are read back by title. */
+export async function findItemByTitle(title: string): Promise<StoredItem | null> {
+  const { item } = await fixture<{ item: StoredItem | null }>(
+    "findByTitle",
+    title,
+  );
+  return item;
+}
+
+export async function removeItemsByTitle(title: string): Promise<number> {
+  const { removed } = await fixture<{ removed: number }>(
+    "removeByTitle",
+    title,
+  );
+  return removed;
+}

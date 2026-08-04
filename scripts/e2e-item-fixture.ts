@@ -13,7 +13,13 @@ import { DEMO_USER_ID } from "../src/lib/constants";
  * directly — Playwright transpiles test files to CJS, and the generated Prisma
  * client is ESM (`import.meta`), so it cannot be loaded in-process.
  *
- * Usage: tsx scripts/e2e-item-fixture.ts <create|remove|exists> <arg> [title]
+ * Usage: tsx scripts/e2e-item-fixture.ts <command> <arg> [title]
+ *   create <suffix> [title]   create a throwaway item at a known id
+ *   remove <id>               delete by id
+ *   exists <id>               report whether the id is present
+ *   findByTitle <title>       read back an item the UI created (ids are cuids)
+ *   removeByTitle <title>     clean up items the UI created
+ *
  * Prints a single JSON line on stdout.
  */
 
@@ -66,6 +72,30 @@ async function main() {
         exists:
           (await prisma.item.count({ where: { id: requireArg(command, arg) } })) === 1,
       };
+    case "findByTitle":
+      return {
+        item: await prisma.item.findFirst({
+          where: { title: requireArg(command, arg), userId: DEMO_USER_ID },
+          select: {
+            id: true,
+            title: true,
+            contentType: true,
+            content: true,
+            description: true,
+            language: true,
+            url: true,
+            itemTypeId: true,
+            userId: true,
+            tags: { select: { name: true }, orderBy: { name: "asc" } },
+          },
+        }),
+      };
+    case "removeByTitle": {
+      const { count } = await prisma.item.deleteMany({
+        where: { title: requireArg(command, arg), userId: DEMO_USER_ID },
+      });
+      return { removed: count };
+    }
     default:
       throw new Error(`Unknown command: ${command ?? "(none)"}`);
   }

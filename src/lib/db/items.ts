@@ -148,6 +148,50 @@ export async function getItemDetail(
   return toDetailData(item);
 }
 
+export interface CreateItemInput {
+  itemTypeId: string;
+  title: string;
+  description: string | null;
+  content: string | null;
+  url: string | null;
+  language: string | null;
+  /** Trimmed, non-empty, de-duplicated tag names. */
+  tags: string[];
+}
+
+/**
+ * Creates an item for the user and returns its full detail.
+ *
+ * `contentType` is required by the schema with no default; every type this
+ * dialog can create stores its body as text, matching the seed.
+ */
+export async function createItem(
+  userId: string,
+  data: CreateItemInput,
+): Promise<ItemDetailData> {
+  const item = await prisma.item.create({
+    data: {
+      title: data.title,
+      contentType: "text",
+      description: data.description,
+      content: data.content,
+      url: data.url,
+      language: data.language,
+      userId,
+      itemTypeId: data.itemTypeId,
+      tags: {
+        connectOrCreate: data.tags.map(name => ({
+          where: { name },
+          create: { name },
+        })),
+      },
+    },
+    select: ITEM_DETAIL_SELECT,
+  });
+
+  return toDetailData(item);
+}
+
 export interface UpdateItemInput {
   title: string;
   description: string | null;
