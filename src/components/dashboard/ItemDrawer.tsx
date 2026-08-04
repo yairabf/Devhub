@@ -1,8 +1,9 @@
 "use client";
 
-import { Folder, Pencil, Pin, Star, Tag, Trash2 } from "lucide-react";
+import { Folder, Pencil, Pin, Star, Tag } from "lucide-react";
 
 import { CopyButton } from "@/components/dashboard/CopyButton";
+import { DeleteItemDialog } from "@/components/dashboard/DeleteItemDialog";
 import { ItemEditForm } from "@/components/dashboard/ItemEditForm";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,15 +19,25 @@ import { getTypeTextClass } from "@/lib/type-colors";
 import { TypeGlyph } from "@/lib/type-icons";
 import { cn } from "@/lib/utils";
 
+/**
+ * A failed load. Carries its own heading because a deleted item is not the same
+ * story as a transport failure and should not be announced as one.
+ */
+export interface ItemDrawerErrorState {
+  title: string;
+  message: string;
+}
+
 interface ItemDrawerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   item: ItemDetailData | null;
-  error: string | null;
+  error: ItemDrawerErrorState | null;
   editing: boolean;
   onEdit: () => void;
   onCancelEdit: () => void;
   onSaved: (updated: ItemDetailData) => void;
+  onDeleted: (itemId: string) => void;
 }
 
 export function ItemDrawer({
@@ -38,6 +49,7 @@ export function ItemDrawer({
   onEdit,
   onCancelEdit,
   onSaved,
+  onDeleted,
 }: ItemDrawerProps) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -56,12 +68,12 @@ export function ItemDrawer({
                 onSaved={onSaved}
               />
             ) : (
-              <ItemViewMode item={item} onEdit={onEdit} />
+              <ItemViewMode item={item} onEdit={onEdit} onDeleted={onDeleted} />
             )}
             <ItemDrawerFooter item={item} />
           </>
         ) : error ? (
-          <ItemDrawerError message={error} />
+          <ItemDrawerError error={error} />
         ) : (
           <ItemDrawerSkeleton />
         )}
@@ -95,9 +107,11 @@ function ItemDrawerHeader({ item }: { item: ItemDetailData }) {
 function ItemViewMode({
   item,
   onEdit,
+  onDeleted,
 }: {
   item: ItemDetailData;
   onEdit: () => void;
+  onDeleted: (itemId: string) => void;
 }) {
   const copyValue = item.content ?? item.url;
 
@@ -155,16 +169,11 @@ function ItemViewMode({
         >
           <Pencil className="size-4" aria-hidden />
         </Button>
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          disabled
-          title="Delete — coming soon"
-          aria-label="Delete item"
-          className="ml-auto text-destructive"
-        >
-          <Trash2 className="size-4" aria-hidden />
-        </Button>
+        <DeleteItemDialog
+          itemId={item.id}
+          itemTitle={item.title}
+          onDeleted={onDeleted}
+        />
       </div>
 
       <div className="flex-1 space-y-5 overflow-y-auto p-4">
@@ -280,11 +289,11 @@ function ItemDrawerSkeleton() {
   );
 }
 
-function ItemDrawerError({ message }: { message: string }) {
+function ItemDrawerError({ error }: { error: ItemDrawerErrorState }) {
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-2 p-8 text-center">
-      <SheetTitle>Something went wrong</SheetTitle>
-      <SheetDescription>{message}</SheetDescription>
+      <SheetTitle>{error.title}</SheetTitle>
+      <SheetDescription>{error.message}</SheetDescription>
     </div>
   );
 }

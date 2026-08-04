@@ -1,16 +1,26 @@
-# Current Feature
+# Current Feature: Delete Item
 
 ## Status
 
-<!-- Not started -->
+In Progress — branch `feature/delete-item`
 
 ## Goals
 
-<!-- What are we building? -->
+- Enable the item drawer's Delete button — currently a disabled placeholder (`title="Delete — coming soon"`) in `src/components/dashboard/ItemDrawer.tsx`.
+- Show a ShadCN-style confirmation before deleting, using the existing `src/components/ui/alert-dialog.tsx` wrapper and following the `DeleteAccountDialog` usage pattern (destructive confirm button, cancel closes without side effects).
+- Add a `deleteItem` server action in `src/actions/items.ts` mirroring `updateItem`: `auth()` session gate and the `{ success, error }` envelope.
+- Add `deleteItem(userId, itemId)` to `src/lib/db/items.ts` using the same `findFirst({ id, userId })` ownership pre-check `updateItem` uses (deliberately avoids coupling to Prisma's `P2025`).
+- Show a success toast via `sonner` on delete; show an inline/toast error message on failure.
+- Close the drawer on success and call `router.refresh()` so the server-rendered card lists (dashboard Pinned/Recent, `/items/[type]`) drop the deleted item.
+- Add unit tests to the existing `src/actions/items.test.ts` and `src/lib/db/items.test.ts` (auth gate, ownership scoping, success path).
 
 ## Notes
 
-<!-- Implementation notes, constraints, decisions -->
+- **Cache eviction (real trap):** `ItemDrawerProvider` keeps a `cache` Map of fetched details, and `handleSaved` *replaces* the entry. Delete must **evict** it (`cache.current.delete(id)`), otherwise re-opening a deleted id hits the cache and renders a ghost item with no fetch.
+- Do **not** run a shadcn CLI `add` — this project hand-rolls ShadCN-style wrappers over `@base-ui/react` (see `alert-dialog.tsx`, `tooltip.tsx`). `sonner` is already installed and mounted via `ThemeToaster`.
+- **Assumption:** delete is drawer-only for this pass — no per-card delete action on `ItemCard`. Say so at `:start` if that's wrong.
+- Verify at implement time that `ItemCollection` (and tag) join rows are cascade-deleted with the item rather than assuming the schema handles it.
+- Standing limitation carried forward: the pages still fetch with `DEMO_USER_ID` while actions scope to `session.user.id`, so delete will only work as the seeded demo user.
 
 ## History
 
