@@ -6,6 +6,7 @@ import {
   getEditableFields,
   isCreatableType,
   orderCreatableTypes,
+  usesCodeEditor,
 } from "@/lib/item-form";
 import type { ItemDetailData } from "@/lib/db/items";
 
@@ -78,6 +79,36 @@ describe("getEditableFields", () => {
     expect(getEditableFields("type_file")).toEqual(none);
     expect(getEditableFields("type_image")).toEqual(none);
     expect(getEditableFields("type_unknown")).toEqual(none);
+  });
+});
+
+describe("usesCodeEditor", () => {
+  it("is true for the code types", () => {
+    expect(usesCodeEditor("type_snippet")).toBe(true);
+    expect(usesCodeEditor("type_command")).toBe(true);
+  });
+
+  it("is false for prose and every other type", () => {
+    expect(usesCodeEditor("type_prompt")).toBe(false);
+    expect(usesCodeEditor("type_note")).toBe(false);
+    expect(usesCodeEditor("type_link")).toBe(false);
+    expect(usesCodeEditor("type_file")).toBe(false);
+    expect(usesCodeEditor("type_image")).toBe(false);
+    expect(usesCodeEditor("type_unknown")).toBe(false);
+  });
+
+  // The editor and the language field are driven by one set on purpose; if they
+  // ever diverge, one of these two assertions is where it shows up.
+  it("agrees with the language field on every creatable type", () => {
+    for (const typeId of [
+      "type_snippet",
+      "type_prompt",
+      "type_command",
+      "type_note",
+      "type_link",
+    ]) {
+      expect(usesCodeEditor(typeId)).toBe(getEditableFields(typeId).language);
+    }
   });
 });
 

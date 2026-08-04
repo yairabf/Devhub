@@ -117,6 +117,12 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+/* Monaco keeps painting its caret even when the editor is read-only, and a
+   blinking caret in the item drawer reads as an editable field. */
+[data-code-editor="read-only"] .monaco-editor .cursors-layer {
+  display: none;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 
+import { codeEditor, setCodeEditorValue } from "./helpers/code-editor";
 import { findItemByTitle, removeItemsByTitle } from "./helpers/items";
 
 /**
@@ -10,7 +11,10 @@ import { findItemByTitle, removeItemsByTitle } from "./helpers/items";
 
 const dialog = (page: Page) => page.locator('[data-slot="dialog-content"]');
 const toast = (page: Page) => page.locator("[data-sonner-toast]");
-const fieldLabels = (page: Page) => dialog(page).locator("form label[for]");
+// Not `label[for]`: the code editor's row has no labelable control to point at,
+// so FormField renders a span there instead.
+const fieldLabels = (page: Page) =>
+  dialog(page).locator('form [data-slot="field-label"]');
 const submit = (page: Page) =>
   dialog(page).getByRole("button", { name: "Create item" });
 
@@ -93,6 +97,28 @@ test.describe("NewItemDialog — type selector", () => {
       "Tags",
     ]);
   });
+
+  test("uses the code editor for code types and a textarea for prose", async ({
+    page,
+  }) => {
+    await page.goto("/dashboard");
+    await openDialog(page);
+
+    // Snippet is the default selection.
+    await expect(codeEditor(dialog(page))).toBeVisible();
+    await expect(page.locator("#new-item-content")).toHaveCount(0);
+
+    await dialog(page).getByText("Command", { exact: true }).click();
+    await expect(codeEditor(dialog(page))).toBeVisible();
+
+    await dialog(page).getByText("Prompt", { exact: true }).click();
+    await expect(codeEditor(dialog(page))).toHaveCount(0);
+    await expect(page.locator("#new-item-content")).toBeVisible();
+
+    await dialog(page).getByText("Note", { exact: true }).click();
+    await expect(codeEditor(dialog(page))).toHaveCount(0);
+    await expect(page.locator("#new-item-content")).toBeVisible();
+  });
 });
 
 test.describe("NewItemDialog — creating", () => {
@@ -102,11 +128,12 @@ test.describe("NewItemDialog — creating", () => {
     await page.goto("/items/snippets");
     await openDialog(page);
 
-    // Leading indentation and the trailing newline must survive.
+    // Leading indentation and the trailing newline must survive — now through
+    // Monaco rather than a textarea.
     const content = "  const indented = 1;\n\n  return indented;\n";
     await page.fill("#new-item-title", title);
     await page.fill("#new-item-description", "Created through the dialog");
-    await page.fill("#new-item-content", content);
+    await setCodeEditorValue(dialog(page), content);
     await page.fill("#new-item-language", "typescript");
     await page.fill("#new-item-tags", " created , e2e , created ");
     await submit(page).click();
