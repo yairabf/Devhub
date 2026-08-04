@@ -1,33 +1,16 @@
-# Current Feature: Code Editor
-
-Spec: `context/features/code-editor-spec.md`
+# Current Feature
 
 ## Status
 
-Complete — branch `feature/code-editor`, awaiting commit and merge
+<!-- Not started -->
 
 ## Goals
 
-- Create a `CodeEditor` component built on Monaco Editor with a dark theme.
-- Use `CodeEditor` instead of `Textarea` for **snippet** and **command** items only.
-- Keep the existing `Textarea` for notes, prompts, and every other non-code type.
-- Add macOS-style window dots (red / yellow / green) at the top of the editor.
-- Add a quick copy button in the editor header.
-- Show the item's language in the editor header, next to the copy button.
-- Support both display (readonly) and edit modes.
-- Fluid height capped at a 400px max, with a themed custom scrollbar.
+<!-- What are we building? -->
 
 ## Notes
 
-- Current rendering to replace:
-  - Display mode: `ItemDrawer.tsx:189` renders content in a `<pre>` block (`max-h-[28rem]`, `whitespace-pre-wrap`).
-  - Edit mode: `ItemEditForm.tsx` and `NewItemDialog.tsx` both render `Textarea` for content.
-- Type gating already exists in `src/lib/item-form.ts#getEditableFields` — `content` for snippet/prompt/command/note, `language` for snippet/command. The editor swap keys off the code types (snippet, command), so reuse that matrix rather than adding a second copy.
-- A `CopyButton` client component already exists (`src/components/dashboard/CopyButton.tsx`) with copy → green `Check` → reset behaviour; reuse it in the editor header instead of writing a new copy action.
-- Monaco is not yet a dependency (`package.json` has no monaco/`@monaco-editor/react`) — it will need installing, and it is client-only, so the editor is a `"use client"` component. Keep the surrounding cards/pages as server components per project convention.
-- Content is significant whitespace: the update path deliberately uses a non-trimming Zod schema for `content`. Whatever Monaco emits must round-trip leading indentation and trailing newlines verbatim.
-- Theme must follow the app's own `dark` class + `devstash:theme-change` event (the pattern `ThemeToaster.tsx` uses), not the OS preference.
-- Scrollbar styling has to work in both light and dark themes.
+<!-- Implementation notes, constraints, decisions -->
 
 ## History
 
