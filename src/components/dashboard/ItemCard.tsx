@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import type { ItemCardData } from "@/lib/db/items";
-import { getTypeIcon } from "@/lib/type-icons";
+import { TypeGlyph } from "@/lib/type-icons";
 import { getTypeLeftBorderClass } from "@/lib/type-colors";
 import { cn } from "@/lib/utils";
 
@@ -20,11 +20,15 @@ interface ItemCardProps {
 
 export function ItemCard({ item }: ItemCardProps) {
   const borderClass = getTypeLeftBorderClass(item.itemTypeId);
-  const TypeIcon = getTypeIcon(item.itemTypeId);
   const copyValue = item.content ?? item.url;
 
   return (
-    <Card className={cn("flex flex-col border-l-4", borderClass)}>
+    <Card
+      className={cn(
+        "flex h-full flex-col border-l-4 transition-colors hover:bg-muted/40",
+        borderClass
+      )}
+    >
       <CardHeader className="flex-row items-start justify-between gap-2">
         <CardTitle className="leading-tight">{item.title}</CardTitle>
         <div className="flex shrink-0 items-center gap-1">
@@ -64,7 +68,7 @@ export function ItemCard({ item }: ItemCardProps) {
           ))}
         </div>
         <Badge variant="outline" className="shrink-0">
-          <TypeIcon className="size-3.5" aria-hidden />
+          <TypeGlyph typeId={item.itemTypeId} className="size-3.5" />
           {item.itemTypeName}
         </Badge>
       </CardFooter>

@@ -1,16 +1,28 @@
-# Current Feature
+# Current Feature: Item Drawer
 
 ## Status
 
-<!-- Not started -->
+In Progress — implemented on `feature/item-drawer`; awaiting review/commit.
 
 ## Goals
 
-<!-- What are we building? -->
+- Add a right-side slide-in drawer (shadcn `Sheet`, `side="right"`) that serves as the item detail view — no separate item page.
+- Clicking an `ItemCard` opens the drawer with that item's full data; works on both the dashboard and the `/items/[type]` list page.
+- Action bar with Favorite (star, yellow when active), Pin, Copy, Edit (pencil), and Delete (trash, right-aligned) — layout per screenshot.
+- Client wrapper component to own drawer state, since the pages are server components.
+- Add `GET /api/items/[id]` returning full item detail (content, collections, language, …) with an auth check; query function lives in `src/lib/db/items.ts`.
+- Drawer shows a skeleton/loading state while the detail request is in flight.
+- Snappy: fetch on click, no page navigation.
 
 ## Notes
 
-<!-- Implementation notes, constraints, decisions -->
+- Spec: `context/features/item-drawer-spec.md`. Visual reference: `context/screenshots/dashboard-ui-drawer.png`.
+- Scope is the **detail display only** — the code editor and other item-type-specific extras come later.
+- Card-level data (title, description, tags) keeps coming from the existing server-component fetch; only the full detail is client-fetched.
+- Action-bar buttons: **display only** this pass (user decision). Copy is live via `CopyButton`; Favorite/Pin reflect state but are disabled; Edit/Delete are disabled placeholders. No PATCH/DELETE endpoints yet.
+- Known limitation: the dashboard and `/items/[type]` pages still fetch with `DEMO_USER_ID`, while `GET /api/items/[id]` scopes to `session.user.id`. Those agree only for the seeded demo login (`user_demo`); a GitHub-OAuth session will see cards it cannot open (404) until the pages move to session-scoped fetching.
+- No seeded item has tags, so the drawer's TAGS block was verified against a mocked API response rather than real data.
+- Tests: 41 passing. `src/app/api/items/[id]/route.test.ts` is the **first API route-handler test** in the suite (mocks `@/auth` and `@/lib/db/items`; colocated next to `route.ts`, which Next ignores since only `route.ts` is a route file). `context/coding-standards.md` still describes route-handler tests as "(later)" — worth updating.
 
 ## History
 

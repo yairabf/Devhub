@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { ItemCard } from "@/components/dashboard/ItemCard";
+import { ItemCardTrigger } from "@/components/dashboard/ItemCardTrigger";
 import { DEMO_USER_ID } from "@/lib/constants";
 import { getItemsByType, getSystemItemTypes } from "@/lib/db/items";
 import { capitalize, getTypeSlug } from "@/lib/format";
@@ -38,7 +39,9 @@ export default async function ItemsByTypePage({
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {items.map(item => (
-            <ItemCard key={item.id} item={item} />
+            <ItemCardTrigger key={item.id} itemId={item.id} title={item.title}>
+              <ItemCard item={item} />
+            </ItemCardTrigger>
           ))}
         </div>
       )}

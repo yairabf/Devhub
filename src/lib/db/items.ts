@@ -17,6 +17,21 @@ export interface ItemCardData {
   tags: ItemTagData[];
 }
 
+export interface ItemCollectionData {
+  id: string;
+  name: string;
+}
+
+/** Full item detail, fetched on demand by the item drawer. */
+export interface ItemDetailData extends ItemCardData {
+  language: string | null;
+  isPinned: boolean;
+  collections: ItemCollectionData[];
+  /** ISO string — the drawer receives this over JSON. */
+  createdAt: string;
+  updatedAt: string;
+}
+
 const ITEM_SELECT = {
   id: true,
   title: true,
@@ -87,6 +102,38 @@ export async function getItemsByType(
     select: ITEM_SELECT,
   });
   return items.map(toCardData);
+}
+
+const ITEM_DETAIL_SELECT = {
+  ...ITEM_SELECT,
+  language: true,
+  isPinned: true,
+  createdAt: true,
+  updatedAt: true,
+  collections: {
+    select: { collection: { select: { id: true, name: true } } },
+    orderBy: { collection: { name: "asc" } },
+  },
+} as const;
+
+export async function getItemDetail(
+  userId: string,
+  itemId: string,
+): Promise<ItemDetailData | null> {
+  const item = await prisma.item.findFirst({
+    where: { id: itemId, userId },
+    select: ITEM_DETAIL_SELECT,
+  });
+  if (!item) return null;
+
+  return {
+    ...toCardData(item),
+    language: item.language,
+    isPinned: item.isPinned,
+    collections: item.collections.map(link => link.collection),
+    createdAt: item.createdAt.toISOString(),
+    updatedAt: item.updatedAt.toISOString(),
+  };
 }
 
 export function getItemsCount(userId: string): Promise<number> {
