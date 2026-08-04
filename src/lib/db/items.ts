@@ -196,6 +196,26 @@ export async function updateItem(
   return toDetailData(item);
 }
 
+/**
+ * Deletes an item the user owns and reports whether it happened. Ownership is
+ * checked first (same reason as `updateItem`: no coupling to Prisma's P2025),
+ * so a missing or foreign item returns false instead of throwing. The
+ * `ItemCollection` links and implicit tag links cascade with the row.
+ */
+export async function deleteItem(
+  userId: string,
+  itemId: string,
+): Promise<boolean> {
+  const owned = await prisma.item.findFirst({
+    where: { id: itemId, userId },
+    select: { id: true },
+  });
+  if (!owned) return false;
+
+  await prisma.item.delete({ where: { id: itemId } });
+  return true;
+}
+
 export function getItemsCount(userId: string): Promise<number> {
   return prisma.item.count({ where: { userId } });
 }

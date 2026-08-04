@@ -1,14 +1,21 @@
 import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
 
 vi.mock("@/auth", () => ({ auth: vi.fn() }));
-vi.mock("@/lib/db/items", () => ({ updateItem: vi.fn() }));
+vi.mock("@/lib/db/items", () => ({
+  updateItem: vi.fn(),
+  deleteItem: vi.fn(),
+}));
 
 import { auth } from "@/auth";
-import { updateItem as updateItemInDb } from "@/lib/db/items";
-import { updateItem } from "@/actions/items";
+import {
+  deleteItem as deleteItemInDb,
+  updateItem as updateItemInDb,
+} from "@/lib/db/items";
+import { deleteItem, updateItem } from "@/actions/items";
 
 const authMock = auth as unknown as Mock;
 const dbUpdate = updateItemInDb as unknown as Mock;
+const dbDelete = deleteItemInDb as unknown as Mock;
 
 const VALID = {
   title: "useDebounce",
@@ -24,8 +31,10 @@ const SAVED = { id: "item_1", title: "useDebounce" };
 beforeEach(() => {
   authMock.mockReset();
   dbUpdate.mockReset();
+  dbDelete.mockReset();
   authMock.mockResolvedValue({ user: { id: "user_demo" } });
   dbUpdate.mockResolvedValue(SAVED);
+  dbDelete.mockResolvedValue(true);
 });
 
 describe("updateItem action", () => {
@@ -176,6 +185,57 @@ describe("updateItem action", () => {
     expect(result).toEqual({
       success: false,
       error: "Could not save this item. Please try again.",
+    });
+  });
+});
+
+describe("deleteItem action", () => {
+  it("deletes as the session user", async () => {
+    const result = await deleteItem("item_1");
+
+    expect(result).toEqual({ success: true });
+    expect(dbDelete).toHaveBeenCalledTimes(1);
+    expect(dbDelete.mock.calls[0][0]).toBe("user_demo");
+    expect(dbDelete.mock.calls[0][1]).toBe("item_1");
+  });
+
+  it("rejects an unauthenticated caller without touching the database", async () => {
+    authMock.mockResolvedValue(null);
+
+    const result = await deleteItem("item_1");
+
+    expect(result).toEqual({
+      success: false,
+      error: "You must be signed in to delete items.",
+    });
+    expect(dbDelete).not.toHaveBeenCalled();
+  });
+
+  it("rejects a session with no user id", async () => {
+    authMock.mockResolvedValue({ user: { email: "demo@devstash.io" } });
+
+    const result = await deleteItem("item_1");
+
+    expect(result).toMatchObject({ success: false });
+    expect(dbDelete).not.toHaveBeenCalled();
+  });
+
+  it("reports a missing or foreign item as not found", async () => {
+    dbDelete.mockResolvedValue(false);
+
+    const result = await deleteItem("item_1");
+
+    expect(result).toEqual({ success: false, error: "Item not found." });
+  });
+
+  it("surfaces an unexpected database failure as a friendly error", async () => {
+    dbDelete.mockRejectedValue(new Error("connection reset"));
+
+    const result = await deleteItem("item_1");
+
+    expect(result).toEqual({
+      success: false,
+      error: "Could not delete this item. Please try again.",
     });
   });
 });

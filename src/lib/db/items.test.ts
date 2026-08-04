@@ -2,21 +2,33 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 vi.mock("@/lib/prisma", () => ({
   prisma: {
-    item: { findMany: vi.fn(), findFirst: vi.fn(), update: vi.fn() },
+    item: {
+      findMany: vi.fn(),
+      findFirst: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+    },
   },
 }));
 
 import { prisma } from "@/lib/prisma";
-import { getItemDetail, getRecentItems, updateItem } from "@/lib/db/items";
+import {
+  deleteItem,
+  getItemDetail,
+  getRecentItems,
+  updateItem,
+} from "@/lib/db/items";
 
 const findMany = vi.mocked(prisma.item.findMany);
 const findFirst = vi.mocked(prisma.item.findFirst);
 const update = vi.mocked(prisma.item.update);
+const destroy = vi.mocked(prisma.item.delete);
 
 beforeEach(() => {
   findMany.mockReset();
   findFirst.mockReset();
   update.mockReset();
+  destroy.mockReset();
 });
 
 describe("getRecentItems", () => {
@@ -257,5 +269,34 @@ describe("updateItem", () => {
       createdAt: "2026-04-10T12:30:00.000Z",
       updatedAt: "2026-08-04T09:00:00.000Z",
     });
+  });
+});
+
+describe("deleteItem", () => {
+  it("refuses to delete an item the user does not own", async () => {
+    findFirst.mockResolvedValue(null as never);
+
+    await expect(deleteItem("user_other", "item_1")).resolves.toBe(false);
+    expect(destroy).not.toHaveBeenCalled();
+  });
+
+  it("checks ownership with both the item id and the user id", async () => {
+    findFirst.mockResolvedValue({ id: "item_1" } as never);
+    destroy.mockResolvedValue({ id: "item_1" } as never);
+
+    await deleteItem("user_demo", "item_1");
+
+    expect(findFirst.mock.calls[0][0]).toMatchObject({
+      where: { id: "item_1", userId: "user_demo" },
+    });
+  });
+
+  it("deletes the owned item by id and reports success", async () => {
+    findFirst.mockResolvedValue({ id: "item_1" } as never);
+    destroy.mockResolvedValue({ id: "item_1" } as never);
+
+    await expect(deleteItem("user_demo", "item_1")).resolves.toBe(true);
+    expect(destroy).toHaveBeenCalledTimes(1);
+    expect(destroy.mock.calls[0][0]).toEqual({ where: { id: "item_1" } });
   });
 });

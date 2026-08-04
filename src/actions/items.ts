@@ -3,7 +3,11 @@
 import { z } from "zod";
 
 import { auth } from "@/auth";
-import { updateItem as updateItemInDb, type ItemDetailData } from "@/lib/db/items";
+import {
+  deleteItem as deleteItemInDb,
+  updateItem as updateItemInDb,
+  type ItemDetailData,
+} from "@/lib/db/items";
 
 /** Empty strings from the form mean "cleared", which the DB stores as null. */
 const nullableText = z
@@ -71,5 +75,30 @@ export async function updateItem(
     return { success: true, data: item };
   } catch {
     return { success: false, error: "Could not save this item. Please try again." };
+  }
+}
+
+export type DeleteItemResult =
+  | { success: true }
+  | { success: false; error: string };
+
+export async function deleteItem(itemId: string): Promise<DeleteItemResult> {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return { success: false, error: "You must be signed in to delete items." };
+    }
+
+    const deleted = await deleteItemInDb(session.user.id, itemId);
+    if (!deleted) {
+      return { success: false, error: "Item not found." };
+    }
+
+    return { success: true };
+  } catch {
+    return {
+      success: false,
+      error: "Could not delete this item. Please try again.",
+    };
   }
 }

@@ -108,6 +108,20 @@ export function ItemDrawerProvider({ children }: { children: React.ReactNode }) 
     [router],
   );
 
+  const handleDeleted = useCallback(
+    (itemId: string) => {
+      // Evict, don't replace: a stale cache entry would let openItem render a
+      // ghost of the deleted item without ever refetching.
+      cache.current.delete(itemId);
+      currentId.current = null;
+      setEditing(false);
+      setOpen(false);
+      // Refresh the server-rendered card lists behind the drawer.
+      router.refresh();
+    },
+    [router],
+  );
+
   // Stable value: otherwise every card trigger re-renders when the drawer opens.
   const contextValue = useMemo(() => ({ openItem }), [openItem]);
 
@@ -123,6 +137,7 @@ export function ItemDrawerProvider({ children }: { children: React.ReactNode }) 
         onEdit={() => setEditing(true)}
         onCancelEdit={() => setEditing(false)}
         onSaved={handleSaved}
+        onDeleted={handleDeleted}
       />
     </ItemDrawerContext.Provider>
   );
