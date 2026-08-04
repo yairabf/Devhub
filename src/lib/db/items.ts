@@ -116,6 +116,25 @@ const ITEM_DETAIL_SELECT = {
   },
 } as const;
 
+type RawDetailItem = RawItem & {
+  language: string | null;
+  isPinned: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  collections: { collection: ItemCollectionData }[];
+};
+
+function toDetailData(item: RawDetailItem): ItemDetailData {
+  return {
+    ...toCardData(item),
+    language: item.language,
+    isPinned: item.isPinned,
+    collections: item.collections.map(link => link.collection),
+    createdAt: item.createdAt.toISOString(),
+    updatedAt: item.updatedAt.toISOString(),
+  };
+}
+
 export async function getItemDetail(
   userId: string,
   itemId: string,
@@ -126,14 +145,55 @@ export async function getItemDetail(
   });
   if (!item) return null;
 
-  return {
-    ...toCardData(item),
-    language: item.language,
-    isPinned: item.isPinned,
-    collections: item.collections.map(link => link.collection),
-    createdAt: item.createdAt.toISOString(),
-    updatedAt: item.updatedAt.toISOString(),
-  };
+  return toDetailData(item);
+}
+
+export interface UpdateItemInput {
+  title: string;
+  description: string | null;
+  content: string | null;
+  url: string | null;
+  language: string | null;
+  /** Trimmed, non-empty, de-duplicated tag names. */
+  tags: string[];
+}
+
+/**
+ * Updates an item the user owns and returns the fresh detail, or null when the
+ * item does not exist or belongs to someone else. Tags are replaced wholesale:
+ * every existing link is dropped, then each name is connected or created.
+ */
+export async function updateItem(
+  userId: string,
+  itemId: string,
+  data: UpdateItemInput,
+): Promise<ItemDetailData | null> {
+  const owned = await prisma.item.findFirst({
+    where: { id: itemId, userId },
+    select: { id: true },
+  });
+  if (!owned) return null;
+
+  const item = await prisma.item.update({
+    where: { id: itemId },
+    data: {
+      title: data.title,
+      description: data.description,
+      content: data.content,
+      url: data.url,
+      language: data.language,
+      tags: {
+        set: [],
+        connectOrCreate: data.tags.map(name => ({
+          where: { name },
+          create: { name },
+        })),
+      },
+    },
+    select: ITEM_DETAIL_SELECT,
+  });
+
+  return toDetailData(item);
 }
 
 export function getItemsCount(userId: string): Promise<number> {
