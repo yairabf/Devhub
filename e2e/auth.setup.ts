@@ -4,7 +4,7 @@ import path from "node:path";
 
 import { expect, test as setup } from "@playwright/test";
 
-import { STORAGE_STATE } from "../playwright.config";
+import { STORAGE_STATE } from "./constants";
 
 const DEMO_EMAIL = "demo@devstash.io";
 const DEMO_PASSWORD = process.env.SEED_DEMO_PASSWORD ?? "12345678";

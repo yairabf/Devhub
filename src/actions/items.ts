@@ -89,6 +89,12 @@ export async function deleteItem(itemId: string): Promise<DeleteItemResult> {
       return { success: false, error: "You must be signed in to delete items." };
     }
 
+    // A blank id can only ever miss, so fail before spending a query on it.
+    // Optional chaining guards a JS caller passing undefined.
+    if (!itemId?.trim()) {
+      return { success: false, error: "Item not found." };
+    }
+
     const deleted = await deleteItemInDb(session.user.id, itemId);
     if (!deleted) {
       return { success: false, error: "Item not found." };

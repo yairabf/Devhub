@@ -19,11 +19,20 @@ import { getTypeTextClass } from "@/lib/type-colors";
 import { TypeGlyph } from "@/lib/type-icons";
 import { cn } from "@/lib/utils";
 
+/**
+ * A failed load. Carries its own heading because a deleted item is not the same
+ * story as a transport failure and should not be announced as one.
+ */
+export interface ItemDrawerErrorState {
+  title: string;
+  message: string;
+}
+
 interface ItemDrawerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   item: ItemDetailData | null;
-  error: string | null;
+  error: ItemDrawerErrorState | null;
   editing: boolean;
   onEdit: () => void;
   onCancelEdit: () => void;
@@ -64,7 +73,7 @@ export function ItemDrawer({
             <ItemDrawerFooter item={item} />
           </>
         ) : error ? (
-          <ItemDrawerError message={error} />
+          <ItemDrawerError error={error} />
         ) : (
           <ItemDrawerSkeleton />
         )}
@@ -280,11 +289,11 @@ function ItemDrawerSkeleton() {
   );
 }
 
-function ItemDrawerError({ message }: { message: string }) {
+function ItemDrawerError({ error }: { error: ItemDrawerErrorState }) {
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-2 p-8 text-center">
-      <SheetTitle>Something went wrong</SheetTitle>
-      <SheetDescription>{message}</SheetDescription>
+      <SheetTitle>{error.title}</SheetTitle>
+      <SheetDescription>{error.message}</SheetDescription>
     </div>
   );
 }

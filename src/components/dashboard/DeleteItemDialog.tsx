@@ -66,6 +66,8 @@ export function DeleteItemDialog({
           </Button>
         }
       />
+      {/* z-60: the drawer this opens from is a Sheet at z-50, and relying on
+          portal DOM order alone to stack above it would be fragile. */}
       <AlertDialogContent className="z-60">
         <AlertDialogTitle>Delete this item?</AlertDialogTitle>
         <AlertDialogDescription>
@@ -82,8 +84,10 @@ export function DeleteItemDialog({
               </Button>
             }
           />
+          {/* Named "Delete", not "Delete item": that is the trigger's label, and
+              duplicating it would announce the same name twice. */}
           <Button variant="destructive" onClick={handleDelete} disabled={pending}>
-            {pending ? "Deleting…" : "Delete item"}
+            {pending ? "Deleting…" : "Delete"}
           </Button>
         </div>
       </AlertDialogContent>

@@ -18,7 +18,7 @@ const dialog = (page: Page) => page.locator('[data-slot="alert-dialog-content"]'
 const deleteTrigger = (page: Page) =>
   drawer(page).getByRole("button", { name: "Delete item" });
 const confirmButton = (page: Page) =>
-  dialog(page).getByRole("button", { name: "Delete item" });
+  dialog(page).getByRole("button", { name: "Delete", exact: true });
 const toast = (page: Page) => page.locator("[data-sonner-toast]");
 
 async function openDrawer(page: Page, item: SeededTestItem) {
@@ -37,7 +37,9 @@ let item: SeededTestItem;
 let suffix: string;
 
 test.beforeEach(async ({}, testInfo) => {
-  suffix = testInfo.title.replace(/[^a-z0-9]+/gi, "_").toLowerCase().slice(0, 40);
+  // Full sanitized title, not a truncated one: two titles sharing a prefix
+  // would otherwise map to the same item id.
+  suffix = testInfo.title.replace(/[^a-z0-9]+/gi, "_").toLowerCase();
   item = await createTestItem(suffix);
 });
 
@@ -54,6 +56,27 @@ test.describe("ItemDrawer — delete affordance", () => {
     await expect(deleteTrigger(page)).toHaveAttribute("title", "Delete item");
     // Favorite and Pin are still deliberate placeholders — delete must not be.
     await expect(drawer(page).getByRole("button", { name: /coming soon/i })).toHaveCount(0);
+  });
+});
+
+test.describe("ItemDrawer — a card whose item is already gone", () => {
+  /**
+   * Opening a card that no longer resolves — the window after a delete before
+   * the list re-renders — must read as a missing item, not as a transport
+   * failure. Deleting the row out of band makes that state deterministic: the
+   * card is stale and nothing was cached, so the open has to hit the API.
+   */
+  test("reports the item as unavailable rather than as a failure", async ({ page }) => {
+    await page.goto("/items/snippets");
+    const card = page.getByRole("button", { name: `Open ${item.title}` });
+    await expect(card).toBeVisible();
+
+    await removeTestItem(item.id);
+    await card.click();
+
+    await expect(drawer(page)).toContainText("Item unavailable");
+    await expect(drawer(page)).toContainText("may have been deleted");
+    await expect(drawer(page)).not.toContainText("Something went wrong");
   });
 });
 

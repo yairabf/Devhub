@@ -1,7 +1,6 @@
 import { defineConfig, devices } from "@playwright/test";
 
-/** Where the signed-in demo session is cached between runs. */
-export const STORAGE_STATE = "e2e/.auth/user.json";
+import { STORAGE_STATE } from "./e2e/constants";
 
 export default defineConfig({
   testDir: "./e2e",

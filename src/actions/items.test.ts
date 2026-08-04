@@ -228,6 +228,16 @@ describe("deleteItem action", () => {
     expect(result).toEqual({ success: false, error: "Item not found." });
   });
 
+  it("rejects a blank id without spending a query on it", async () => {
+    for (const blank of ["", "   "]) {
+      await expect(deleteItem(blank)).resolves.toEqual({
+        success: false,
+        error: "Item not found.",
+      });
+    }
+    expect(dbDelete).not.toHaveBeenCalled();
+  });
+
   it("surfaces an unexpected database failure as a friendly error", async () => {
     dbDelete.mockRejectedValue(new Error("connection reset"));
 
