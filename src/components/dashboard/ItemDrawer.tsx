@@ -2,6 +2,7 @@
 
 import { Folder, Pencil, Pin, Star, Tag } from "lucide-react";
 
+import { CodeEditor } from "@/components/dashboard/CodeEditor";
 import { CopyButton } from "@/components/dashboard/CopyButton";
 import { DeleteItemDialog } from "@/components/dashboard/DeleteItemDialog";
 import { ItemEditForm } from "@/components/dashboard/ItemEditForm";
@@ -15,6 +16,7 @@ import {
 } from "@/components/ui/sheet";
 import type { ItemDetailData } from "@/lib/db/items";
 import { capitalize, formatIsoDate } from "@/lib/format";
+import { usesCodeEditor } from "@/lib/item-form";
 import { getTypeTextClass } from "@/lib/type-colors";
 import { TypeGlyph } from "@/lib/type-icons";
 import { cn } from "@/lib/utils";
@@ -186,9 +188,18 @@ function ItemViewMode({
         {item.content && (
           <section className="space-y-2">
             <SectionLabel>Content</SectionLabel>
-            <pre className="max-h-[28rem] overflow-auto rounded-lg bg-muted px-3 py-2.5 font-mono text-xs whitespace-pre-wrap text-foreground/90">
-              {item.content}
-            </pre>
+            {usesCodeEditor(item.itemTypeId) ? (
+              <CodeEditor
+                value={item.content}
+                language={item.language}
+                ariaLabel={`${item.title} content`}
+                copyLabel={`Copy ${item.itemTypeName.toLowerCase()}`}
+              />
+            ) : (
+              <pre className="max-h-[28rem] overflow-auto rounded-lg bg-muted px-3 py-2.5 font-mono text-xs whitespace-pre-wrap text-foreground/90">
+                {item.content}
+              </pre>
+            )}
           </section>
         )}
 

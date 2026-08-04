@@ -4,12 +4,17 @@ import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import { updateItem } from "@/actions/items";
+import { CodeEditor } from "@/components/dashboard/CodeEditor";
 import { FormField } from "@/components/dashboard/FormField";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { ItemDetailData } from "@/lib/db/items";
-import { buildUpdatePayload, getEditableFields } from "@/lib/item-form";
+import {
+  buildUpdatePayload,
+  getEditableFields,
+  usesCodeEditor,
+} from "@/lib/item-form";
 
 interface ItemEditFormProps {
   item: ItemDetailData;
@@ -31,6 +36,7 @@ export function ItemEditForm({ item, onCancel, onSaved }: ItemEditFormProps) {
     language: showLanguage,
     url: showUrl,
   } = getEditableFields(item.itemTypeId);
+  const showCodeEditor = usesCodeEditor(item.itemTypeId);
   const canSave = title.trim().length > 0 && !pending;
 
   function handleSubmit(event: { preventDefault(): void }) {
@@ -102,17 +108,30 @@ export function ItemEditForm({ item, onCancel, onSaved }: ItemEditFormProps) {
           />
         </FormField>
 
-        {showContent && (
-          <FormField htmlFor="item-content" label="Content">
-            <Textarea
-              id="item-content"
-              value={content}
-              onChange={event => setContent(event.target.value)}
-              rows={12}
-              className="font-mono text-xs"
-            />
-          </FormField>
-        )}
+        {showContent &&
+          (showCodeEditor ? (
+            // No htmlFor: Monaco is a widget, not an input. It names itself
+            // through ariaLabel instead.
+            <FormField label="Content">
+              <CodeEditor
+                value={content}
+                language={language}
+                onChange={setContent}
+                disabled={pending}
+                ariaLabel="Content"
+              />
+            </FormField>
+          ) : (
+            <FormField htmlFor="item-content" label="Content">
+              <Textarea
+                id="item-content"
+                value={content}
+                onChange={event => setContent(event.target.value)}
+                rows={12}
+                className="font-mono text-xs"
+              />
+            </FormField>
+          ))}
 
         {showLanguage && (
           <FormField htmlFor="item-language" label="Language">

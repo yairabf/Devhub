@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { createItem } from "@/actions/items";
+import { CodeEditor } from "@/components/dashboard/CodeEditor";
 import { FormField } from "@/components/dashboard/FormField";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,6 +25,7 @@ import {
   buildCreatePayload,
   getEditableFields,
   orderCreatableTypes,
+  usesCodeEditor,
   type ItemDraft,
 } from "@/lib/item-form";
 import { getTypeTextClass } from "@/lib/type-colors";
@@ -57,6 +59,7 @@ export function NewItemDialog({ itemTypes }: NewItemDialogProps) {
   const [pending, startTransition] = useTransition();
 
   const fields = getEditableFields(itemTypeId);
+  const showCodeEditor = usesCodeEditor(itemTypeId);
   const canSave = draft.title.trim().length > 0 && itemTypeId !== "" && !pending;
 
   function set<K extends keyof ItemDraft>(key: K, value: string) {
@@ -177,18 +180,31 @@ export function NewItemDialog({ itemTypes }: NewItemDialogProps) {
             />
           </FormField>
 
-          {fields.content && (
-            <FormField htmlFor="new-item-content" label="Content">
-              <Textarea
-                id="new-item-content"
-                value={draft.content}
-                onChange={event => set("content", event.target.value)}
-                rows={8}
-                className="font-mono text-xs"
-                disabled={pending}
-              />
-            </FormField>
-          )}
+          {fields.content &&
+            (showCodeEditor ? (
+              // No htmlFor: Monaco is a widget, not an input. It names itself
+              // through ariaLabel instead.
+              <FormField label="Content">
+                <CodeEditor
+                  value={draft.content}
+                  language={draft.language}
+                  onChange={next => set("content", next)}
+                  disabled={pending}
+                  ariaLabel="Content"
+                />
+              </FormField>
+            ) : (
+              <FormField htmlFor="new-item-content" label="Content">
+                <Textarea
+                  id="new-item-content"
+                  value={draft.content}
+                  onChange={event => set("content", event.target.value)}
+                  rows={8}
+                  className="font-mono text-xs"
+                  disabled={pending}
+                />
+              </FormField>
+            ))}
 
           {fields.language && (
             <FormField htmlFor="new-item-language" label="Language">

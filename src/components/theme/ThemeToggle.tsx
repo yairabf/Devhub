@@ -1,48 +1,24 @@
 "use client";
 
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect } from "react";
 import { Moon, Sun } from "lucide-react";
 
+import {
+  THEME_CHANGE_EVENT,
+  THEME_STORAGE_KEY,
+  useAppTheme,
+  type Theme,
+} from "@/components/theme/useAppTheme";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-
-type Theme = "light" | "dark";
-
-const THEME_STORAGE_KEY = "devstash:theme";
-const THEME_CHANGE_EVENT = "devstash:theme-change";
 
 function applyTheme(theme: Theme) {
   document.documentElement.classList.toggle("dark", theme === "dark");
   document.documentElement.style.colorScheme = theme;
 }
 
-function getStoredTheme(): Theme {
-  if (typeof window === "undefined") return "dark";
-
-  const storedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
-  return storedTheme === "light" || storedTheme === "dark" ? storedTheme : "dark";
-}
-
-function subscribeToThemeChange(onStoreChange: () => void) {
-  window.addEventListener("storage", onStoreChange);
-  window.addEventListener(THEME_CHANGE_EVENT, onStoreChange);
-
-  return () => {
-    window.removeEventListener("storage", onStoreChange);
-    window.removeEventListener(THEME_CHANGE_EVENT, onStoreChange);
-  };
-}
-
-function getServerThemeSnapshot(): Theme {
-  return "dark";
-}
-
 export function ThemeToggle() {
-  const theme = useSyncExternalStore(
-    subscribeToThemeChange,
-    getStoredTheme,
-    getServerThemeSnapshot,
-  );
+  const theme = useAppTheme();
 
   useEffect(() => {
     applyTheme(theme);

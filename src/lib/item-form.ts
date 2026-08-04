@@ -8,7 +8,12 @@ const TYPES_WITH_CONTENT = new Set([
   "type_command",
   "type_note",
 ]);
-const TYPES_WITH_LANGUAGE = new Set(["type_snippet", "type_command"]);
+/**
+ * Types whose body is code. These are the types that carry a language *and* the
+ * types that get the Monaco editor instead of a textarea — deliberately one set,
+ * since "has a language" and "is code" are the same question here.
+ */
+const CODE_TYPES = new Set(["type_snippet", "type_command"]);
 const TYPES_WITH_URL = new Set(["type_link"]);
 
 export const LINK_TYPE_ID = "type_link";
@@ -51,9 +56,18 @@ export interface EditableFields {
 export function getEditableFields(itemTypeId: string): EditableFields {
   return {
     content: TYPES_WITH_CONTENT.has(itemTypeId),
-    language: TYPES_WITH_LANGUAGE.has(itemTypeId),
+    language: CODE_TYPES.has(itemTypeId),
     url: TYPES_WITH_URL.has(itemTypeId),
   };
+}
+
+/**
+ * Whether this type's content is shown in the code editor rather than a plain
+ * textarea. Exported as its own question so call sites read as intent rather
+ * than leaning on `getEditableFields().language` as a proxy for "is code".
+ */
+export function usesCodeEditor(itemTypeId: string): boolean {
+  return CODE_TYPES.has(itemTypeId);
 }
 
 /** Raw form state — every field is a string, tags still comma-separated. */
