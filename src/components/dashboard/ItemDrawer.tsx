@@ -3,6 +3,7 @@
 import { Folder, Pencil, Pin, Star, Tag, Trash2 } from "lucide-react";
 
 import { CopyButton } from "@/components/dashboard/CopyButton";
+import { ItemEditForm } from "@/components/dashboard/ItemEditForm";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,9 +23,22 @@ interface ItemDrawerProps {
   onOpenChange: (open: boolean) => void;
   item: ItemDetailData | null;
   error: string | null;
+  editing: boolean;
+  onEdit: () => void;
+  onCancelEdit: () => void;
+  onSaved: (updated: ItemDetailData) => void;
 }
 
-export function ItemDrawer({ open, onOpenChange, item, error }: ItemDrawerProps) {
+export function ItemDrawer({
+  open,
+  onOpenChange,
+  item,
+  error,
+  editing,
+  onEdit,
+  onCancelEdit,
+  onSaved,
+}: ItemDrawerProps) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
@@ -32,7 +46,20 @@ export function ItemDrawer({ open, onOpenChange, item, error }: ItemDrawerProps)
         className="!w-full gap-0 overflow-hidden p-0 sm:!max-w-2xl"
       >
         {item ? (
-          <ItemDrawerContent item={item} />
+          <>
+            <ItemDrawerHeader item={item} />
+            {editing ? (
+              <ItemEditForm
+                key={item.id}
+                item={item}
+                onCancel={onCancelEdit}
+                onSaved={onSaved}
+              />
+            ) : (
+              <ItemViewMode item={item} onEdit={onEdit} />
+            )}
+            <ItemDrawerFooter item={item} />
+          </>
         ) : error ? (
           <ItemDrawerError message={error} />
         ) : (
@@ -43,29 +70,39 @@ export function ItemDrawer({ open, onOpenChange, item, error }: ItemDrawerProps)
   );
 }
 
-function ItemDrawerContent({ item }: { item: ItemDetailData }) {
+function ItemDrawerHeader({ item }: { item: ItemDetailData }) {
+  return (
+    <div className="flex items-start gap-3 border-b border-border p-4 pr-12">
+      <div className="grid size-10 shrink-0 place-items-center rounded-lg bg-muted">
+        <TypeGlyph
+          typeId={item.itemTypeId}
+          className={cn("size-5", getTypeTextClass(item.itemTypeId))}
+        />
+      </div>
+      <div className="min-w-0 flex-1">
+        <SheetTitle className="text-base leading-tight break-words">
+          {item.title}
+        </SheetTitle>
+        <p className="text-xs text-muted-foreground">
+          {capitalize(item.itemTypeName)}
+          {item.language ? ` · ${item.language}` : ""}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function ItemViewMode({
+  item,
+  onEdit,
+}: {
+  item: ItemDetailData;
+  onEdit: () => void;
+}) {
   const copyValue = item.content ?? item.url;
 
   return (
     <>
-      <div className="flex items-start gap-3 border-b border-border p-4 pr-12">
-        <div className="grid size-10 shrink-0 place-items-center rounded-lg bg-muted">
-          <TypeGlyph
-            typeId={item.itemTypeId}
-            className={cn("size-5", getTypeTextClass(item.itemTypeId))}
-          />
-        </div>
-        <div className="min-w-0 flex-1">
-          <SheetTitle className="text-base leading-tight break-words">
-            {item.title}
-          </SheetTitle>
-          <p className="text-xs text-muted-foreground">
-            {capitalize(item.itemTypeName)}
-            {item.language ? ` · ${item.language}` : ""}
-          </p>
-        </div>
-      </div>
-
       <div className="flex items-center gap-1 border-b border-border px-4 py-2">
         <Button
           variant="ghost"
@@ -111,11 +148,12 @@ function ItemDrawerContent({ item }: { item: ItemDetailData }) {
         <Button
           variant="ghost"
           size="icon-sm"
-          disabled
-          title="Edit — coming soon"
+          onClick={onEdit}
+          title="Edit item"
           aria-label="Edit item"
+          className="text-muted-foreground hover:text-foreground"
         >
-          <Pencil className="size-4 text-muted-foreground" aria-hidden />
+          <Pencil className="size-4" aria-hidden />
         </Button>
         <Button
           variant="ghost"
@@ -185,12 +223,16 @@ function ItemDrawerContent({ item }: { item: ItemDetailData }) {
           </section>
         )}
       </div>
-
-      <div className="flex items-center justify-between border-t border-border px-4 py-3 text-xs text-muted-foreground">
-        <span>Created {formatIsoDate(item.createdAt)}</span>
-        <span>Updated {formatIsoDate(item.updatedAt)}</span>
-      </div>
     </>
+  );
+}
+
+function ItemDrawerFooter({ item }: { item: ItemDetailData }) {
+  return (
+    <div className="flex items-center justify-between border-t border-border px-4 py-3 text-xs text-muted-foreground">
+      <span>Created {formatIsoDate(item.createdAt)}</span>
+      <span>Updated {formatIsoDate(item.updatedAt)}</span>
+    </div>
   );
 }
 

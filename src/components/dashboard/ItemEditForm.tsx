@@ -1,0 +1,175 @@
+"use client";
+
+import { useState, useTransition } from "react";
+import { toast } from "sonner";
+
+import { updateItem } from "@/actions/items";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import type { ItemDetailData } from "@/lib/db/items";
+import { buildUpdatePayload, getEditableFields } from "@/lib/item-form";
+
+interface ItemEditFormProps {
+  item: ItemDetailData;
+  onCancel: () => void;
+  onSaved: (updated: ItemDetailData) => void;
+}
+
+export function ItemEditForm({ item, onCancel, onSaved }: ItemEditFormProps) {
+  const [title, setTitle] = useState(item.title);
+  const [description, setDescription] = useState(item.description ?? "");
+  const [content, setContent] = useState(item.content ?? "");
+  const [language, setLanguage] = useState(item.language ?? "");
+  const [url, setUrl] = useState(item.url ?? "");
+  const [tags, setTags] = useState(item.tags.map(tag => tag.name).join(", "));
+  const [pending, startTransition] = useTransition();
+
+  const {
+    content: showContent,
+    language: showLanguage,
+    url: showUrl,
+  } = getEditableFields(item.itemTypeId);
+  const canSave = title.trim().length > 0 && !pending;
+
+  function handleSubmit(event: { preventDefault(): void }) {
+    event.preventDefault();
+    if (!canSave) return;
+
+    startTransition(async () => {
+      const payload = buildUpdatePayload(item, {
+        title,
+        description,
+        content,
+        language,
+        url,
+        tags,
+      });
+      const result = await updateItem(item.id, payload);
+
+      if (!result.success) {
+        toast.error(result.error);
+        return;
+      }
+
+      toast.success("Item saved");
+      onSaved(result.data);
+    });
+  }
+
+  // noValidate: the Zod schema in the server action is the source of truth, so
+  // validation errors arrive as toasts rather than native bubbles that would
+  // block submit before the action runs.
+  return (
+    <form
+      onSubmit={handleSubmit}
+      noValidate
+      className="flex min-h-0 flex-1 flex-col"
+    >
+      <div className="flex items-center gap-2 border-b border-border px-4 py-2">
+        <Button type="submit" size="sm" disabled={!canSave}>
+          {pending ? "Saving…" : "Save"}
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          onClick={onCancel}
+          disabled={pending}
+        >
+          Cancel
+        </Button>
+      </div>
+
+      <div className="flex-1 space-y-4 overflow-y-auto p-4">
+        <Field htmlFor="item-title" label="Title">
+          <Input
+            id="item-title"
+            value={title}
+            onChange={event => setTitle(event.target.value)}
+            required
+            aria-invalid={title.trim().length === 0}
+          />
+        </Field>
+
+        <Field htmlFor="item-description" label="Description">
+          <Textarea
+            id="item-description"
+            value={description}
+            onChange={event => setDescription(event.target.value)}
+            rows={2}
+          />
+        </Field>
+
+        {showContent && (
+          <Field htmlFor="item-content" label="Content">
+            <Textarea
+              id="item-content"
+              value={content}
+              onChange={event => setContent(event.target.value)}
+              rows={12}
+              className="font-mono text-xs"
+            />
+          </Field>
+        )}
+
+        {showLanguage && (
+          <Field htmlFor="item-language" label="Language">
+            <Input
+              id="item-language"
+              value={language}
+              onChange={event => setLanguage(event.target.value)}
+              placeholder="typescript"
+            />
+          </Field>
+        )}
+
+        {showUrl && (
+          <Field htmlFor="item-url" label="URL">
+            <Input
+              id="item-url"
+              type="url"
+              value={url}
+              onChange={event => setUrl(event.target.value)}
+              placeholder="https://example.com"
+            />
+          </Field>
+        )}
+
+        <Field htmlFor="item-tags" label="Tags">
+          <Input
+            id="item-tags"
+            value={tags}
+            onChange={event => setTags(event.target.value)}
+            placeholder="react, hooks"
+          />
+          <p className="text-xs text-muted-foreground">
+            Separate tags with commas.
+          </p>
+        </Field>
+      </div>
+    </form>
+  );
+}
+
+function Field({
+  htmlFor,
+  label,
+  children,
+}: {
+  htmlFor: string;
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <label
+        htmlFor={htmlFor}
+        className="block font-mono text-xs font-medium tracking-wider text-muted-foreground uppercase"
+      >
+        {label}
+      </label>
+      {children}
+    </div>
+  );
+}

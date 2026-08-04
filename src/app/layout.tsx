@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { ThemeToaster } from "@/components/theme/ThemeToaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 const inter = Inter({
@@ -48,6 +49,7 @@ export default function RootLayout({
       </head>
       <body className="h-full">
         <TooltipProvider>{children}</TooltipProvider>
+        <ThemeToaster />
       </body>
     </html>
   );

@@ -1,16 +1,31 @@
-# Current Feature
+# Current Feature: Item Drawer — Edit Mode
 
 ## Status
 
-<!-- Not started -->
+In Progress
 
 ## Goals
 
-<!-- What are we building? -->
+- Turn the Edit (pencil) button in the item drawer's action bar into an inline mode toggle — the same drawer stays open and its fields become editable inputs.
+- In edit mode, replace the action bar with Save and Cancel; Cancel discards changes and returns to view mode.
+- Save persists via a server action, returns to view mode, refreshes the drawer with the updated item, and calls `router.refresh()` so the underlying card list reflects the change.
+- Show a toast on save success and on error.
+- Editable for all types: **Title** (text, required), **Description** (textarea, optional), **Tags** (comma-separated input → array on save).
+- Editable per type: **Content** (textarea — snippet, prompt, command, note), **Language** (text — snippet, command), **URL** (text — link).
+- Display-only in edit mode: item type, collections, created/updated dates.
+- Add `updateItem(itemId, data)` server action in `src/actions/items.ts` — Zod-validated, `auth()` session, ownership check, returns `{ success, data, error }`.
+- Add `updateItem` query function in `src/lib/db/items.ts` — disconnects all existing tags and connect-or-creates the new ones, returns the updated `ItemDetailData` so the drawer refreshes without a second fetch.
+- Zod schema is the server-side source of truth (`title` non-empty trimmed; `description`/`content`/`language` string-or-null; `url` valid URL or null; `tags` array of trimmed non-empty strings); return validation errors in the `error` field for the client to display.
 
 ## Notes
 
-<!-- Implementation notes, constraints, decisions -->
+- Spec: `context/features/item-drawer-edit-spec.md`. Builds directly on the Item Drawer completed 2026-08-04.
+- No form library — controlled inputs with local state. Client-side guard: disable Save while the title is empty. The content textarea is a plain textarea; the code editor comes later.
+- **Toasts need a decision before implementing.** `sonner` was installed for auth Phase 3 and then *uninstalled* on 2026-05-26 — the `<Toaster>` mount was removed after a subscription race silently dropped toasts (child effects run before parent effects, and Sonner does not replay queued toasts). There is currently no toast library and no `src/components/ui/toast*`. Options: (a) re-add `sonner` and mount `<Toaster>` in the root layout — the earlier race was specific to publishing during a cross-navigation mount, which is not this case; (b) inline status message inside the drawer, no new dependency. Spec says toast, so (a) unless told otherwise.
+- Mutations from the drawer are new ground: the drawer's action bar shipped display-only, so Favorite/Pin/Delete stay disabled — this feature wires **Edit only**.
+- `updateItem` is the first write path through `lib/db/items.ts`; existing tests mock the Prisma singleton, so the tag disconnect/connect-or-create shape should be asserted there, plus server-action tests for the Zod and ownership branches.
+- Ownership: the action must scope the update to `session.user.id`. Same `DEMO_USER_ID` caveat as the drawer — pages fetch as the demo user, so edits only work when signed in as `demo@devstash.io`.
+- `url` validation: the spec lists it as optional-or-null for all types, so a `link` item could technically be saved with an empty URL. Flagging in case links should require one.
 
 ## History
 

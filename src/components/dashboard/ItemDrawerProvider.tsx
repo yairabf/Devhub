@@ -8,6 +8,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { useRouter } from "next/navigation";
 
 import { ItemDrawer } from "@/components/dashboard/ItemDrawer";
 import type { ItemDetailData } from "@/lib/db/items";
@@ -34,9 +35,11 @@ export function useItemDrawer(): ItemDrawerContextValue {
 }
 
 export function ItemDrawerProvider({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [item, setItem] = useState<ItemDetailData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false);
 
   // Details already fetched this session — reopening an item is instant.
   const cache = useRef(new Map<string, ItemDetailData>());
@@ -69,6 +72,7 @@ export function ItemDrawerProvider({ children }: { children: React.ReactNode }) 
     (itemId: string) => {
       currentId.current = itemId;
       setError(null);
+      setEditing(false);
       setOpen(true);
 
       const cached = cache.current.get(itemId);
@@ -85,9 +89,24 @@ export function ItemDrawerProvider({ children }: { children: React.ReactNode }) 
 
   const handleOpenChange = useCallback((next: boolean) => {
     setOpen(next);
-    if (!next) currentId.current = null;
+    if (!next) {
+      currentId.current = null;
+      setEditing(false);
+    }
     // The item is intentionally kept so the closing animation doesn't flash empty.
   }, []);
+
+  const handleSaved = useCallback(
+    (updated: ItemDetailData) => {
+      // Replace the cache entry too, or reopening would show pre-edit values.
+      cache.current.set(updated.id, updated);
+      setItem(updated);
+      setEditing(false);
+      // Refresh the server-rendered card lists behind the drawer.
+      router.refresh();
+    },
+    [router],
+  );
 
   // Stable value: otherwise every card trigger re-renders when the drawer opens.
   const contextValue = useMemo(() => ({ openItem }), [openItem]);
@@ -100,6 +119,10 @@ export function ItemDrawerProvider({ children }: { children: React.ReactNode }) 
         onOpenChange={handleOpenChange}
         item={item}
         error={error}
+        editing={editing}
+        onEdit={() => setEditing(true)}
+        onCancelEdit={() => setEditing(false)}
+        onSaved={handleSaved}
       />
     </ItemDrawerContext.Provider>
   );
