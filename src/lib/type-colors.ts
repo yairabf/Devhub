@@ -18,6 +18,16 @@ const TYPE_DOT_CLASS: Record<string, string> = {
   type_image: "bg-pink-500",
 };
 
+const TYPE_TEXT_CLASS: Record<string, string> = {
+  type_snippet: "text-blue-500",
+  type_prompt: "text-purple-500",
+  type_command: "text-orange-500",
+  type_note: "text-yellow-400",
+  type_link: "text-emerald-500",
+  type_file: "text-gray-500",
+  type_image: "text-pink-500",
+};
+
 export function getTypeLeftBorderClass(typeId: string | null): string {
   if (!typeId) return "border-l-border";
   return TYPE_LEFT_BORDER_CLASS[typeId] ?? "border-l-border";
@@ -26,4 +36,9 @@ export function getTypeLeftBorderClass(typeId: string | null): string {
 export function getTypeDotClass(typeId: string | null): string {
   if (!typeId) return "bg-muted-foreground";
   return TYPE_DOT_CLASS[typeId] ?? "bg-muted-foreground";
+}
+
+export function getTypeTextClass(typeId: string | null): string {
+  if (!typeId) return "text-muted-foreground";
+  return TYPE_TEXT_CLASS[typeId] ?? "text-muted-foreground";
 }

@@ -21,7 +21,9 @@ export function CopyButton({ value, label = "Copy to clipboard", className }: Co
     return () => clearTimeout(timeout);
   }, [copied]);
 
-  async function handleCopy() {
+  async function handleCopy(event: { stopPropagation(): void }) {
+    // The card around this button may itself be a drawer trigger.
+    event.stopPropagation();
     try {
       await navigator.clipboard.writeText(value);
       setCopied(true);

@@ -1,0 +1,248 @@
+"use client";
+
+import { Folder, Pencil, Pin, Star, Tag, Trash2 } from "lucide-react";
+
+import { CopyButton } from "@/components/dashboard/CopyButton";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import type { ItemDetailData } from "@/lib/db/items";
+import { capitalize, formatIsoDate } from "@/lib/format";
+import { getTypeTextClass } from "@/lib/type-colors";
+import { TypeGlyph } from "@/lib/type-icons";
+import { cn } from "@/lib/utils";
+
+interface ItemDrawerProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  item: ItemDetailData | null;
+  error: string | null;
+}
+
+export function ItemDrawer({ open, onOpenChange, item, error }: ItemDrawerProps) {
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent
+        side="right"
+        className="!w-full gap-0 overflow-hidden p-0 sm:!max-w-2xl"
+      >
+        {item ? (
+          <ItemDrawerContent item={item} />
+        ) : error ? (
+          <ItemDrawerError message={error} />
+        ) : (
+          <ItemDrawerSkeleton />
+        )}
+      </SheetContent>
+    </Sheet>
+  );
+}
+
+function ItemDrawerContent({ item }: { item: ItemDetailData }) {
+  const copyValue = item.content ?? item.url;
+
+  return (
+    <>
+      <div className="flex items-start gap-3 border-b border-border p-4 pr-12">
+        <div className="grid size-10 shrink-0 place-items-center rounded-lg bg-muted">
+          <TypeGlyph
+            typeId={item.itemTypeId}
+            className={cn("size-5", getTypeTextClass(item.itemTypeId))}
+          />
+        </div>
+        <div className="min-w-0 flex-1">
+          <SheetTitle className="text-base leading-tight break-words">
+            {item.title}
+          </SheetTitle>
+          <p className="text-xs text-muted-foreground">
+            {capitalize(item.itemTypeName)}
+            {item.language ? ` · ${item.language}` : ""}
+          </p>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-1 border-b border-border px-4 py-2">
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          disabled
+          title="Favorite — coming soon"
+          aria-label={item.isFavorite ? "Favorited" : "Not favorited"}
+        >
+          <Star
+            className={cn(
+              "size-4",
+              item.isFavorite
+                ? "fill-yellow-400 text-yellow-400"
+                : "text-muted-foreground",
+            )}
+            aria-hidden
+          />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          disabled
+          title="Pin — coming soon"
+          aria-label={item.isPinned ? "Pinned" : "Not pinned"}
+        >
+          <Pin
+            className={cn(
+              "size-4",
+              item.isPinned
+                ? "fill-foreground text-foreground"
+                : "text-muted-foreground",
+            )}
+            aria-hidden
+          />
+        </Button>
+        {copyValue && (
+          <CopyButton
+            value={copyValue}
+            label={`Copy ${item.itemTypeName.toLowerCase()}`}
+            className="size-7 [&_svg]:size-4"
+          />
+        )}
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          disabled
+          title="Edit — coming soon"
+          aria-label="Edit item"
+        >
+          <Pencil className="size-4 text-muted-foreground" aria-hidden />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          disabled
+          title="Delete — coming soon"
+          aria-label="Delete item"
+          className="ml-auto text-destructive"
+        >
+          <Trash2 className="size-4" aria-hidden />
+        </Button>
+      </div>
+
+      <div className="flex-1 space-y-5 overflow-y-auto p-4">
+        {item.description && (
+          <SheetDescription className="text-foreground">
+            {item.description}
+          </SheetDescription>
+        )}
+
+        {item.content && (
+          <section className="space-y-2">
+            <SectionLabel>Content</SectionLabel>
+            <pre className="max-h-[28rem] overflow-auto rounded-lg bg-muted px-3 py-2.5 font-mono text-xs whitespace-pre-wrap text-foreground/90">
+              {item.content}
+            </pre>
+          </section>
+        )}
+
+        {item.url && (
+          <section className="space-y-2">
+            <SectionLabel>URL</SectionLabel>
+            <a
+              href={item.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block truncate rounded-lg bg-muted px-3 py-2.5 font-mono text-xs text-blue-500 hover:underline"
+            >
+              {item.url}
+            </a>
+          </section>
+        )}
+
+        {item.tags.length > 0 && (
+          <section className="space-y-2">
+            <SectionLabel icon={Tag}>Tags</SectionLabel>
+            <div className="flex flex-wrap items-center gap-1.5">
+              {item.tags.map(tag => (
+                <Badge key={tag.id} variant="secondary">
+                  #{tag.name}
+                </Badge>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {item.collections.length > 0 && (
+          <section className="space-y-2">
+            <SectionLabel icon={Folder}>Collections</SectionLabel>
+            <div className="flex flex-wrap items-center gap-1.5">
+              {item.collections.map(collection => (
+                <Badge key={collection.id} variant="outline">
+                  {collection.name}
+                </Badge>
+              ))}
+            </div>
+          </section>
+        )}
+      </div>
+
+      <div className="flex items-center justify-between border-t border-border px-4 py-3 text-xs text-muted-foreground">
+        <span>Created {formatIsoDate(item.createdAt)}</span>
+        <span>Updated {formatIsoDate(item.updatedAt)}</span>
+      </div>
+    </>
+  );
+}
+
+function SectionLabel({
+  children,
+  icon: Icon,
+}: {
+  children: React.ReactNode;
+  icon?: React.ComponentType<{ className?: string; "aria-hidden"?: boolean }>;
+}) {
+  return (
+    <h3 className="flex items-center gap-1.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+      {Icon && <Icon className="size-3.5" aria-hidden />}
+      {children}
+    </h3>
+  );
+}
+
+function ItemDrawerSkeleton() {
+  return (
+    <>
+      <div className="flex items-start gap-3 border-b border-border p-4 pr-12">
+        <div className="size-10 shrink-0 animate-pulse rounded-lg bg-muted" />
+        <div className="flex-1 space-y-2 py-1">
+          <div className="h-4 w-1/2 animate-pulse rounded bg-muted" />
+          <div className="h-3 w-24 animate-pulse rounded bg-muted" />
+        </div>
+      </div>
+      <SheetTitle className="sr-only">Loading item</SheetTitle>
+      <div className="flex items-center gap-2 border-b border-border px-4 py-2.5">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <div key={index} className="size-5 animate-pulse rounded bg-muted" />
+        ))}
+        <div className="ml-auto size-5 animate-pulse rounded bg-muted" />
+      </div>
+      <div className="flex-1 space-y-5 p-4">
+        <div className="h-3 w-2/3 animate-pulse rounded bg-muted" />
+        <div className="h-40 animate-pulse rounded-lg bg-muted" />
+        <div className="flex gap-1.5">
+          <div className="h-5 w-16 animate-pulse rounded-full bg-muted" />
+          <div className="h-5 w-16 animate-pulse rounded-full bg-muted" />
+        </div>
+      </div>
+    </>
+  );
+}
+
+function ItemDrawerError({ message }: { message: string }) {
+  return (
+    <div className="flex flex-1 flex-col items-center justify-center gap-2 p-8 text-center">
+      <SheetTitle>Something went wrong</SheetTitle>
+      <SheetDescription>{message}</SheetDescription>
+    </div>
+  );
+}

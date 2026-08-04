@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { getTypeLeftBorderClass, getTypeDotClass } from "@/lib/type-colors";
+import {
+  getTypeLeftBorderClass,
+  getTypeDotClass,
+  getTypeTextClass,
+} from "@/lib/type-colors";
 
 describe("getTypeLeftBorderClass", () => {
   it("returns the mapped class for a known type id", () => {
@@ -28,5 +32,20 @@ describe("getTypeDotClass", () => {
 
   it("falls back to the muted class for null", () => {
     expect(getTypeDotClass(null)).toBe("bg-muted-foreground");
+  });
+});
+
+describe("getTypeTextClass", () => {
+  it("returns the mapped class for a known type id", () => {
+    expect(getTypeTextClass("type_snippet")).toBe("text-blue-500");
+    expect(getTypeTextClass("type_prompt")).toBe("text-purple-500");
+  });
+
+  it("falls back to the muted class for an unknown type id", () => {
+    expect(getTypeTextClass("type_unknown")).toBe("text-muted-foreground");
+  });
+
+  it("falls back to the muted class for null", () => {
+    expect(getTypeTextClass(null)).toBe("text-muted-foreground");
   });
 });

@@ -1,3 +1,4 @@
+import { createElement } from "react";
 import {
   Code2,
   FileText,
@@ -21,4 +22,18 @@ const TYPE_ICONS: Record<string, LucideIcon> = {
 
 export function getTypeIcon(typeId: string): LucideIcon {
   return TYPE_ICONS[typeId] ?? FileText;
+}
+
+/**
+ * Renders a type's icon without binding it to a local component variable,
+ * which would reset state on every render (react-hooks/static-components).
+ */
+export function TypeGlyph({
+  typeId,
+  className,
+}: {
+  typeId: string;
+  className?: string;
+}) {
+  return createElement(getTypeIcon(typeId), { className, "aria-hidden": true });
 }

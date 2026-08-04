@@ -1,6 +1,7 @@
 import { CollectionCard } from "@/components/dashboard/CollectionCard";
 import { DashboardSection } from "@/components/dashboard/DashboardSection";
 import { ItemCard } from "@/components/dashboard/ItemCard";
+import { ItemCardTrigger } from "@/components/dashboard/ItemCardTrigger";
 import { StatsGrid } from "@/components/dashboard/StatsGrid";
 import { DEMO_USER_ID } from "@/lib/constants";
 import {
@@ -61,7 +62,9 @@ export default async function DashboardPage() {
         <DashboardSection title="Pinned Items">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             {pinnedItems.map(item => (
-              <ItemCard key={item.id} item={item} />
+              <ItemCardTrigger key={item.id} itemId={item.id} title={item.title}>
+                <ItemCard item={item} />
+              </ItemCardTrigger>
             ))}
           </div>
         </DashboardSection>
@@ -73,7 +76,9 @@ export default async function DashboardPage() {
         ) : (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             {recentItems.map(item => (
-              <ItemCard key={item.id} item={item} />
+              <ItemCardTrigger key={item.id} itemId={item.id} title={item.title}>
+                <ItemCard item={item} />
+              </ItemCardTrigger>
             ))}
           </div>
         )}

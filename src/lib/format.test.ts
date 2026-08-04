@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { getInitials, getTypeSlug, capitalize } from "@/lib/format";
+import {
+  getInitials,
+  getTypeSlug,
+  capitalize,
+  formatIsoDate,
+} from "@/lib/format";
 
 describe("getInitials", () => {
   it("takes the first letter of the first two words, uppercased", () => {
@@ -37,5 +42,20 @@ describe("capitalize", () => {
 
   it("returns the value unchanged when empty", () => {
     expect(capitalize("")).toBe("");
+  });
+});
+
+describe("formatIsoDate", () => {
+  it("renders an ISO timestamp as a UTC calendar date", () => {
+    expect(formatIsoDate("2026-04-10T12:30:00.000Z")).toBe("2026-04-10");
+  });
+
+  it("uses the UTC day, not the local one", () => {
+    expect(formatIsoDate("2026-04-10T23:30:00.000Z")).toBe("2026-04-10");
+  });
+
+  it("returns an empty string for an unparseable value", () => {
+    expect(formatIsoDate("not-a-date")).toBe("");
+    expect(formatIsoDate("")).toBe("");
   });
 });
