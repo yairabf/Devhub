@@ -1,16 +1,34 @@
-# Current Feature
+# Current Feature: Item Create
+
+Spec: `context/features/item-create-spec.md`
 
 ## Status
 
-<!-- Not started -->
+In Progress — branch `feature/item-create`
 
 ## Goals
 
-<!-- What are we building? -->
+- Add a `Dialog` UI primitive at `src/components/ui/dialog.tsx` — **the project has no dialog yet** (only `alert-dialog.tsx`). Hand-roll it over `@base-ui/react/dialog` following the `alert-dialog.tsx` / `tooltip.tsx` wrapper pattern; do not run a shadcn CLI `add`.
+- Wire the existing TopBar "New Item" button (`src/components/dashboard/TopBar.tsx:38`, currently inert) to open the create dialog.
+- Type selector for the 5 non-Pro types: snippet, prompt, command, note, link (exclude `type_file` / `type_image`).
+- Type-gated fields: all types get title (required), description, tags; snippet/command add content + language; prompt/note add content; link requires URL.
+- `createItem` server action in `src/actions/items.ts` with Zod validation, `auth()` gate, and the `{ success, data, error }` envelope — mirroring `updateItem`.
+- `createItem(userId, data)` query function in `src/lib/db/items.ts`.
+- On success: toast, close the dialog, and `router.refresh()` so the server-rendered lists pick up the new item.
+- Unit tests for the action and the `lib/db` helper (auth gate, per-type validation, tag handling), plus a Playwright spec now that `e2e/` exists.
 
 ## Notes
 
-<!-- Implementation notes, constraints, decisions -->
+- **Reuse `src/lib/item-form.ts`, don't duplicate the type gating.** `getEditableFields(itemTypeId)` already encodes exactly the spec's matrix (content for snippet/prompt/command/note, language for snippet/command, url for link) and is unit-tested. `buildUpdatePayload` is edit-specific (it carries hidden fields over from a stored item) so create needs its own payload builder, but the field-visibility rules should come from the same place.
+- **`Item.contentType` is required by the Prisma schema** and has no default. The create must set it explicitly (`"text"`, matching the seed and the e2e fixture) or the insert fails.
+- **Content must not be trimmed.** Reuse the `nullableBody` schema from `src/actions/items.ts` — indentation and trailing newlines are significant in code. Only title/description/language/url get trimmed (`nullableText`).
+- **`url` is required for links here**, which differs from `updateItem` where it stayed optional. Worth deciding whether to align the two.
+- Populate the type selector from `getSystemItemTypes()` and filter out the Pro ids, rather than hardcoding a list — the ids are `type_snippet`, `type_prompt`, `type_command`, `type_note`, `type_link`.
+- Follow the tag input convention from `ItemEditForm`: one comma-separated text field, de-duplicated and trimmed in the action, persisted via `connectOrCreate`.
+- Set the form `noValidate` as `ItemEditForm` does, so the server Zod schema is the single source of truth and errors arrive as toasts instead of native browser bubbles.
+- **Out of scope unless you say otherwise:** the free-tier 50-item limit from the project overview is not mentioned in the spec, so this pass won't enforce it.
+- Standing limitation: pages fetch with `DEMO_USER_ID` while actions scope to `session.user.id`, so a created item will only appear in the lists for the seeded demo login.
+- The "New Collection" button next to it stays inert — this feature is items only.
 
 ## History
 

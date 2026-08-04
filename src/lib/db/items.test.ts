@@ -5,6 +5,7 @@ vi.mock("@/lib/prisma", () => ({
     item: {
       findMany: vi.fn(),
       findFirst: vi.fn(),
+      create: vi.fn(),
       update: vi.fn(),
       delete: vi.fn(),
     },
@@ -13,6 +14,7 @@ vi.mock("@/lib/prisma", () => ({
 
 import { prisma } from "@/lib/prisma";
 import {
+  createItem,
   deleteItem,
   getItemDetail,
   getRecentItems,
@@ -21,12 +23,14 @@ import {
 
 const findMany = vi.mocked(prisma.item.findMany);
 const findFirst = vi.mocked(prisma.item.findFirst);
+const create = vi.mocked(prisma.item.create);
 const update = vi.mocked(prisma.item.update);
 const destroy = vi.mocked(prisma.item.delete);
 
 beforeEach(() => {
   findMany.mockReset();
   findFirst.mockReset();
+  create.mockReset();
   update.mockReset();
   destroy.mockReset();
 });
@@ -298,5 +302,110 @@ describe("deleteItem", () => {
     await expect(deleteItem("user_demo", "item_1")).resolves.toBe(true);
     expect(destroy).toHaveBeenCalledTimes(1);
     expect(destroy.mock.calls[0][0]).toEqual({ where: { id: "item_1" } });
+  });
+});
+
+describe("createItem", () => {
+  const INPUT = {
+    itemTypeId: "type_snippet",
+    title: "useDebounce",
+    description: "A debounce hook",
+    content: "const x = 1;",
+    url: null,
+    language: "typescript",
+    tags: ["react", "hooks"],
+  };
+
+  const CREATED_ROW = {
+    id: "item_new",
+    title: "useDebounce",
+    description: "A debounce hook",
+    content: "const x = 1;",
+    url: null,
+    isFavorite: false,
+    isPinned: false,
+    language: "typescript",
+    itemTypeId: "type_snippet",
+    itemType: { name: "snippet" },
+    tags: [
+      { id: "tag_1", name: "react" },
+      { id: "tag_2", name: "hooks" },
+    ],
+    collections: [],
+    createdAt: new Date("2026-08-04T09:00:00.000Z"),
+    updatedAt: new Date("2026-08-04T09:00:00.000Z"),
+  };
+
+  it("scopes the row to the user and sets the required contentType", async () => {
+    create.mockResolvedValue(CREATED_ROW as never);
+
+    await createItem("user_demo", INPUT);
+
+    expect(create.mock.calls[0][0]).toMatchObject({
+      data: {
+        userId: "user_demo",
+        itemTypeId: "type_snippet",
+        // Required by the schema with no default — the insert fails without it.
+        contentType: "text",
+        title: "useDebounce",
+        description: "A debounce hook",
+        content: "const x = 1;",
+        url: null,
+        language: "typescript",
+      },
+    });
+  });
+
+  it("connects or creates each tag", async () => {
+    create.mockResolvedValue(CREATED_ROW as never);
+
+    await createItem("user_demo", INPUT);
+
+    expect(create.mock.calls[0][0]).toMatchObject({
+      data: {
+        tags: {
+          connectOrCreate: [
+            { where: { name: "react" }, create: { name: "react" } },
+            { where: { name: "hooks" }, create: { name: "hooks" } },
+          ],
+        },
+      },
+    });
+  });
+
+  it("sends an empty connectOrCreate when there are no tags", async () => {
+    create.mockResolvedValue({ ...CREATED_ROW, tags: [] } as never);
+
+    await createItem("user_demo", { ...INPUT, tags: [] });
+
+    expect(create.mock.calls[0][0]).toMatchObject({
+      data: { tags: { connectOrCreate: [] } },
+    });
+  });
+
+  it("returns the new item as detail data with ISO timestamps", async () => {
+    create.mockResolvedValue(CREATED_ROW as never);
+
+    const result = await createItem("user_demo", INPUT);
+
+    expect(result).toEqual({
+      id: "item_new",
+      title: "useDebounce",
+      description: "A debounce hook",
+      content: "const x = 1;",
+      url: null,
+      isFavorite: false,
+      isPinned: false,
+      language: "typescript",
+      itemTypeId: "type_snippet",
+      itemTypeName: "snippet",
+      tags: [
+        { id: "tag_1", name: "react" },
+        { id: "tag_2", name: "hooks" },
+      ],
+      collections: [],
+      createdAt: "2026-08-04T09:00:00.000Z",
+      updatedAt: "2026-08-04T09:00:00.000Z",
+    });
   });
 });

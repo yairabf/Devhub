@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import { updateItem } from "@/actions/items";
+import { FormField } from "@/components/dashboard/FormField";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -82,7 +83,7 @@ export function ItemEditForm({ item, onCancel, onSaved }: ItemEditFormProps) {
       </div>
 
       <div className="flex-1 space-y-4 overflow-y-auto p-4">
-        <Field htmlFor="item-title" label="Title">
+        <FormField htmlFor="item-title" label="Title">
           <Input
             id="item-title"
             value={title}
@@ -90,19 +91,19 @@ export function ItemEditForm({ item, onCancel, onSaved }: ItemEditFormProps) {
             required
             aria-invalid={title.trim().length === 0}
           />
-        </Field>
+        </FormField>
 
-        <Field htmlFor="item-description" label="Description">
+        <FormField htmlFor="item-description" label="Description">
           <Textarea
             id="item-description"
             value={description}
             onChange={event => setDescription(event.target.value)}
             rows={2}
           />
-        </Field>
+        </FormField>
 
         {showContent && (
-          <Field htmlFor="item-content" label="Content">
+          <FormField htmlFor="item-content" label="Content">
             <Textarea
               id="item-content"
               value={content}
@@ -110,22 +111,22 @@ export function ItemEditForm({ item, onCancel, onSaved }: ItemEditFormProps) {
               rows={12}
               className="font-mono text-xs"
             />
-          </Field>
+          </FormField>
         )}
 
         {showLanguage && (
-          <Field htmlFor="item-language" label="Language">
+          <FormField htmlFor="item-language" label="Language">
             <Input
               id="item-language"
               value={language}
               onChange={event => setLanguage(event.target.value)}
               placeholder="typescript"
             />
-          </Field>
+          </FormField>
         )}
 
         {showUrl && (
-          <Field htmlFor="item-url" label="URL">
+          <FormField htmlFor="item-url" label="URL">
             <Input
               id="item-url"
               type="url"
@@ -133,10 +134,10 @@ export function ItemEditForm({ item, onCancel, onSaved }: ItemEditFormProps) {
               onChange={event => setUrl(event.target.value)}
               placeholder="https://example.com"
             />
-          </Field>
+          </FormField>
         )}
 
-        <Field htmlFor="item-tags" label="Tags">
+        <FormField htmlFor="item-tags" label="Tags">
           <Input
             id="item-tags"
             value={tags}
@@ -146,30 +147,8 @@ export function ItemEditForm({ item, onCancel, onSaved }: ItemEditFormProps) {
           <p className="text-xs text-muted-foreground">
             Separate tags with commas.
           </p>
-        </Field>
+        </FormField>
       </div>
     </form>
-  );
-}
-
-function Field({
-  htmlFor,
-  label,
-  children,
-}: {
-  htmlFor: string;
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="space-y-1.5">
-      <label
-        htmlFor={htmlFor}
-        className="block font-mono text-xs font-medium tracking-wider text-muted-foreground uppercase"
-      >
-        {label}
-      </label>
-      {children}
-    </div>
   );
 }

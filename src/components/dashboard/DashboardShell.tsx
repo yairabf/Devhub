@@ -19,7 +19,10 @@ export function DashboardShell({ children, sidebarData, user }: DashboardShellPr
   return (
     <ItemDrawerProvider>
       <div className="flex h-full flex-col">
-        <TopBar onOpenDrawer={() => setDrawerOpen(true)} />
+        <TopBar
+          onOpenDrawer={() => setDrawerOpen(true)}
+          itemTypes={sidebarData.itemTypes}
+        />
         <div className="flex flex-1 overflow-hidden">
           <Sidebar
             collapsed={collapsed}
