@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
 import { codeEditor, setCodeEditorValue } from "./helpers/code-editor";
+import { markdownEditor } from "./helpers/markdown-editor";
 import { findItemByTitle, removeItemsByTitle } from "./helpers/items";
 
 /**
@@ -98,7 +99,12 @@ test.describe("NewItemDialog — type selector", () => {
     ]);
   });
 
-  test("uses the code editor for code types and a textarea for prose", async ({
+  /**
+   * A type with a body gets one of the two editors and never a plain textarea, so
+   * `#new-item-content` should exist for no type at all. The editor-swap itself is
+   * covered in `markdown-editor.spec.ts`.
+   */
+  test("uses the code editor for code types and the Markdown editor for prose", async ({
     page,
   }) => {
     await page.goto("/dashboard");
@@ -113,11 +119,13 @@ test.describe("NewItemDialog — type selector", () => {
 
     await dialog(page).getByText("Prompt", { exact: true }).click();
     await expect(codeEditor(dialog(page))).toHaveCount(0);
-    await expect(page.locator("#new-item-content")).toBeVisible();
+    await expect(markdownEditor(dialog(page))).toBeVisible();
+    await expect(page.locator("#new-item-content")).toHaveCount(0);
 
     await dialog(page).getByText("Note", { exact: true }).click();
     await expect(codeEditor(dialog(page))).toHaveCount(0);
-    await expect(page.locator("#new-item-content")).toBeVisible();
+    await expect(markdownEditor(dialog(page))).toBeVisible();
+    await expect(page.locator("#new-item-content")).toHaveCount(0);
   });
 });
 

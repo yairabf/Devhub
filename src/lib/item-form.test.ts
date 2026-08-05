@@ -7,6 +7,7 @@ import {
   isCreatableType,
   orderCreatableTypes,
   usesCodeEditor,
+  usesMarkdownEditor,
 } from "@/lib/item-form";
 import type { ItemDetailData } from "@/lib/db/items";
 
@@ -108,6 +109,49 @@ describe("usesCodeEditor", () => {
       "type_link",
     ]) {
       expect(usesCodeEditor(typeId)).toBe(getEditableFields(typeId).language);
+    }
+  });
+});
+
+describe("usesMarkdownEditor", () => {
+  it("is true for the prose types", () => {
+    expect(usesMarkdownEditor("type_prompt")).toBe(true);
+    expect(usesMarkdownEditor("type_note")).toBe(true);
+  });
+
+  it("is false for the code types, which keep the code editor", () => {
+    expect(usesMarkdownEditor("type_snippet")).toBe(false);
+    expect(usesMarkdownEditor("type_command")).toBe(false);
+  });
+
+  it("is false for types with no content at all", () => {
+    expect(usesMarkdownEditor("type_link")).toBe(false);
+    expect(usesMarkdownEditor("type_file")).toBe(false);
+    expect(usesMarkdownEditor("type_image")).toBe(false);
+    expect(usesMarkdownEditor("type_unknown")).toBe(false);
+  });
+
+  /**
+   * The whole point of deriving this from the same two sets: a type with a body
+   * gets exactly one editor, and a type without one gets neither. If a future
+   * type is added to only one set, this is where it surfaces.
+   */
+  it("pairs with the code editor to cover every content type exactly once", () => {
+    for (const typeId of [
+      "type_snippet",
+      "type_prompt",
+      "type_command",
+      "type_note",
+      "type_link",
+      "type_file",
+      "type_image",
+      "type_unknown",
+    ]) {
+      const editors = [usesCodeEditor(typeId), usesMarkdownEditor(typeId)];
+
+      expect(editors.filter(Boolean)).toHaveLength(
+        getEditableFields(typeId).content ? 1 : 0,
+      );
     }
   });
 });

@@ -70,6 +70,18 @@ export function usesCodeEditor(itemTypeId: string): boolean {
   return CODE_TYPES.has(itemTypeId);
 }
 
+/**
+ * Whether this type's content is prose, and so gets the Markdown editor.
+ *
+ * Derived rather than declared: a type with a body is either code or prose, so
+ * a third set here could drift out of step with the two above. Every type with
+ * content therefore gets exactly one of the two editors, which is what the
+ * drift test asserts.
+ */
+export function usesMarkdownEditor(itemTypeId: string): boolean {
+  return TYPES_WITH_CONTENT.has(itemTypeId) && !CODE_TYPES.has(itemTypeId);
+}
+
 /** Raw form state — every field is a string, tags still comma-separated. */
 export interface ItemDraft {
   title: string;

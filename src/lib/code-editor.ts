@@ -4,6 +4,11 @@
  * These live outside both components on purpose: `CodeEditor` only imports the
  * Monaco surface dynamically, so importing a constant from that module would
  * drag monaco into the parent chunk and undo the lazy load.
+ *
+ * The bounds and `clampEditorHeight` are shared with the Markdown editor too —
+ * the two sit side by side in the same drawer and are specified to grow the same
+ * way, so the numbers must not be written down twice. Everything below them is
+ * Monaco-specific.
  */
 
 /** Tall enough to still look like an editor for a one-line command. */

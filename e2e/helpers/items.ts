@@ -13,11 +13,13 @@ const FIXTURE = "scripts/e2e-item-fixture.ts";
 async function fixture<T>(
   command: string,
   arg: string,
-  extra?: string,
+  ...extras: string[]
 ): Promise<T> {
-  const args = ["tsx", FIXTURE, command, arg];
-  if (extra !== undefined) args.push(extra);
-  const { stdout } = await run("npx", args, { cwd: process.cwd() });
+  const { stdout } = await run(
+    "npx",
+    ["tsx", FIXTURE, command, arg, ...extras],
+    { cwd: process.cwd() },
+  );
   return JSON.parse(stdout) as T;
 }
 
@@ -30,12 +32,19 @@ export interface SeededTestItem {
  * Creates a throwaway item owned by the demo user so specs never delete seeded
  * data (which `npm run db:test` asserts on). Linked to a collection and tagged
  * so the drawer renders both sections.
+ *
+ * Defaults to a snippet. Pass `type_note` or `type_prompt` for an item that
+ * renders in the Markdown editor — the fixture seeds those with Markdown source
+ * and no language.
  */
 export function createTestItem(
   suffix: string,
   title?: string,
+  itemTypeId?: string,
 ): Promise<SeededTestItem> {
-  return fixture<SeededTestItem>("create", suffix, title);
+  // Empty string means "use the fixture's own default". The CLI arguments are
+  // positional, so the type needs a placeholder in the title slot to reach it.
+  return fixture<SeededTestItem>("create", suffix, title ?? "", itemTypeId ?? "");
 }
 
 /** Idempotent cleanup — safe to call when the spec already deleted the item. */

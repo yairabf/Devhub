@@ -61,11 +61,13 @@ test.describe("CodeEditor — which types get it", () => {
     await expectCodeEditorReady(drawer(page));
   });
 
-  test("a prompt keeps the plain preformatted block", async ({ page }) => {
+  // Prose types get the Markdown editor instead; `markdown-editor.spec.ts` owns
+  // what that renders, so this only asserts Monaco stays out of it.
+  test("a prompt does not get the code editor", async ({ page }) => {
     await page.goto("/items/prompts");
     await openItem(page, PROMPT);
 
-    await expect(drawer(page).locator("pre")).toBeVisible();
+    await expect(drawer(page).locator("[data-markdown-editor]")).toBeVisible();
     await expect(codeEditor(drawer(page))).toHaveCount(0);
   });
 });
