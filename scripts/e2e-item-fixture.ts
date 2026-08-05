@@ -13,8 +13,10 @@ import { DEMO_USER_ID } from "../src/lib/constants";
  * directly — Playwright transpiles test files to CJS, and the generated Prisma
  * client is ESM (`import.meta`), so it cannot be loaded in-process.
  *
- * Usage: tsx scripts/e2e-item-fixture.ts <command> <arg> [title]
- *   create <suffix> [title]   create a throwaway item at a known id
+ * Usage: tsx scripts/e2e-item-fixture.ts <command> <arg> [title] [itemTypeId]
+ *   create <suffix> [title] [itemTypeId]
+ *                             create a throwaway item at a known id; defaults to
+ *                             a snippet, pass type_note/type_prompt for prose
  *   remove <id>               delete by id
  *   exists <id>               report whether the id is present
  *   findByTitle <title>       read back an item the UI created (ids are cuids)
@@ -33,9 +35,37 @@ const prisma = new PrismaClient({
   log: ["error"],
 });
 
-async function create(suffix: string, explicitTitle?: string) {
+/**
+ * Prose types render in the Markdown editor and carry no language, so a
+ * throwaway of one of those types is seeded with Markdown source instead of
+ * code. Kept as a local set rather than importing `usesMarkdownEditor`: this
+ * script runs under `tsx` with relative imports, and the ids it already
+ * hardcodes (collection, type) are in the same spirit.
+ */
+const PROSE_TYPE_IDS = new Set(["type_note", "type_prompt"]);
+
+const CODE_CONTENT = "console.log('e2e throwaway');";
+const PROSE_CONTENT = [
+  "# E2E heading",
+  "",
+  "Paragraph with **bold** text and `inline code`.",
+  "",
+  "- first",
+  "- second",
+  "",
+].join("\n");
+
+async function create(
+  suffix: string,
+  explicitTitle?: string,
+  explicitTypeId?: string,
+) {
   const id = `item_e2e_${suffix}`;
-  const title = explicitTitle ?? `E2E throwaway ${suffix}`;
+  // Empty rather than absent: the caller passes placeholders for the arguments
+  // it does not care about, since these are positional.
+  const title = explicitTitle || `E2E throwaway ${suffix}`;
+  const itemTypeId = explicitTypeId || "type_snippet";
+  const isProse = PROSE_TYPE_IDS.has(itemTypeId);
 
   await prisma.item.deleteMany({ where: { id } });
   await prisma.item.create({
@@ -43,11 +73,11 @@ async function create(suffix: string, explicitTitle?: string) {
       id,
       title,
       contentType: "text",
-      content: "console.log('e2e throwaway');",
+      content: isProse ? PROSE_CONTENT : CODE_CONTENT,
       description: "Created by the Playwright suite — safe to delete.",
-      language: "typescript",
+      language: isProse ? null : "typescript",
       userId: DEMO_USER_ID,
-      itemTypeId: "type_snippet",
+      itemTypeId,
       collections: { create: { collectionId: "col_react_patterns" } },
       tags: {
         connectOrCreate: [{ where: { name: "e2e" }, create: { name: "e2e" } }],
@@ -59,11 +89,11 @@ async function create(suffix: string, explicitTitle?: string) {
 }
 
 async function main() {
-  const [command, arg, title] = process.argv.slice(2);
+  const [command, arg, title, itemTypeId] = process.argv.slice(2);
 
   switch (command) {
     case "create":
-      return create(requireArg(command, arg), title);
+      return create(requireArg(command, arg), title, itemTypeId);
     case "remove":
       await prisma.item.deleteMany({ where: { id: requireArg(command, arg) } });
       return { removed: true };

@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { updateItem } from "@/actions/items";
 import { CodeEditor } from "@/components/dashboard/CodeEditor";
 import { FormField } from "@/components/dashboard/FormField";
+import { MarkdownEditor } from "@/components/dashboard/MarkdownEditor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -108,10 +109,14 @@ export function ItemEditForm({ item, onCancel, onSaved }: ItemEditFormProps) {
           />
         </FormField>
 
+        {/* Never a plain textarea: a type with a body is either code or prose, so
+            `showContent` implies one of these two editors. Neither row passes
+            htmlFor — Monaco is a widget rather than an input, and the Markdown
+            Write textarea unmounts whenever Preview is the active tab, so a
+            <label for> would point at nothing half the time. Both name themselves
+            through ariaLabel instead. */}
         {showContent &&
           (showCodeEditor ? (
-            // No htmlFor: Monaco is a widget, not an input. It names itself
-            // through ariaLabel instead.
             <FormField label="Content">
               <CodeEditor
                 value={content}
@@ -122,13 +127,12 @@ export function ItemEditForm({ item, onCancel, onSaved }: ItemEditFormProps) {
               />
             </FormField>
           ) : (
-            <FormField htmlFor="item-content" label="Content">
-              <Textarea
-                id="item-content"
+            <FormField label="Content">
+              <MarkdownEditor
                 value={content}
-                onChange={event => setContent(event.target.value)}
-                rows={12}
-                className="font-mono text-xs"
+                onChange={setContent}
+                disabled={pending}
+                ariaLabel="Content"
               />
             </FormField>
           ))}

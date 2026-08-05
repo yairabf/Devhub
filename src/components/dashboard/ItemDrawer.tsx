@@ -6,6 +6,7 @@ import { CodeEditor } from "@/components/dashboard/CodeEditor";
 import { CopyButton } from "@/components/dashboard/CopyButton";
 import { DeleteItemDialog } from "@/components/dashboard/DeleteItemDialog";
 import { ItemEditForm } from "@/components/dashboard/ItemEditForm";
+import { MarkdownEditor } from "@/components/dashboard/MarkdownEditor";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,7 +17,7 @@ import {
 } from "@/components/ui/sheet";
 import type { ItemDetailData } from "@/lib/db/items";
 import { capitalize, formatIsoDate } from "@/lib/format";
-import { usesCodeEditor } from "@/lib/item-form";
+import { usesCodeEditor, usesMarkdownEditor } from "@/lib/item-form";
 import { getTypeTextClass } from "@/lib/type-colors";
 import { TypeGlyph } from "@/lib/type-icons";
 import { cn } from "@/lib/utils";
@@ -192,6 +193,12 @@ function ItemViewMode({
               <CodeEditor
                 value={item.content}
                 language={item.language}
+                ariaLabel={`${item.title} content`}
+                copyLabel={`Copy ${item.itemTypeName.toLowerCase()}`}
+              />
+            ) : usesMarkdownEditor(item.itemTypeId) ? (
+              <MarkdownEditor
+                value={item.content}
                 ariaLabel={`${item.title} content`}
                 copyLabel={`Copy ${item.itemTypeName.toLowerCase()}`}
               />

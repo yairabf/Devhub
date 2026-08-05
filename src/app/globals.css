@@ -123,6 +123,210 @@
   display: none;
 }
 
+/* ---------------------------------------------------------------------------
+   Markdown preview typography (MarkdownEditor's Preview pane).
+
+   Plain CSS rather than utility classes because react-markdown emits the tags
+   itself — there is nowhere to hang a class. Every colour is a theme token, so
+   the preview follows the app's own light/dark switch for free, and Tailwind's
+   preflight reset means margins, list markers and table borders all have to be
+   re-stated explicitly here.
+   --------------------------------------------------------------------------- */
+.markdown-preview {
+  font-size: 0.8125rem;
+  line-height: 1.65;
+  color: var(--foreground);
+  overflow-wrap: break-word;
+}
+
+/* The pane supplies its own padding; the first and last block must not add to it. */
+.markdown-preview > :first-child {
+  margin-top: 0;
+}
+.markdown-preview > :last-child {
+  margin-bottom: 0;
+}
+
+.markdown-preview p,
+.markdown-preview ul,
+.markdown-preview ol,
+.markdown-preview blockquote,
+.markdown-preview pre,
+.markdown-preview table {
+  margin-block: 0.75em;
+}
+
+/* Headings: sized off the pane's own font-size so the whole scale moves together. */
+.markdown-preview h1,
+.markdown-preview h2,
+.markdown-preview h3,
+.markdown-preview h4,
+.markdown-preview h5,
+.markdown-preview h6 {
+  font-weight: 600;
+  line-height: 1.3;
+  margin-block: 1.4em 0.6em;
+  color: var(--foreground);
+}
+
+.markdown-preview h1 {
+  font-size: 1.6em;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid var(--border);
+}
+.markdown-preview h2 {
+  font-size: 1.35em;
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid var(--border);
+}
+.markdown-preview h3 {
+  font-size: 1.18em;
+}
+.markdown-preview h4 {
+  font-size: 1.05em;
+}
+.markdown-preview h5 {
+  font-size: 0.95em;
+}
+/* Smallest level: size alone stops carrying the distinction, so it leans on case. */
+.markdown-preview h6 {
+  font-size: 0.9em;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+.markdown-preview strong {
+  font-weight: 600;
+  color: var(--foreground);
+}
+.markdown-preview em {
+  font-style: italic;
+}
+.markdown-preview del {
+  text-decoration: line-through;
+  color: var(--muted-foreground);
+}
+
+/* Lists: preflight strips the markers and the indent, so both come back here. */
+.markdown-preview ul,
+.markdown-preview ol {
+  padding-inline-start: 1.5em;
+}
+.markdown-preview ul {
+  list-style-type: disc;
+}
+.markdown-preview ul ul {
+  list-style-type: circle;
+}
+.markdown-preview ul ul ul {
+  list-style-type: square;
+}
+.markdown-preview ol {
+  list-style-type: decimal;
+}
+.markdown-preview li {
+  margin-block: 0.25em;
+}
+.markdown-preview li::marker {
+  color: var(--muted-foreground);
+}
+/* Nested lists hug their parent item instead of opening a fresh block. */
+.markdown-preview li > ul,
+.markdown-preview li > ol,
+.markdown-preview li > p {
+  margin-block: 0.25em;
+}
+
+/* GFM task lists: the checkbox is the marker, so the bullet would double up. */
+.markdown-preview li:has(> input[type="checkbox"]) {
+  list-style-type: none;
+  margin-inline-start: -1.25em;
+}
+.markdown-preview input[type="checkbox"] {
+  margin-inline-end: 0.5em;
+  accent-color: var(--primary);
+  vertical-align: middle;
+}
+/* Task-list checkboxes are the only native controls in the preview, and the app
+   themes itself with a class rather than `color-scheme` — so on a light page with
+   a dark OS preference the browser painted an unchecked box as a filled dark
+   square. Pinning the scheme to the app's own theme is what keeps the native
+   control in step, and it beats redrawing the checkbox by hand (`::after` on an
+   input is not supported in every browser). */
+.markdown-preview {
+  color-scheme: light;
+}
+.dark .markdown-preview {
+  color-scheme: dark;
+}
+
+.markdown-preview blockquote {
+  padding-inline-start: 1em;
+  border-inline-start: 3px solid var(--border);
+  color: var(--muted-foreground);
+}
+
+/* Inline code: a tint of the foreground, so it reads as a highlight in both
+   themes instead of needing a separate light and dark colour. */
+.markdown-preview code {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.9em;
+  padding: 0.15em 0.35em;
+  border-radius: var(--radius-sm);
+  background-color: color-mix(in oklab, var(--foreground) 10%, transparent);
+}
+
+/* Fenced blocks sit on --background, which is darker than the --muted pane in
+   dark mode and lighter in light mode — either way it separates from the pane. */
+.markdown-preview pre {
+  padding: 0.75em 0.9em;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background-color: var(--background);
+  overflow-x: auto;
+}
+/* The block already carries the surface; the inline treatment would double it. */
+.markdown-preview pre code {
+  padding: 0;
+  background-color: transparent;
+  font-size: 0.95em;
+  white-space: pre;
+}
+
+.markdown-preview table {
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+  font-size: 0.95em;
+}
+.markdown-preview th,
+.markdown-preview td {
+  padding: 0.4em 0.7em;
+  border: 1px solid var(--border);
+  text-align: start;
+}
+.markdown-preview th {
+  font-weight: 600;
+  background-color: var(--secondary);
+}
+
+.markdown-preview hr {
+  margin-block: 1.25em;
+  border: 0;
+  border-top: 1px solid var(--border);
+}
+
+.markdown-preview img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius-md);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
