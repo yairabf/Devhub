@@ -6,7 +6,7 @@
    - `git branch -d <feature-branch>` — plain `-d`, never `-D`, so git refuses if anything is unmerged
    - Verify it is gone: `git branch --list '<feature-branch>'` must print nothing. If it still lists the branch, the delete did not happen — fix that before moving on.
    - If `-d` refuses because the branch is unmerged, stop and report it. Do not force-delete.
-4. Reset current-feature.md:
+4. Reset `context/current-feature.md`:
    - Change H1 back to `# Current Feature`
    - Clear Goals and Notes sections (keep placeholder comments)
    - Add feature summary to the END of History

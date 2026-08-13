@@ -1,16 +1,63 @@
-# Current Feature
+# Current Feature: Collection Create
 
 ## Status
 
-<!-- Not started -->
+Not Started
 
 ## Goals
 
-<!-- What are we building? -->
+- Add a working **New Collection** button to the dashboard TopBar (currently inert).
+- Clicking it opens a modal with the fields a collection needs: **name** (required) and **description** (optional).
+- Creating a collection persists it scoped to the **signed-in user**.
+- Show a **toast on success and on failure**.
+- After a successful save, every surface that lists collections reflects the new
+  one without a manual reload — sidebar Recent Collections, the dashboard
+  Recent Collections grid, and the Collections stat count.
 
 ## Notes
 
-<!-- Implementation notes, constraints, decisions -->
+### Follow the item-create patterns
+
+This feature mirrors **Item Create** (2026-08-04). Reuse rather than re-invent:
+
+- `src/components/ui/dialog.tsx` — the existing base-ui `Dialog` wrapper, including
+  `closeDisabled` so the X and Cancel stay consistent while a request is in flight.
+- `NewItemDialog` in the TopBar is the structural model for `NewCollectionDialog`.
+- Validation with **Zod**, returning the project's `{ success, data, error }` envelope.
+- `auth()` gate on the mutation; **never** trust a `userId` sent from the client.
+- Toasts via the existing `sonner` + `ThemeToaster` mount (follows the app's own
+  theme, not the OS).
+- `router.refresh()` after save to pull the server-rendered lists forward.
+- `FormField` (`src/components/dashboard/FormField.tsx`) for the label/input rows.
+
+### Data layer
+
+- New `createCollection(userId, data)` in `src/lib/db/collections.ts`, alongside the
+  existing `getCollections` / `getCollectionById` / `getFavoriteCollections`.
+- Server components keep fetching directly through `lib/db`; only the client-side
+  create call crosses a network boundary.
+
+### Open question — server action vs. API route
+
+The request says "**api routes for any client-side calls**", but it also says to
+follow the item patterns, and item create uses a **server action**
+(`createItem` in `src/actions/items.ts`). `context/coding-standards.md` puts a
+simple form mutation like this in the server-action column and reserves API
+routes for webhooks, uploads, specific status codes, and future mobile/CLI
+clients. **Resolve this before implementing** — the two conventions can't both
+be followed here.
+
+### Known context carried in from the current branch
+
+- Branch `feature/get-collection-db` has **uncommitted** work adding
+  `getCollections` (renamed from `getRecentCollections`, limit now optional),
+  `getCollectionById`, and `getItemsByCollection`. This feature builds on that
+  layer; decide whether it lands first or merges together.
+- There is still **no `/collections` route** — the sidebar's "View all
+  collections" link 404s. Out of scope here unless stated otherwise.
+- The free tier's **3-collection limit** is not enforced anywhere today
+  (the same gap Item Create left for the 50-item limit). Out of scope unless
+  stated otherwise.
 
 ## History
 

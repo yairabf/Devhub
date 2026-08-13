@@ -3,7 +3,7 @@ import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { DEMO_USER_ID } from "@/lib/constants";
 import {
   getFavoriteCollections,
-  getRecentCollections,
+  getCollections,
 } from "@/lib/db/collections";
 import { getSystemItemTypes } from "@/lib/db/items";
 
@@ -23,7 +23,7 @@ export default async function ItemsLayout({
 
   const [favoriteCollections, recentCollections, itemTypes] = await Promise.all([
     getFavoriteCollections(DEMO_USER_ID),
-    getRecentCollections(DEMO_USER_ID, 5),
+    getCollections(DEMO_USER_ID, 5),
     getSystemItemTypes(),
   ]);
 

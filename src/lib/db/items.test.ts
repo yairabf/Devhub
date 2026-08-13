@@ -17,6 +17,7 @@ import {
   createItem,
   deleteItem,
   getItemDetail,
+  getItemsByCollection,
   getRecentItems,
   updateItem,
 } from "@/lib/db/items";
@@ -85,6 +86,76 @@ describe("getRecentItems", () => {
 
     const args = findMany.mock.calls[0][0];
     expect(args).toMatchObject({ take: 5 });
+  });
+});
+
+describe("getItemsByCollection", () => {
+  it("scopes the query to the owner as well as the collection", async () => {
+    findMany.mockResolvedValue([] as never);
+
+    await getItemsByCollection("user_demo", "col_react_patterns");
+
+    // Dropping userId would return another user's items to anyone who knows
+    // (or guesses) a collection id, so this is the access-control guard.
+    expect(findMany).toHaveBeenCalledTimes(1);
+    expect(findMany.mock.calls[0][0]).toMatchObject({
+      where: {
+        userId: "user_demo",
+        collections: { some: { collectionId: "col_react_patterns" } },
+      },
+    });
+  });
+
+  it("breaks updatedAt ties on id so the order is deterministic", async () => {
+    findMany.mockResolvedValue([] as never);
+
+    await getItemsByCollection("user_demo", "col_react_patterns");
+
+    // Matches every other list query in this module; the seed writes items in
+    // one transaction, so updatedAt values collide.
+    expect(findMany.mock.calls[0][0]).toMatchObject({
+      orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
+    });
+  });
+
+  it("flattens the raw Prisma rows into ItemCardData", async () => {
+    findMany.mockResolvedValue([
+      {
+        id: "item_1",
+        title: "useDebounce",
+        description: "A debounce hook",
+        content: "const x = 1;",
+        url: null,
+        isFavorite: true,
+        itemTypeId: "type_snippet",
+        itemType: { name: "Snippet" },
+        tags: [{ id: "tag_1", name: "react" }],
+      },
+    ] as never);
+
+    const result = await getItemsByCollection("user_demo", "col_react_patterns");
+
+    expect(result).toEqual([
+      {
+        id: "item_1",
+        title: "useDebounce",
+        description: "A debounce hook",
+        content: "const x = 1;",
+        url: null,
+        isFavorite: true,
+        itemTypeId: "type_snippet",
+        itemTypeName: "Snippet",
+        tags: [{ id: "tag_1", name: "react" }],
+      },
+    ]);
+  });
+
+  it("returns an empty array for a collection with no items", async () => {
+    findMany.mockResolvedValue([] as never);
+
+    await expect(
+      getItemsByCollection("user_demo", "col_empty"),
+    ).resolves.toEqual([]);
   });
 });
 
