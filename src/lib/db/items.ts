@@ -70,6 +70,18 @@ function toCardData(item: RawItem): ItemCardData {
   };
 }
 
+export async function getItemsByCollection(
+  userId: string,
+  collectionId: string,
+): Promise<ItemCardData[]> {
+  const items = await prisma.item.findMany({
+    where: { userId, collections: { some: { collectionId } } },
+    orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
+    select: ITEM_SELECT,
+  });
+  return items.map(toCardData);
+}
+
 export async function getPinnedItems(userId: string): Promise<ItemCardData[]> {
   const items = await prisma.item.findMany({
     where: { userId, isPinned: true },

@@ -34,13 +34,40 @@ export function getFavoriteCollections(
   });
 }
 
-export async function getRecentCollections(
+/** Header data for the collection detail page. */
+export interface CollectionMeta {
+  id: string;
+  name: string;
+  description: string | null;
+  isFavorite: boolean;
+}
+
+/**
+ * Looks up one collection the user owns, or null when it does not exist or
+ * belongs to someone else. `findFirst` rather than `findUnique` because the
+ * latter only accepts unique fields, and `userId` is not part of what makes
+ * `id` unique — scoping on both is what stops a shared or guessed URL from
+ * reading another user's collection.
+ */
+export function getCollectionById(
   userId: string,
-  limit = 6,
+  collectionId: string,
+): Promise<CollectionMeta | null> {
+  return prisma.collection.findFirst({
+    where: { id: collectionId, userId },
+    select: { id: true, name: true, description: true, isFavorite: true },
+  });
+}
+
+export async function getCollections(
+  userId: string,
+  limit?: number,
 ): Promise<CollectionCardData[]> {
   const collections = await prisma.collection.findMany({
     where: { userId },
-    orderBy: { updatedAt: "desc" },
+    orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
+    // Prisma drops an `undefined` argument entirely, so omitting the limit
+    // returns every collection.
     take: limit,
     select: {
       id: true,

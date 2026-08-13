@@ -7,7 +7,7 @@ import { DEMO_USER_ID } from "@/lib/constants";
 import {
   getCollectionsCount,
   getFavoriteCollectionsCount,
-  getRecentCollections,
+  getCollections,
 } from "@/lib/db/collections";
 import {
   getFavoriteItemsCount,
@@ -28,7 +28,7 @@ export default async function DashboardPage() {
     favoriteItemsCount,
     favoriteCollectionsCount,
   ] = await Promise.all([
-    getRecentCollections(DEMO_USER_ID, 6),
+    getCollections(DEMO_USER_ID, 6),
     getPinnedItems(DEMO_USER_ID),
     getRecentItems(DEMO_USER_ID, 10),
     getCollectionsCount(DEMO_USER_ID),
