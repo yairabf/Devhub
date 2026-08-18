@@ -1,54 +1,16 @@
-# Current Feature: Global Search / Command Palette
+# Current Feature
 
 ## Status
 
-In Progress
+<!-- Not started -->
 
 ## Goals
 
-- Add a global command palette that opens with **Cmd+K** (Mac) / **Ctrl+K** (Windows).
-- Fuzzy search across all of the signed-in user's items **and** collections, client-side (no server round-trip per keystroke).
-- Results grouped into an **Items** section and a **Collections** section.
-- Keyboard navigation: arrow keys move the highlight, Enter selects, Escape closes.
-- Each result shows its context: item type icon for items, item count for collections.
-- Selecting an item opens the **item drawer**; selecting a collection navigates to its **collection page**.
-- The TopBar search input opens the palette on click (it is inert today).
-- The TopBar search field shows a **⌘K** hint (rendered as an adjacent `kbd`-style chip rather than literal placeholder text, so the hint survives if the field becomes a button — see Notes).
+<!-- What are we building? -->
 
 ## Notes
 
-### Open decision — which command primitive
-
-- The spec says "use shadcn `cmdk` (Command)", but **`cmdk` is not installed**. shadcn itself *is* set up (`components.json` at the repo root, `style: base-nova`, ui alias `@/components/ui`), and the simpler primitives (`button`, `card`, `badge`, `input`, `separator`, `avatar`, `scroll-area`) came from it — but every *overlay/interactive* primitive (`dialog`, `dropdown-menu`, `tabs`, `alert-dialog`, `sheet`, `tooltip`) is hand-rolled over `@base-ui/react`, which is the category a command palette falls into.
-- `@base-ui/react` ships `autocomplete` and `combobox` (no `command`), so a hand-rolled `src/components/ui/command.tsx` over `autocomplete` inside the existing `Dialog` primitive is the pattern-consistent option; installing `cmdk` is the literal-spec option. **Decide before implementing** — this is the one real architectural fork in the feature.
-
-### Data & threading
-
-- `src/lib/db/items.ts` has no "all items for this user" fetch — only `getRecentItems(userId, limit)`, `getItemsByType`, `getItemsByCollection`, `getPinnedItems`. `getCollections(userId)` does already return the full list with counts. So "reuse existing data fetching functions" holds for collections but a **new search-index fetch for items** (id, title, itemTypeId, short content preview) is needed; keep the select narrow — do not pull full `content` for every item into the client bundle.
-- Thread the prefetched data the same way `collectionOptions` / `itemTypes` already travel: `dashboard/layout.tsx`, `items/layout.tsx`, `collections/layout.tsx` (all `force-dynamic`, all session-scoped via `auth()`) → `DashboardShell` → `TopBar`. That gives prefetch-on-load for free with no client fetch and no new API route.
-- Scope every query to `session.user.id` — the `DEMO_USER_ID` hardcoding was already removed from these layouts during Collection Create.
-
-### Wiring the two select actions
-
-- **Item** → `useItemDrawer().openItem(id)` from `ItemDrawerProvider`, which is already mounted in `DashboardShell` (so it is in scope for the TopBar) and already caches fetched details.
-- **Collection** → `router.push('/collections/${id}')`, mirroring `CollectionCardTrigger`.
-- Close the palette before/as the drawer opens so two overlays never stack; `Sheet` sits at `z-50` and `DeleteItemDialog` documented `z-60` — pick the palette's layer deliberately.
-
-### Presentation
-
-- Type icons come from `TypeGlyph` / `getTypeIcon` in `src/lib/type-icons.tsx`; per-type colors from `src/lib/type-colors.ts` (`getTypeTextClass` / `getTypeDotClass`) — reuse rather than re-deriving.
-- The TopBar `Input` at `src/components/dashboard/TopBar.tsx` is currently a plain inert `Input`. It becomes a trigger; if it stays an `<input>` it must be read-only/non-focusable-into so clicking opens the palette instead of typing in place — a `<button>` styled as the input is likely cleaner.
-
-### Search logic & testing
-
-- Put the fuzzy matcher + grouping in a pure module (`src/lib/search.ts`) so it is unit-testable under the project's Vitest scope (server-side logic/utilities only, colocated `*.test.ts`) — the component itself is out of unit-test scope.
-- Follow the existing e2e pattern with a new `e2e/global-search.spec.ts`; `scripts/e2e-item-fixture.ts` already creates/removes throwaway items.
-
-### Watch-outs
-
-- The global Cmd+K listener must not double-fire or conflict with an open Monaco editor — Monaco owns Cmd+K chord keybindings internally (the context menu is already disabled), so verify the palette still opens from inside a snippet/command editor, and decide whether it should.
-- Decide what happens when the palette is open over the item drawer or a dialog (Escape ordering).
-- Prefetching the whole index is fine at seed scale (~18 items); note a cap or a fallback plan if an account's item count grows large.
+<!-- Implementation notes, constraints, decisions -->
 
 ## History
 
