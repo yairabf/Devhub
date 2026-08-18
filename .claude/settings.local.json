@@ -4,7 +4,35 @@
       "Bash(npx prisma *)",
       "Bash(npm run *)",
       "mcp__plugin_playwright_playwright__browser_take_screenshot",
-      "Bash(git checkout *)"
+      "Bash(git checkout *)",
+      "mcp__plugin_playwright_playwright__browser_snapshot",
+      "mcp__plugin_playwright_playwright__browser_click",
+      "mcp__plugin_context7_context7__resolve-library-id",
+      "mcp__plugin_context7_context7__query-docs",
+      "mcp__plugin_playwright_playwright__browser_navigate",
+      "mcp__plugin_playwright_playwright__browser_type",
+      "mcp__plugin_playwright_playwright__browser_fill_form",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "mcp__plugin_playwright_playwright__browser_evaluate",
+      "mcp__plugin_playwright_playwright__browser_wait_for",
+      "Bash(node *)",
+      "Bash(kill 30656)",
+      "Bash(git push *)",
+      "Bash(mv \"context/screenshots/dashboard-ui-drawer.png.png\" \"context/screenshots/dashboard-ui-drawer.png\")",
+      "Bash(mv \"context/screenshots/dashboard-ui-main.png.png\" \"context/screenshots/dashboard-ui-main.png\")",
+      "Bash(git mv *)",
+      "Bash(git merge *)",
+      "Bash(git branch *)",
+      "Bash(echo \"started pid $!\")",
+      "mcp__plugin_playwright_playwright__browser_resize",
+      "mcp__plugin_playwright_playwright__browser_close",
+      "Read(//private/tmp/**)",
+      "Bash(npm test *)"
     ]
-  }
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "neon"
+  ]
 }

@@ -330,6 +330,66 @@ export function getSystemItemTypes(): Promise<SidebarItemType[]> {
   });
 }
 
+/** The narrow shape the command palette's search index needs — no full content. */
+export interface SearchableItem {
+  id: string;
+  title: string;
+  itemTypeId: string;
+  itemTypeName: string;
+  preview: string;
+}
+
+const SEARCH_PREVIEW_LENGTH = 140;
+
+/**
+ * The command palette prefetches the whole index client-side (no per-keystroke
+ * round-trip), which only holds up while an account's item count stays small.
+ * This caps the payload rather than leaving it unbounded — most-recent items
+ * win, since those are the ones a search is most likely for.
+ */
+const SEARCH_INDEX_LIMIT = 500;
+
+/**
+ * Prisma can't truncate a column in `select`, so the preview is sliced here,
+ * server-side, before the narrow `SearchableItem` — not the full row — ever
+ * reaches the client bundle.
+ */
+function buildPreview(item: {
+  description: string | null;
+  content: string | null;
+  url: string | null;
+}): string {
+  const source = item.description ?? item.content ?? item.url ?? "";
+  return source.slice(0, SEARCH_PREVIEW_LENGTH);
+}
+
+export async function getSearchableItems(
+  userId: string,
+): Promise<SearchableItem[]> {
+  const items = await prisma.item.findMany({
+    where: { userId },
+    orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
+    take: SEARCH_INDEX_LIMIT,
+    select: {
+      id: true,
+      title: true,
+      itemTypeId: true,
+      itemType: { select: { name: true } },
+      description: true,
+      content: true,
+      url: true,
+    },
+  });
+
+  return items.map(item => ({
+    id: item.id,
+    title: item.title,
+    itemTypeId: item.itemTypeId,
+    itemTypeName: item.itemType.name,
+    preview: buildPreview(item),
+  }));
+}
+
 export interface ItemTypeBreakdown {
   id: string;
   name: string;

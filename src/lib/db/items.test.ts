@@ -22,6 +22,7 @@ import {
   getItemDetail,
   getItemsByCollection,
   getRecentItems,
+  getSearchableItems,
   updateItem,
 } from "@/lib/db/items";
 
@@ -92,6 +93,102 @@ describe("getRecentItems", () => {
 
     const args = findMany.mock.calls[0][0];
     expect(args).toMatchObject({ take: 5 });
+  });
+});
+
+describe("getSearchableItems", () => {
+  it("builds a preview from description, falling back to content then url", async () => {
+    findMany.mockResolvedValue([
+      {
+        id: "item_1",
+        title: "useDebounce",
+        itemTypeId: "type_snippet",
+        itemType: { name: "Snippet" },
+        description: "A debounce hook",
+        content: "const x = 1;",
+        url: null,
+      },
+      {
+        id: "item_2",
+        title: "Command palette notes",
+        itemTypeId: "type_note",
+        itemType: { name: "Note" },
+        description: null,
+        content: "Ideas for the palette",
+        url: null,
+      },
+      {
+        id: "item_3",
+        title: "Anthropic docs",
+        itemTypeId: "type_link",
+        itemType: { name: "Link" },
+        description: null,
+        content: null,
+        url: "https://docs.anthropic.com",
+      },
+    ] as never);
+
+    const result = await getSearchableItems("user_demo");
+
+    expect(result).toEqual([
+      {
+        id: "item_1",
+        title: "useDebounce",
+        itemTypeId: "type_snippet",
+        itemTypeName: "Snippet",
+        preview: "A debounce hook",
+      },
+      {
+        id: "item_2",
+        title: "Command palette notes",
+        itemTypeId: "type_note",
+        itemTypeName: "Note",
+        preview: "Ideas for the palette",
+      },
+      {
+        id: "item_3",
+        title: "Anthropic docs",
+        itemTypeId: "type_link",
+        itemTypeName: "Link",
+        preview: "https://docs.anthropic.com",
+      },
+    ]);
+  });
+
+  it("truncates a long preview to 140 characters", async () => {
+    findMany.mockResolvedValue([
+      {
+        id: "item_1",
+        title: "Long note",
+        itemTypeId: "type_note",
+        itemType: { name: "Note" },
+        description: null,
+        content: "x".repeat(200),
+        url: null,
+      },
+    ] as never);
+
+    const result = await getSearchableItems("user_demo");
+
+    expect(result[0].preview).toHaveLength(140);
+  });
+
+  it("scopes the query to the owner", async () => {
+    findMany.mockResolvedValue([] as never);
+
+    await getSearchableItems("user_demo");
+
+    const args = findMany.mock.calls[0][0];
+    expect(args).toMatchObject({ where: { userId: "user_demo" } });
+  });
+
+  it("caps the index rather than fetching every item unbounded", async () => {
+    findMany.mockResolvedValue([] as never);
+
+    await getSearchableItems("user_demo");
+
+    const args = findMany.mock.calls[0][0];
+    expect(args).toMatchObject({ take: 500 });
   });
 });
 
