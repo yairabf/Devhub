@@ -1,18 +1,28 @@
-# Current Feature
+# Current Feature: Collection Edit, Delete & Favorite Affordances
 
 ## Status
 
-<!-- Not started -->
+In Progress
 
 ## Goals
 
-<!-- What are we building? -->
+- `/collections/[id]` detail page gets an action bar with Edit, Delete, and Favorite buttons (mirroring the item drawer's action bar).
+  - Favorite is icon/button only this pass — no handler, no persisted state change.
+  - Edit opens a modal to edit the collection's metadata (name, description) — same fields as `NewCollectionDialog`, pre-filled with the current values.
+  - Delete opens a confirmation dialog before deleting. Deleting a collection must NOT delete its items — only the collection (and its `ItemCollection` membership rows) goes away; items simply stop belonging to it.
+- `CollectionCard` (used on `/collections` and the dashboard's Recent Collections grid) gets a 3-dot menu button with the same Edit / Delete / Favorite options.
+  - Clicking the 3-dot button opens the dropdown and must not navigate.
+  - Clicking anywhere else on the card navigates to `/collections/[id]`, same as today.
 
 ## Notes
 
-<!-- Implementation notes, constraints, decisions -->
-- Both pages should render inside `DashboardShell` (mirror the `items/layout.tsx` pattern).
-- Free-tier 3-collection limit enforcement remains out of scope (per existing known gaps).
+- No dropdown-menu UI primitive exists yet (`src/components/ui/` has no `dropdown-menu.tsx`) — `@base-ui/react/menu` is available in `node_modules` and unused so far; build the primitive over it following the existing hand-rolled wrapper pattern (`dialog.tsx`, `alert-dialog.tsx`, `tabs.tsx`).
+- `createCollection` already exists in `src/actions/collections.ts` / `src/lib/db/collections.ts`; this feature adds sibling `updateCollection` and `deleteCollection` (action + db-layer, `auth()`-gated, ownership-checked via `findFirst({ id, userId })` before mutating — same convention as `updateItem`/`deleteItem`).
+- Schema already guarantees the "items survive" requirement for free: `ItemCollection.collection` has `onDelete: Cascade` scoped to the join row only (`prisma/schema.prisma` — deleting a `Collection` cascades the `ItemCollection` rows, not the `Item` rows). No special handling needed beyond a plain `prisma.collection.delete()`.
+- `CollectionCard` currently wraps its whole `Card` in a `next/link` (added in the prior Collections Pages feature). That won't work once the card needs a real `<button>` for the dropdown trigger — a button can't nest inside an anchor. Switch to the same pattern `ItemCard`/`ItemCardTrigger` already use: `CollectionCard` stays a server component with the menu trigger as a client island inside it (stopping propagation), and a new client `CollectionCardTrigger` wrapper (mirroring `ItemCardTrigger`) handles the click-to-navigate (`router.push`) at the two call sites (`dashboard/page.tsx`, `collections/page.tsx`).
+- Reference patterns already in the codebase: `DeleteItemDialog` + `src/components/ui/alert-dialog.tsx` for the delete confirmation; `NewCollectionDialog` + `src/components/ui/dialog.tsx` for the edit modal; `ItemEditForm`'s Save/Cancel + toast + `router.refresh()` flow for applying the edit.
+- After edit/delete, refresh so the dashboard/sidebar/list all follow — same `router.refresh()` approach used elsewhere; delete additionally needs to navigate away from `/collections/[id]` since it no longer exists (mirror how item delete closes the drawer).
+- Favorite is explicitly out of scope for behavior this pass — render the menu item/icon in a disabled or inert state, don't wire a handler or touch `isFavorite`.
 
 ## History
 

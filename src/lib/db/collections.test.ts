@@ -2,26 +2,38 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 vi.mock("@/lib/prisma", () => ({
   prisma: {
-    collection: { findMany: vi.fn(), findFirst: vi.fn(), create: vi.fn() },
+    collection: {
+      findMany: vi.fn(),
+      findFirst: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+    },
   },
 }));
 
 import { prisma } from "@/lib/prisma";
 import {
   createCollection,
+  deleteCollection,
   getCollectionById,
   getCollectionOptions,
   getCollections,
+  updateCollection,
 } from "@/lib/db/collections";
 
 const findMany = vi.mocked(prisma.collection.findMany);
 const findFirst = vi.mocked(prisma.collection.findFirst);
 const create = vi.mocked(prisma.collection.create);
+const update = vi.mocked(prisma.collection.update);
+const destroy = vi.mocked(prisma.collection.delete);
 
 beforeEach(() => {
   findMany.mockReset();
   findFirst.mockReset();
   create.mockReset();
+  update.mockReset();
+  destroy.mockReset();
 });
 
 describe("getCollections", () => {
@@ -184,6 +196,88 @@ describe("createCollection", () => {
       uniqueTypeIds: [],
       dominantTypeId: null,
     });
+  });
+});
+
+describe("updateCollection", () => {
+  const INPUT = { name: "React Patterns v2", description: "Updated" };
+
+  it("refuses to update a collection the user does not own", async () => {
+    findFirst.mockResolvedValue(null as never);
+
+    const result = await updateCollection("user_other", "col_1", INPUT);
+
+    expect(result).toBeNull();
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it("checks ownership with both the collection id and the user id", async () => {
+    findFirst.mockResolvedValue({ id: "col_1" } as never);
+    update.mockResolvedValue({
+      id: "col_1",
+      name: INPUT.name,
+      description: INPUT.description,
+      isFavorite: false,
+    } as never);
+
+    await updateCollection("user_demo", "col_1", INPUT);
+
+    expect(findFirst.mock.calls[0][0]).toMatchObject({
+      where: { id: "col_1", userId: "user_demo" },
+    });
+  });
+
+  it("updates only the name and description", async () => {
+    findFirst.mockResolvedValue({ id: "col_1" } as never);
+    update.mockResolvedValue({
+      id: "col_1",
+      name: INPUT.name,
+      description: INPUT.description,
+      isFavorite: false,
+    } as never);
+
+    const result = await updateCollection("user_demo", "col_1", INPUT);
+
+    expect(update).toHaveBeenCalledTimes(1);
+    expect(update.mock.calls[0][0]).toMatchObject({
+      where: { id: "col_1" },
+      data: { name: INPUT.name, description: INPUT.description },
+    });
+    expect(result).toEqual({
+      id: "col_1",
+      name: INPUT.name,
+      description: INPUT.description,
+      isFavorite: false,
+    });
+  });
+});
+
+describe("deleteCollection", () => {
+  it("refuses to delete a collection the user does not own", async () => {
+    findFirst.mockResolvedValue(null as never);
+
+    await expect(deleteCollection("user_other", "col_1")).resolves.toBe(false);
+    expect(destroy).not.toHaveBeenCalled();
+  });
+
+  it("checks ownership with both the collection id and the user id", async () => {
+    findFirst.mockResolvedValue({ id: "col_1" } as never);
+    destroy.mockResolvedValue({ id: "col_1" } as never);
+
+    await deleteCollection("user_demo", "col_1");
+
+    expect(findFirst.mock.calls[0][0]).toMatchObject({
+      where: { id: "col_1", userId: "user_demo" },
+    });
+  });
+
+  it("deletes the owned collection by id and reports success", async () => {
+    findFirst.mockResolvedValue({ id: "col_1" } as never);
+    destroy.mockResolvedValue({ id: "col_1" } as never);
+
+    await expect(deleteCollection("user_demo", "col_1")).resolves.toBe(true);
+    expect(destroy).toHaveBeenCalledTimes(1);
+    expect(destroy.mock.calls[0][0]).toEqual({ where: { id: "col_1" } });
   });
 });
 

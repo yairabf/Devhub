@@ -108,6 +108,54 @@ export async function createCollection(
   };
 }
 
+export interface UpdateCollectionInput {
+  name: string;
+  description: string | null;
+}
+
+/**
+ * Updates a collection's metadata (name/description only). Ownership is
+ * verified with `findFirst` before writing, mirroring `updateItem` — so a
+ * missing or foreign id returns `null` instead of coupling to Prisma's
+ * `P2025`.
+ */
+export async function updateCollection(
+  userId: string,
+  collectionId: string,
+  data: UpdateCollectionInput,
+): Promise<CollectionMeta | null> {
+  const owned = await prisma.collection.findFirst({
+    where: { id: collectionId, userId },
+    select: { id: true },
+  });
+  if (!owned) return null;
+
+  return prisma.collection.update({
+    where: { id: collectionId },
+    data: { name: data.name, description: data.description },
+    select: { id: true, name: true, description: true, isFavorite: true },
+  });
+}
+
+/**
+ * Deletes a collection. Only the collection row and its `ItemCollection`
+ * membership rows go away (`onDelete: Cascade` on that join model) — the
+ * items themselves are untouched.
+ */
+export async function deleteCollection(
+  userId: string,
+  collectionId: string,
+): Promise<boolean> {
+  const owned = await prisma.collection.findFirst({
+    where: { id: collectionId, userId },
+    select: { id: true },
+  });
+  if (!owned) return false;
+
+  await prisma.collection.delete({ where: { id: collectionId } });
+  return true;
+}
+
 export async function getCollections(
   userId: string,
   limit?: number,

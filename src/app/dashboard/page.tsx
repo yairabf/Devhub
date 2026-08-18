@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 
 import { auth } from "@/auth";
 import { CollectionCard } from "@/components/dashboard/CollectionCard";
+import { CollectionCardTrigger } from "@/components/dashboard/CollectionCardTrigger";
 import { DashboardSection } from "@/components/dashboard/DashboardSection";
 import { ItemCard } from "@/components/dashboard/ItemCard";
 import { ItemCardTrigger } from "@/components/dashboard/ItemCardTrigger";
@@ -60,7 +61,13 @@ export default async function DashboardPage() {
         ) : (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             {recentCollections.map(collection => (
-              <CollectionCard key={collection.id} collection={collection} />
+              <CollectionCardTrigger
+                key={collection.id}
+                collectionId={collection.id}
+                name={collection.name}
+              >
+                <CollectionCard collection={collection} />
+              </CollectionCardTrigger>
             ))}
           </div>
         )}

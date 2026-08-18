@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 
 import { auth } from "@/auth";
+import { CollectionDetailHeader } from "@/components/dashboard/CollectionDetailHeader";
 import { ItemCard } from "@/components/dashboard/ItemCard";
 import { ItemCardTrigger } from "@/components/dashboard/ItemCardTrigger";
 import { getCollectionById } from "@/lib/db/collections";
@@ -27,19 +28,7 @@ export default async function CollectionDetailPage({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-foreground">
-          {collection.name}
-        </h1>
-        {collection.description && (
-          <p className="mt-1 text-sm text-muted-foreground">
-            {collection.description}
-          </p>
-        )}
-        <p className="mt-1 text-sm text-muted-foreground">
-          {items.length} {items.length === 1 ? "item" : "items"}
-        </p>
-      </div>
+      <CollectionDetailHeader collection={collection} itemCount={items.length} />
 
       {items.length === 0 ? (
         <p className="text-sm text-muted-foreground">
