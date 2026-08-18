@@ -43,14 +43,12 @@ test.describe("NewItemDialog — type selector", () => {
     await openDialog(page);
 
     await expect(dialog(page).getByRole("heading")).toHaveText("New item");
-    // The DB returns types alphabetically; the selector must not.
-    await expect(dialog(page).locator("fieldset label")).toHaveText([
-      "Snippet",
-      "Prompt",
-      "Command",
-      "Note",
-      "Link",
-    ]);
+    // The DB returns types alphabetically; the selector must not. Scoped to the
+    // Type group specifically — the dialog now has a second fieldset (Collections)
+    // with its own labels, which a bare "fieldset label" locator would also match.
+    await expect(
+      dialog(page).getByRole("group", { name: "Type" }).locator("label"),
+    ).toHaveText(["Snippet", "Prompt", "Command", "Note", "Link"]);
     await expect(
       dialog(page).locator('input[name="itemType"]:checked'),
     ).toHaveValue("type_snippet");
@@ -73,13 +71,15 @@ test.describe("NewItemDialog — type selector", () => {
     await openDialog(page);
 
     // Sentence case: the uppercase look is a CSS transform, and toHaveText
-    // reads the untransformed text content.
+    // reads the untransformed text content. Collections trails every type —
+    // it isn't gated like the other fields, every item type can belong to one.
     await expect(fieldLabels(page)).toHaveText([
       "Title",
       "Description",
       "Content",
       "Language",
       "Tags",
+      "Collections",
     ]);
 
     await dialog(page).getByText("Note", { exact: true }).click();
@@ -88,6 +88,7 @@ test.describe("NewItemDialog — type selector", () => {
       "Description",
       "Content",
       "Tags",
+      "Collections",
     ]);
 
     await dialog(page).getByText("Link", { exact: true }).click();
@@ -96,6 +97,7 @@ test.describe("NewItemDialog — type selector", () => {
       "Description",
       "URL",
       "Tags",
+      "Collections",
     ]);
   });
 

@@ -90,6 +90,8 @@ export interface ItemDraft {
   language: string;
   url: string;
   tags: string;
+  /** Collection ids to add the item to — every item type can belong to one. */
+  collectionIds: string[];
 }
 
 /**
@@ -109,6 +111,7 @@ export function buildUpdatePayload(
     language: fields.language ? draft.language : item.language,
     url: fields.url ? draft.url : item.url,
     tags: draft.tags.split(","),
+    collectionIds: draft.collectionIds,
   };
 }
 
@@ -131,5 +134,6 @@ export function buildCreatePayload(
     language: fields.language ? draft.language : null,
     url: fields.url ? draft.url : null,
     tags: draft.tags.split(","),
+    collectionIds: draft.collectionIds,
   };
 }

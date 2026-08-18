@@ -9,6 +9,9 @@ vi.mock("@/lib/prisma", () => ({
       update: vi.fn(),
       delete: vi.fn(),
     },
+    collection: {
+      findMany: vi.fn(),
+    },
   },
 }));
 
@@ -27,6 +30,7 @@ const findFirst = vi.mocked(prisma.item.findFirst);
 const create = vi.mocked(prisma.item.create);
 const update = vi.mocked(prisma.item.update);
 const destroy = vi.mocked(prisma.item.delete);
+const collectionFindMany = vi.mocked(prisma.collection.findMany);
 
 beforeEach(() => {
   findMany.mockReset();
@@ -34,6 +38,8 @@ beforeEach(() => {
   create.mockReset();
   update.mockReset();
   destroy.mockReset();
+  collectionFindMany.mockReset();
+  collectionFindMany.mockResolvedValue([] as never);
 });
 
 describe("getRecentItems", () => {
@@ -222,6 +228,7 @@ describe("updateItem", () => {
     url: null,
     language: "typescript",
     tags: ["react", "hooks"],
+    collectionIds: [],
   };
 
   const UPDATED_ROW = {
@@ -285,6 +292,48 @@ describe("updateItem", () => {
             { where: { name: "react" }, create: { name: "react" } },
             { where: { name: "hooks" }, create: { name: "hooks" } },
           ],
+        },
+      },
+    });
+  });
+
+  it("skips the ownership query and clears every collection link when none are selected", async () => {
+    findFirst.mockResolvedValue({ id: "item_1" } as never);
+    update.mockResolvedValue(UPDATED_ROW as never);
+
+    await updateItem("user_demo", "item_1", INPUT);
+
+    expect(collectionFindMany).not.toHaveBeenCalled();
+    const args = update.mock.calls[0][0];
+    expect(args).toMatchObject({
+      data: { collections: { deleteMany: {}, create: [] } },
+    });
+  });
+
+  it("replaces collection links by clearing them then re-creating only the verified ids", async () => {
+    findFirst.mockResolvedValue({ id: "item_1" } as never);
+    update.mockResolvedValue(UPDATED_ROW as never);
+    // "col_foreign" is not owned by this user and must not be returned here.
+    collectionFindMany.mockResolvedValue([
+      { id: "col_1" },
+      { id: "col_2" },
+    ] as never);
+
+    await updateItem("user_demo", "item_1", {
+      ...INPUT,
+      collectionIds: ["col_1", "col_2", "col_foreign"],
+    });
+
+    expect(collectionFindMany).toHaveBeenCalledWith({
+      where: { id: { in: ["col_1", "col_2", "col_foreign"] }, userId: "user_demo" },
+      select: { id: true },
+    });
+    const args = update.mock.calls[0][0];
+    expect(args).toMatchObject({
+      data: {
+        collections: {
+          deleteMany: {},
+          create: [{ collectionId: "col_1" }, { collectionId: "col_2" }],
         },
       },
     });
@@ -385,6 +434,7 @@ describe("createItem", () => {
     url: null,
     language: "typescript",
     tags: ["react", "hooks"],
+    collectionIds: [],
   };
 
   const CREATED_ROW = {
@@ -451,6 +501,36 @@ describe("createItem", () => {
 
     expect(create.mock.calls[0][0]).toMatchObject({
       data: { tags: { connectOrCreate: [] } },
+    });
+  });
+
+  it("skips the ownership query and creates no collection links when none are selected", async () => {
+    create.mockResolvedValue(CREATED_ROW as never);
+
+    await createItem("user_demo", INPUT);
+
+    expect(collectionFindMany).not.toHaveBeenCalled();
+    expect(create.mock.calls[0][0]).toMatchObject({
+      data: { collections: { create: [] } },
+    });
+  });
+
+  it("links only the collections verified as owned by this user", async () => {
+    create.mockResolvedValue(CREATED_ROW as never);
+    // "col_foreign" is not owned by this user and must not be returned here.
+    collectionFindMany.mockResolvedValue([{ id: "col_1" }] as never);
+
+    await createItem("user_demo", {
+      ...INPUT,
+      collectionIds: ["col_1", "col_foreign"],
+    });
+
+    expect(collectionFindMany).toHaveBeenCalledWith({
+      where: { id: { in: ["col_1", "col_foreign"] }, userId: "user_demo" },
+      select: { id: true },
+    });
+    expect(create.mock.calls[0][0]).toMatchObject({
+      data: { collections: { create: [{ collectionId: "col_1" }] } },
     });
   });
 

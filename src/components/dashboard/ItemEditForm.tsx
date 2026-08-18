@@ -5,11 +5,13 @@ import { toast } from "sonner";
 
 import { updateItem } from "@/actions/items";
 import { CodeEditor } from "@/components/dashboard/CodeEditor";
+import { CollectionPicker } from "@/components/dashboard/CollectionPicker";
 import { FormField } from "@/components/dashboard/FormField";
 import { MarkdownEditor } from "@/components/dashboard/MarkdownEditor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import type { CollectionOption } from "@/lib/db/collections";
 import type { ItemDetailData } from "@/lib/db/items";
 import {
   buildUpdatePayload,
@@ -19,17 +21,27 @@ import {
 
 interface ItemEditFormProps {
   item: ItemDetailData;
+  /** The user's collections, for the Collections picker. */
+  collectionOptions: CollectionOption[];
   onCancel: () => void;
   onSaved: (updated: ItemDetailData) => void;
 }
 
-export function ItemEditForm({ item, onCancel, onSaved }: ItemEditFormProps) {
+export function ItemEditForm({
+  item,
+  collectionOptions,
+  onCancel,
+  onSaved,
+}: ItemEditFormProps) {
   const [title, setTitle] = useState(item.title);
   const [description, setDescription] = useState(item.description ?? "");
   const [content, setContent] = useState(item.content ?? "");
   const [language, setLanguage] = useState(item.language ?? "");
   const [url, setUrl] = useState(item.url ?? "");
   const [tags, setTags] = useState(item.tags.map(tag => tag.name).join(", "));
+  const [collectionIds, setCollectionIds] = useState(
+    item.collections.map(collection => collection.id),
+  );
   const [pending, startTransition] = useTransition();
 
   const {
@@ -52,6 +64,7 @@ export function ItemEditForm({ item, onCancel, onSaved }: ItemEditFormProps) {
         language,
         url,
         tags,
+        collectionIds,
       });
       const result = await updateItem(item.id, payload);
 
@@ -171,6 +184,13 @@ export function ItemEditForm({ item, onCancel, onSaved }: ItemEditFormProps) {
             Separate tags with commas.
           </p>
         </FormField>
+
+        <CollectionPicker
+          options={collectionOptions}
+          selectedIds={collectionIds}
+          onChange={setCollectionIds}
+          disabled={pending}
+        />
       </div>
     </form>
   );

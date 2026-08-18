@@ -34,6 +34,24 @@ export function getFavoriteCollections(
   });
 }
 
+export interface CollectionOption {
+  id: string;
+  name: string;
+}
+
+/**
+ * Every collection the user owns, trimmed to just id + name — the shape a
+ * picker needs. Alphabetical rather than recency-ordered: a checkbox list is
+ * scanned by name, not by what was touched most recently.
+ */
+export function getCollectionOptions(userId: string): Promise<CollectionOption[]> {
+  return prisma.collection.findMany({
+    where: { userId },
+    orderBy: { name: "asc" },
+    select: { id: true, name: true },
+  });
+}
+
 /** Header data for the collection detail page. */
 export interface CollectionMeta {
   id: string;

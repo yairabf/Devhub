@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 import { createItem } from "@/actions/items";
 import { CodeEditor } from "@/components/dashboard/CodeEditor";
+import { CollectionPicker } from "@/components/dashboard/CollectionPicker";
 import { FormField } from "@/components/dashboard/FormField";
 import { MarkdownEditor } from "@/components/dashboard/MarkdownEditor";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import type { CollectionOption } from "@/lib/db/collections";
 import type { SidebarItemType } from "@/lib/db/items";
 import { capitalize } from "@/lib/format";
 import {
@@ -40,14 +42,17 @@ const EMPTY_DRAFT: ItemDraft = {
   language: "",
   url: "",
   tags: "",
+  collectionIds: [],
 };
 
 interface NewItemDialogProps {
   /** System types from the layout; Pro upload types are filtered out here. */
   itemTypes: SidebarItemType[];
+  /** The user's collections, for the Collections picker. */
+  collectionOptions: CollectionOption[];
 }
 
-export function NewItemDialog({ itemTypes }: NewItemDialogProps) {
+export function NewItemDialog({ itemTypes, collectionOptions }: NewItemDialogProps) {
   const router = useRouter();
   const creatable = orderCreatableTypes(itemTypes);
 
@@ -245,6 +250,13 @@ export function NewItemDialog({ itemTypes }: NewItemDialogProps) {
               Separate tags with commas.
             </p>
           </FormField>
+
+          <CollectionPicker
+            options={collectionOptions}
+            selectedIds={draft.collectionIds}
+            onChange={ids => setDraft(current => ({ ...current, collectionIds: ids }))}
+            disabled={pending}
+          />
 
           <div className="flex justify-end gap-2 pt-1">
             <DialogClose

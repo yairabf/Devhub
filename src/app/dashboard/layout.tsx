@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import {
+  getCollectionOptions,
   getFavoriteCollections,
   getCollections,
 } from "@/lib/db/collections";
@@ -27,15 +28,18 @@ export default async function DashboardLayout({
     image: session.user.image ?? null,
   };
 
-  const [favoriteCollections, recentCollections, itemTypes] = await Promise.all([
-    getFavoriteCollections(userId),
-    getCollections(userId, 5),
-    getSystemItemTypes(),
-  ]);
+  const [favoriteCollections, recentCollections, itemTypes, collectionOptions] =
+    await Promise.all([
+      getFavoriteCollections(userId),
+      getCollections(userId, 5),
+      getSystemItemTypes(),
+      getCollectionOptions(userId),
+    ]);
 
   return (
     <DashboardShell
       sidebarData={{ favoriteCollections, recentCollections, itemTypes }}
+      collectionOptions={collectionOptions}
       user={user}
     >
       {children}

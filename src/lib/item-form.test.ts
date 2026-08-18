@@ -38,6 +38,7 @@ const DRAFT = {
   language: "javascript",
   url: "https://draft.example.com/",
   tags: "react, hooks",
+  collectionIds: ["col_1"],
 };
 
 describe("getEditableFields", () => {
@@ -212,6 +213,15 @@ describe("buildUpdatePayload", () => {
 
     expect(payload.tags).toEqual([""]);
   });
+
+  it("passes collectionIds through unconditionally, like tags", () => {
+    const payload = buildUpdatePayload(makeItem(), {
+      ...DRAFT,
+      collectionIds: ["col_1", "col_2"],
+    });
+
+    expect(payload.collectionIds).toEqual(["col_1", "col_2"]);
+  });
 });
 
 describe("isCreatableType", () => {
@@ -242,6 +252,7 @@ describe("buildCreatePayload", () => {
     language: "typescript",
     url: "https://example.com",
     tags: "react, hooks",
+    collectionIds: ["col_1"],
   };
 
   it("keeps content and language for a snippet and nulls the url", () => {
@@ -253,6 +264,7 @@ describe("buildCreatePayload", () => {
       language: "typescript",
       url: null,
       tags: ["react", " hooks"],
+      collectionIds: ["col_1"],
     });
   });
 
@@ -279,6 +291,15 @@ describe("buildCreatePayload", () => {
 
     expect(payload).toMatchObject({ language: null, url: null });
     expect(payload.content).toBe("const x = 1;");
+  });
+
+  it("passes collectionIds through unconditionally, like tags", () => {
+    const payload = buildCreatePayload("type_link", {
+      ...DRAFT,
+      collectionIds: ["col_1", "col_2"],
+    });
+
+    expect(payload.collectionIds).toEqual(["col_1", "col_2"]);
   });
 });
 

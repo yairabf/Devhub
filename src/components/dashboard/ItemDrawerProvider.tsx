@@ -14,6 +14,7 @@ import {
   ItemDrawer,
   type ItemDrawerErrorState,
 } from "@/components/dashboard/ItemDrawer";
+import type { CollectionOption } from "@/lib/db/collections";
 import type { ItemDetailData } from "@/lib/db/items";
 
 const GENERIC_ERROR: ItemDrawerErrorState = {
@@ -51,7 +52,16 @@ export function useItemDrawer(): ItemDrawerContextValue {
   return context;
 }
 
-export function ItemDrawerProvider({ children }: { children: React.ReactNode }) {
+interface ItemDrawerProviderProps {
+  children: React.ReactNode;
+  /** The user's collections, threaded to the edit form's Collections picker. */
+  collectionOptions: CollectionOption[];
+}
+
+export function ItemDrawerProvider({
+  children,
+  collectionOptions,
+}: ItemDrawerProviderProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [item, setItem] = useState<ItemDetailData | null>(null);
@@ -166,6 +176,7 @@ export function ItemDrawerProvider({ children }: { children: React.ReactNode }) 
         item={item}
         error={error}
         editing={editing}
+        collectionOptions={collectionOptions}
         onEdit={() => setEditing(true)}
         onCancelEdit={() => setEditing(false)}
         onSaved={handleSaved}

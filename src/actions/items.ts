@@ -37,6 +37,12 @@ const tagList = z
     ...new Set(names.map(name => name.trim()).filter(Boolean)),
   ]);
 
+/** De-duplicated collection ids; ownership is verified in the db layer. */
+const collectionIdList = z
+  .array(z.string())
+  .default([])
+  .transform(ids => [...new Set(ids)]);
+
 const isValidUrl = (value: string) => z.string().url().safeParse(value).success;
 
 /** Fields both the create and update forms submit identically. */
@@ -46,6 +52,7 @@ const sharedItemFields = {
   content: nullableBody,
   language: nullableText,
   tags: tagList,
+  collectionIds: collectionIdList,
 };
 
 const updateItemSchema = z.object({
@@ -122,6 +129,7 @@ export async function createItem(
       language: fields.language ? parsed.data.language : null,
       url: fields.url ? parsed.data.url : null,
       tags: parsed.data.tags,
+      collectionIds: parsed.data.collectionIds,
     });
 
     return { success: true, data: item };

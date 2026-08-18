@@ -139,6 +139,18 @@ describe("updateItem action", () => {
     });
   });
 
+  it("de-duplicates collectionIds and defaults to an empty array", async () => {
+    await updateItem("item_1", { ...VALID, collectionIds: ["col_1", "col_1", "col_2"] });
+
+    expect(dbUpdate.mock.calls[0][2]).toMatchObject({
+      collectionIds: ["col_1", "col_2"],
+    });
+
+    await updateItem("item_1", VALID);
+
+    expect(dbUpdate.mock.calls[1][2]).toMatchObject({ collectionIds: [] });
+  });
+
   // What the form actually sends for a link: the hidden content/language fields
   // arrive as the stored nulls rather than empty strings.
   it("passes explicit nulls straight through", async () => {
@@ -158,6 +170,7 @@ describe("updateItem action", () => {
       language: null,
       url: "https://lucide.dev/",
       tags: [],
+      collectionIds: [],
     });
   });
 
@@ -171,6 +184,7 @@ describe("updateItem action", () => {
       language: null,
       url: null,
       tags: [],
+      collectionIds: [],
     });
   });
 
@@ -362,6 +376,18 @@ describe("createItem action", () => {
     expect(dbCreate.mock.calls[0][1]).toMatchObject({
       tags: ["react", "hooks"],
     });
+  });
+
+  it("de-duplicates collectionIds and defaults to an empty array", async () => {
+    await createItem({ ...SNIPPET, collectionIds: ["col_1", "col_1", "col_2"] });
+
+    expect(dbCreate.mock.calls[0][1]).toMatchObject({
+      collectionIds: ["col_1", "col_2"],
+    });
+
+    await createItem(SNIPPET);
+
+    expect(dbCreate.mock.calls[1][1]).toMatchObject({ collectionIds: [] });
   });
 
   it("surfaces an unexpected database failure as a friendly error", async () => {

@@ -15,6 +15,7 @@ import {
   SheetDescription,
   SheetTitle,
 } from "@/components/ui/sheet";
+import type { CollectionOption } from "@/lib/db/collections";
 import type { ItemDetailData } from "@/lib/db/items";
 import { capitalize, formatIsoDate } from "@/lib/format";
 import { usesCodeEditor, usesMarkdownEditor } from "@/lib/item-form";
@@ -37,6 +38,8 @@ interface ItemDrawerProps {
   item: ItemDetailData | null;
   error: ItemDrawerErrorState | null;
   editing: boolean;
+  /** The user's collections, threaded to the edit form's Collections picker. */
+  collectionOptions: CollectionOption[];
   onEdit: () => void;
   onCancelEdit: () => void;
   onSaved: (updated: ItemDetailData) => void;
@@ -49,6 +52,7 @@ export function ItemDrawer({
   item,
   error,
   editing,
+  collectionOptions,
   onEdit,
   onCancelEdit,
   onSaved,
@@ -67,6 +71,7 @@ export function ItemDrawer({
               <ItemEditForm
                 key={item.id}
                 item={item}
+                collectionOptions={collectionOptions}
                 onCancel={onCancelEdit}
                 onSaved={onSaved}
               />

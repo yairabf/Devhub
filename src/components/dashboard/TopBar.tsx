@@ -6,14 +6,16 @@ import { Input } from "@/components/ui/input";
 import { NewCollectionDialog } from "@/components/dashboard/NewCollectionDialog";
 import { NewItemDialog } from "@/components/dashboard/NewItemDialog";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
+import type { CollectionOption } from "@/lib/db/collections";
 import type { SidebarItemType } from "@/lib/db/items";
 
 interface TopBarProps {
   onOpenDrawer: () => void;
   itemTypes: SidebarItemType[];
+  collectionOptions: CollectionOption[];
 }
 
-export function TopBar({ onOpenDrawer, itemTypes }: TopBarProps) {
+export function TopBar({ onOpenDrawer, itemTypes, collectionOptions }: TopBarProps) {
   return (
     <header className="flex items-center justify-between gap-4 border-b border-border bg-background px-4 py-3 md:px-6">
       <div className="flex items-center gap-3">
@@ -34,7 +36,7 @@ export function TopBar({ onOpenDrawer, itemTypes }: TopBarProps) {
       <div className="flex items-center gap-2">
         <ThemeToggle />
         <NewCollectionDialog />
-        <NewItemDialog itemTypes={itemTypes} />
+        <NewItemDialog itemTypes={itemTypes} collectionOptions={collectionOptions} />
       </div>
     </header>
   );

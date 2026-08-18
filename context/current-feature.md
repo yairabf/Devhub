@@ -1,16 +1,78 @@
-# Current Feature
+# Current Feature: Add Item to Collections
 
 ## Status
 
-<!-- Not started -->
+In Progress — branch `feature/add-item-to-collections`
 
 ## Goals
 
-<!-- What are we building? -->
+- Add a **Collections** input to both the New Item dialog and the Item Drawer's
+  edit form, letting the user select **one or more** of their existing
+  collections to add the item to.
+- Creating an item links it to every collection selected at creation time.
+- Editing an item's collection selection updates its membership — checking a
+  box adds the item to that collection, unchecking removes it (a full-replace
+  save, the same semantics the existing Tags field already uses).
+- The edit form's picker pre-populates from the item's current collections.
+- **Out of scope:** displaying collection detail/list pages (there is still no
+  `/collections` route), and enforcing the free-tier 3-collection limit.
 
 ## Notes
 
-<!-- Implementation notes, constraints, decisions -->
+### Current state (researched before writing these goals)
+
+- `NewItemDialog` (`src/components/dashboard/NewItemDialog.tsx`) only receives
+  `itemTypes`, threaded from `src/app/dashboard/layout.tsx` /
+  `src/app/items/layout.tsx` through `DashboardShell` → `TopBar`. There is no
+  existing plumbing carrying a "user's collections" list down to it.
+- `ItemEditForm` (`src/components/dashboard/ItemEditForm.tsx`) receives only
+  `item: ItemDetailData` and has no collections field. The drawer's **view**
+  mode already renders a read-only "COLLECTIONS" section
+  (`ItemDrawer.tsx`, inside `ItemViewMode`) as `Badge`s from
+  `item.collections` — that stays as-is, just fed by whatever the picker saves.
+- `ItemDetailData.collections` (`src/lib/db/items.ts`) is already
+  `{ id, name }[]`, so the edit form can pre-populate selected ids directly
+  from `item.collections.map(c => c.id)`.
+- `ItemCollection` (`prisma/schema.prisma`) is an **explicit** join model
+  (composite `@@id([itemId, collectionId])` + `addedAt`), not an implicit
+  many-to-many like `Item.tags`. That means the create/update db functions
+  can't reuse the tags' `connectOrCreate` / `set` shape verbatim — the nested
+  write is `create: collectionIds.map(id => ({ collectionId: id }))` on
+  create, and `deleteMany: {} , create: [...]` on update (an implicit m2m's
+  `set` isn't available on a one-to-many join relation).
+- No existing lightweight "all of a user's collections, id + name" query —
+  `getFavoriteCollections` is favorites-only, `getCollections` is heavier
+  (counts, description, type breakdown). A new trimmed helper (e.g.
+  `getCollectionOptions(userId)`) is the closest fit for populating a picker.
+- No multi-select/checkbox/combobox UI primitive exists in `src/components/ui/`.
+  The closest in-repo precedent is `NewItemDialog`'s type selector — a native
+  radio group styled as chips (`has-[:checked]` Tailwind styling). The same
+  pattern with checkboxes (not radios) is the natural fit; consider extracting
+  one shared picker component so both forms don't duplicate it, the way
+  `FormField` was extracted for label/input rows.
+
+### Security
+
+- `collectionIds` sent from the client must be **verified as owned by the
+  session user** server-side before linking (same principle as never trusting
+  a client-sent `userId`) — e.g. filter against
+  `prisma.collection.findMany({ where: { id: { in }, userId } })` rather than
+  trusting the id list as-is.
+
+### Likely touch points
+
+- `src/lib/item-form.ts` — add `collectionIds: string[]` to `ItemDraft`,
+  threaded through `buildCreatePayload`/`buildUpdatePayload` unconditionally
+  (not type-gated, like `tags`).
+- `src/actions/items.ts` — add `collectionIds: z.array(z.string()).default([])`
+  to the shared create/update Zod schema.
+- `src/lib/db/items.ts` — `createItem`/`updateItem` nested writes on the
+  `collections` relation, plus the new `getCollectionOptions` (or similar) in
+  `src/lib/db/collections.ts`.
+- Threading the collections-options list to both `NewItemDialog` (via
+  `DashboardShell`/`TopBar`, alongside `itemTypes`) and to `ItemEditForm`
+  (via wherever `ItemDrawerProvider` gets its data) needs a decision during
+  implementation.
 
 ## History
 

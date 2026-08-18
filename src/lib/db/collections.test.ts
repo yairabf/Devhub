@@ -7,7 +7,12 @@ vi.mock("@/lib/prisma", () => ({
 }));
 
 import { prisma } from "@/lib/prisma";
-import { createCollection, getCollectionById, getCollections } from "@/lib/db/collections";
+import {
+  createCollection,
+  getCollectionById,
+  getCollectionOptions,
+  getCollections,
+} from "@/lib/db/collections";
 
 const findMany = vi.mocked(prisma.collection.findMany);
 const findFirst = vi.mocked(prisma.collection.findFirst);
@@ -179,5 +184,31 @@ describe("createCollection", () => {
       uniqueTypeIds: [],
       dominantTypeId: null,
     });
+  });
+});
+
+describe("getCollectionOptions", () => {
+  it("scopes the query to the owner and orders alphabetically", async () => {
+    findMany.mockResolvedValue([] as never);
+
+    await getCollectionOptions("user_demo");
+
+    expect(findMany).toHaveBeenCalledWith({
+      where: { userId: "user_demo" },
+      orderBy: { name: "asc" },
+      select: { id: true, name: true },
+    });
+  });
+
+  it("returns the trimmed id + name shape", async () => {
+    findMany.mockResolvedValue([
+      { id: "col_1", name: "React Patterns" },
+      { id: "col_2", name: "DevOps" },
+    ] as never);
+
+    await expect(getCollectionOptions("user_demo")).resolves.toEqual([
+      { id: "col_1", name: "React Patterns" },
+      { id: "col_2", name: "DevOps" },
+    ]);
   });
 });

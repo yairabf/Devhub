@@ -160,6 +160,25 @@ export async function getItemDetail(
   return toDetailData(item);
 }
 
+/**
+ * Filters `collectionIds` down to the ones `userId` actually owns — a client
+ * could send any id it likes, and this is what stops that from linking an
+ * item into someone else's collection. Skips the query entirely when nothing
+ * was selected, the common case for most saves.
+ */
+async function verifyCollectionIds(
+  userId: string,
+  collectionIds: string[],
+): Promise<string[]> {
+  if (collectionIds.length === 0) return [];
+
+  const owned = await prisma.collection.findMany({
+    where: { id: { in: collectionIds }, userId },
+    select: { id: true },
+  });
+  return owned.map(collection => collection.id);
+}
+
 export interface CreateItemInput {
   itemTypeId: string;
   title: string;
@@ -169,6 +188,8 @@ export interface CreateItemInput {
   language: string | null;
   /** Trimmed, non-empty, de-duplicated tag names. */
   tags: string[];
+  /** Collections to add the item to; verified against the owner before use. */
+  collectionIds: string[];
 }
 
 /**
@@ -181,6 +202,8 @@ export async function createItem(
   userId: string,
   data: CreateItemInput,
 ): Promise<ItemDetailData> {
+  const collectionIds = await verifyCollectionIds(userId, data.collectionIds);
+
   const item = await prisma.item.create({
     data: {
       title: data.title,
@@ -197,6 +220,9 @@ export async function createItem(
           create: { name },
         })),
       },
+      collections: {
+        create: collectionIds.map(collectionId => ({ collectionId })),
+      },
     },
     select: ITEM_DETAIL_SELECT,
   });
@@ -212,12 +238,16 @@ export interface UpdateItemInput {
   language: string | null;
   /** Trimmed, non-empty, de-duplicated tag names. */
   tags: string[];
+  /** Collections to add the item to; verified against the owner before use. */
+  collectionIds: string[];
 }
 
 /**
  * Updates an item the user owns and returns the fresh detail, or null when the
- * item does not exist or belongs to someone else. Tags are replaced wholesale:
- * every existing link is dropped, then each name is connected or created.
+ * item does not exist or belongs to someone else. Tags and collections are
+ * both replaced wholesale: tags via `set: []` + connect-or-create, and
+ * collections (an explicit join model, so `set` isn't available on it) via
+ * `deleteMany: {}` + `create`.
  */
 export async function updateItem(
   userId: string,
@@ -229,6 +259,8 @@ export async function updateItem(
     select: { id: true },
   });
   if (!owned) return null;
+
+  const collectionIds = await verifyCollectionIds(userId, data.collectionIds);
 
   const item = await prisma.item.update({
     where: { id: itemId },
@@ -244,6 +276,10 @@ export async function updateItem(
           where: { name },
           create: { name },
         })),
+      },
+      collections: {
+        deleteMany: {},
+        create: collectionIds.map(collectionId => ({ collectionId })),
       },
     },
     select: ITEM_DETAIL_SELECT,
