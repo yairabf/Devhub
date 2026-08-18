@@ -54,8 +54,8 @@ describe("GET /api/items/[id]", () => {
     });
   });
 
-  // Deliberately not the seeded demo id: the pages still fetch with DEMO_USER_ID,
-  // so this guards against the route falling back to that constant.
+  // Deliberately not the seeded demo id, so this still fails if the route ever
+  // regresses to a hardcoded user rather than reading the session.
   it("scopes the lookup to the session user, not a hardcoded one", async () => {
     authMock.mockResolvedValue({ user: { id: "user_github_42" } });
     getItemDetailMock.mockResolvedValue(ITEM);

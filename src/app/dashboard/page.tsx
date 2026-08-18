@@ -1,9 +1,11 @@
+import { redirect } from "next/navigation";
+
+import { auth } from "@/auth";
 import { CollectionCard } from "@/components/dashboard/CollectionCard";
 import { DashboardSection } from "@/components/dashboard/DashboardSection";
 import { ItemCard } from "@/components/dashboard/ItemCard";
 import { ItemCardTrigger } from "@/components/dashboard/ItemCardTrigger";
 import { StatsGrid } from "@/components/dashboard/StatsGrid";
-import { DEMO_USER_ID } from "@/lib/constants";
 import {
   getCollectionsCount,
   getFavoriteCollectionsCount,
@@ -19,6 +21,12 @@ import {
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
+  const session = await auth();
+  if (!session?.user?.id) {
+    redirect("/sign-in?callbackUrl=/dashboard");
+  }
+  const userId = session.user.id;
+
   const [
     recentCollections,
     pinnedItems,
@@ -28,13 +36,13 @@ export default async function DashboardPage() {
     favoriteItemsCount,
     favoriteCollectionsCount,
   ] = await Promise.all([
-    getCollections(DEMO_USER_ID, 6),
-    getPinnedItems(DEMO_USER_ID),
-    getRecentItems(DEMO_USER_ID, 10),
-    getCollectionsCount(DEMO_USER_ID),
-    getItemsCount(DEMO_USER_ID),
-    getFavoriteItemsCount(DEMO_USER_ID),
-    getFavoriteCollectionsCount(DEMO_USER_ID),
+    getCollections(userId, 6),
+    getPinnedItems(userId),
+    getRecentItems(userId, 10),
+    getCollectionsCount(userId),
+    getItemsCount(userId),
+    getFavoriteItemsCount(userId),
+    getFavoriteCollectionsCount(userId),
   ]);
 
   return (

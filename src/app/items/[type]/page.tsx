@@ -1,8 +1,8 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
+import { auth } from "@/auth";
 import { ItemCard } from "@/components/dashboard/ItemCard";
 import { ItemCardTrigger } from "@/components/dashboard/ItemCardTrigger";
-import { DEMO_USER_ID } from "@/lib/constants";
 import { getItemsByType, getSystemItemTypes } from "@/lib/db/items";
 import { capitalize, getTypeSlug } from "@/lib/format";
 
@@ -15,11 +15,16 @@ export default async function ItemsByTypePage({
 }) {
   const { type: slug } = await params;
 
+  const session = await auth();
+  if (!session?.user?.id) {
+    redirect(`/sign-in?callbackUrl=/items/${slug}`);
+  }
+
   const itemTypes = await getSystemItemTypes();
   const itemType = itemTypes.find(type => getTypeSlug(type.name) === slug);
   if (!itemType) notFound();
 
-  const items = await getItemsByType(DEMO_USER_ID, itemType.id);
+  const items = await getItemsByType(session.user.id, itemType.id);
 
   return (
     <div className="space-y-6">

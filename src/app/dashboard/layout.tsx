@@ -1,6 +1,7 @@
+import { redirect } from "next/navigation";
+
 import { auth } from "@/auth";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
-import { DEMO_USER_ID } from "@/lib/constants";
 import {
   getFavoriteCollections,
   getCollections,
@@ -15,15 +16,20 @@ export default async function DashboardLayout({
   children: React.ReactNode;
 }) {
   const session = await auth();
+  if (!session?.user?.id) {
+    redirect("/sign-in?callbackUrl=/dashboard");
+  }
+  const userId = session.user.id;
+
   const user = {
-    name: session?.user?.name ?? null,
-    email: session?.user?.email ?? null,
-    image: session?.user?.image ?? null,
+    name: session.user.name ?? null,
+    email: session.user.email ?? null,
+    image: session.user.image ?? null,
   };
 
   const [favoriteCollections, recentCollections, itemTypes] = await Promise.all([
-    getFavoriteCollections(DEMO_USER_ID),
-    getCollections(DEMO_USER_ID, 5),
+    getFavoriteCollections(userId),
+    getCollections(userId, 5),
     getSystemItemTypes(),
   ]);
 

@@ -1,8 +1,9 @@
 "use client";
 
-import { FolderPlus, Menu, Search } from "lucide-react";
+import { Menu, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { NewCollectionDialog } from "@/components/dashboard/NewCollectionDialog";
 import { NewItemDialog } from "@/components/dashboard/NewItemDialog";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import type { SidebarItemType } from "@/lib/db/items";
@@ -32,10 +33,7 @@ export function TopBar({ onOpenDrawer, itemTypes }: TopBarProps) {
       </div>
       <div className="flex items-center gap-2">
         <ThemeToggle />
-        <Button variant="outline" className="hidden sm:inline-flex">
-          <FolderPlus className="mr-2 h-4 w-4" />
-          New Collection
-        </Button>
+        <NewCollectionDialog />
         <NewItemDialog itemTypes={itemTypes} />
       </div>
     </header>

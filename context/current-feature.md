@@ -2,7 +2,7 @@
 
 ## Status
 
-Not Started
+In Progress — branch `feature/collection-create`
 
 ## Goals
 
@@ -37,27 +37,38 @@ This feature mirrors **Item Create** (2026-08-04). Reuse rather than re-invent:
 - Server components keep fetching directly through `lib/db`; only the client-side
   create call crosses a network boundary.
 
-### Open question — server action vs. API route
+### Decision — server action, not an API route
 
-The request says "**api routes for any client-side calls**", but it also says to
-follow the item patterns, and item create uses a **server action**
-(`createItem` in `src/actions/items.ts`). `context/coding-standards.md` puts a
-simple form mutation like this in the server-action column and reserves API
-routes for webhooks, uploads, specific status codes, and future mobile/CLI
-clients. **Resolve this before implementing** — the two conventions can't both
-be followed here.
+The request said "api routes for any client-side calls", but it also said to
+follow the item patterns, and item create uses a **server action**. Resolved
+2026-08-13 in favour of a **server action** (`createCollection` in
+`src/actions/collections.ts`), matching `createItem` and
+`context/coding-standards.md`, which puts simple form mutations in the
+server-action column and reserves API routes for webhooks, uploads, specific
+HTTP semantics, and future mobile/CLI clients.
 
-### Known context carried in from the current branch
+### Known context
 
-- Branch `feature/get-collection-db` has **uncommitted** work adding
-  `getCollections` (renamed from `getRecentCollections`, limit now optional),
-  `getCollectionById`, and `getItemsByCollection`. This feature builds on that
-  layer; decide whether it lands first or merges together.
+- `feature/get-collection-db` was merged to main first (`0371f7e`), so
+  `getCollections` / `getCollectionById` / `getItemsByCollection` are already
+  available on this branch.
 - There is still **no `/collections` route** — the sidebar's "View all
   collections" link 404s. Out of scope here unless stated otherwise.
 - The free tier's **3-collection limit** is not enforced anywhere today
   (the same gap Item Create left for the 50-item limit). Out of scope unless
   stated otherwise.
+- `/dashboard` and `/items/[type]` (plus their layouts) moved from the
+  `DEMO_USER_ID` constant to `auth()`'s `session.user.id`, redirecting to
+  `/sign-in` when unauthenticated. Required for this feature's "every surface
+  reflects the new collection" goal to actually hold for a real signed-in user
+  — the sidebar/dashboard collection lists were previously hardcoded to the
+  demo user regardless of who created the collection. `DEMO_USER_ID` remains
+  in `src/lib/constants.ts` for the seed/test-db/e2e-fixture scripts, which
+  still need a stable id. Also added `/items` to `src/proxy.ts`'s
+  `PROTECTED_PREFIXES`/matcher so the new page-level redirect on `/items/[type]`
+  gets the same middleware-level defense-in-depth `/dashboard` and `/profile`
+  already had (the established pattern from the 2026-05-26 Profile Page work) —
+  `/items` was previously reachable without signing in at all.
 
 ## History
 

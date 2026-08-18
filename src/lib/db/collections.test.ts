@@ -2,19 +2,21 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 vi.mock("@/lib/prisma", () => ({
   prisma: {
-    collection: { findMany: vi.fn(), findFirst: vi.fn() },
+    collection: { findMany: vi.fn(), findFirst: vi.fn(), create: vi.fn() },
   },
 }));
 
 import { prisma } from "@/lib/prisma";
-import { getCollectionById, getCollections } from "@/lib/db/collections";
+import { createCollection, getCollectionById, getCollections } from "@/lib/db/collections";
 
 const findMany = vi.mocked(prisma.collection.findMany);
 const findFirst = vi.mocked(prisma.collection.findFirst);
+const create = vi.mocked(prisma.collection.create);
 
 beforeEach(() => {
   findMany.mockReset();
   findFirst.mockReset();
+  create.mockReset();
 });
 
 describe("getCollections", () => {
@@ -139,5 +141,43 @@ describe("getCollectionById", () => {
     findFirst.mockResolvedValue(null as never);
 
     await expect(getCollectionById("user_demo", "col_someone_else")).resolves.toBeNull();
+  });
+});
+
+describe("createCollection", () => {
+  it("scopes the new row to the given owner", async () => {
+    create.mockResolvedValue({
+      id: "col_new",
+      name: "React Patterns",
+      description: "Reusable patterns",
+      isFavorite: false,
+    } as never);
+
+    await createCollection("user_demo", { name: "React Patterns", description: "Reusable patterns" });
+
+    expect(create.mock.calls[0][0]).toMatchObject({
+      data: { name: "React Patterns", description: "Reusable patterns", userId: "user_demo" },
+    });
+  });
+
+  it("returns a zeroed CollectionCardData for the empty, freshly created collection", async () => {
+    create.mockResolvedValue({
+      id: "col_new",
+      name: "React Patterns",
+      description: null,
+      isFavorite: false,
+    } as never);
+
+    const result = await createCollection("user_demo", { name: "React Patterns", description: null });
+
+    expect(result).toEqual({
+      id: "col_new",
+      name: "React Patterns",
+      description: null,
+      isFavorite: false,
+      itemCount: 0,
+      uniqueTypeIds: [],
+      dominantTypeId: null,
+    });
   });
 });

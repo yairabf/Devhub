@@ -59,6 +59,37 @@ export function getCollectionById(
   });
 }
 
+export interface CreateCollectionInput {
+  name: string;
+  description: string | null;
+}
+
+/**
+ * Creates a collection owned by `userId`. Returns `CollectionCardData` so the
+ * caller has the same shape the grids render, without a second read — a fresh
+ * collection is always empty, hence the zeroed counts.
+ */
+export async function createCollection(
+  userId: string,
+  data: CreateCollectionInput,
+): Promise<CollectionCardData> {
+  const collection = await prisma.collection.create({
+    data: {
+      name: data.name,
+      description: data.description,
+      userId,
+    },
+    select: { id: true, name: true, description: true, isFavorite: true },
+  });
+
+  return {
+    ...collection,
+    itemCount: 0,
+    uniqueTypeIds: [],
+    dominantTypeId: null,
+  };
+}
+
 export async function getCollections(
   userId: string,
   limit?: number,
