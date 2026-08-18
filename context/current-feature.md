@@ -1,16 +1,23 @@
-# Current Feature
+# Current Feature: Collections Pages
 
 ## Status
 
-<!-- Not started -->
+In Progress
 
 ## Goals
 
-<!-- What are we building? -->
+- Create a `/collections` page listing all of the signed-in user's collections, using the existing `CollectionCard` component.
+- Create a `/collections/[id]` page showing the items inside that specific collection, using the existing `ItemCard` component.
+- Link the sidebar's "View all collections" link to `/collections` (currently 404s — known gap from Collection Create).
+- Link every collection card (dashboard Recent Collections, and the new `/collections` list) to its `/collections/[id]` detail page.
 
 ## Notes
 
-<!-- Implementation notes, constraints, decisions -->
+- Known gaps to close, called out in `current-feature.md` history from Collection Create (2026-08-19) and Add Item to Collections (2026-08-19): no `/collections` route exists yet, and "View all collections" 404s.
+- Reuse existing patterns: `/items/[type]/page.tsx` is the closest analog for a list-of-cards page scoped to the session user (auth via `session.user.id`, redirect to `/sign-in` if unauthenticated, `force-dynamic`).
+- `getCollections`-style data fetching likely needed for the list page (counts/description) — check `src/lib/db/collections.ts` for what already exists (`getRecentCollections`, `getCollectionOptions`, etc.) before adding a new query.
+- Both pages should render inside `DashboardShell` (mirror the `items/layout.tsx` pattern).
+- Free-tier 3-collection limit enforcement remains out of scope (per existing known gaps).
 
 ## History
 
