@@ -6,6 +6,7 @@ import { auth } from "@/auth";
 import {
   createItem as createItemInDb,
   deleteItem as deleteItemInDb,
+  toggleItemFavorite as toggleItemFavoriteInDb,
   updateItem as updateItemInDb,
   type ItemDetailData,
 } from "@/lib/db/items";
@@ -171,6 +172,37 @@ export async function updateItem(
     return { success: true, data: item };
   } catch {
     return { success: false, error: "Could not save this item. Please try again." };
+  }
+}
+
+export type ToggleItemFavoriteResult =
+  | { success: true; data: { isFavorite: boolean } }
+  | { success: false; error: string };
+
+export async function toggleItemFavorite(
+  itemId: string,
+): Promise<ToggleItemFavoriteResult> {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return { success: false, error: "You must be signed in to favorite items." };
+    }
+
+    if (!itemId?.trim()) {
+      return { success: false, error: "Item not found." };
+    }
+
+    const isFavorite = await toggleItemFavoriteInDb(session.user.id, itemId);
+    if (isFavorite === null) {
+      return { success: false, error: "Item not found." };
+    }
+
+    return { success: true, data: { isFavorite } };
+  } catch {
+    return {
+      success: false,
+      error: "Could not update this item. Please try again.",
+    };
   }
 }
 

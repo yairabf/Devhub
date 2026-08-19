@@ -5,20 +5,28 @@ vi.mock("@/lib/db/items", () => ({
   createItem: vi.fn(),
   updateItem: vi.fn(),
   deleteItem: vi.fn(),
+  toggleItemFavorite: vi.fn(),
 }));
 
 import { auth } from "@/auth";
 import {
   createItem as createItemInDb,
   deleteItem as deleteItemInDb,
+  toggleItemFavorite as toggleItemFavoriteInDb,
   updateItem as updateItemInDb,
 } from "@/lib/db/items";
-import { createItem, deleteItem, updateItem } from "@/actions/items";
+import {
+  createItem,
+  deleteItem,
+  toggleItemFavorite,
+  updateItem,
+} from "@/actions/items";
 
 const authMock = auth as unknown as Mock;
 const dbCreate = createItemInDb as unknown as Mock;
 const dbUpdate = updateItemInDb as unknown as Mock;
 const dbDelete = deleteItemInDb as unknown as Mock;
+const dbToggleFavorite = toggleItemFavoriteInDb as unknown as Mock;
 
 const VALID = {
   title: "useDebounce",
@@ -36,10 +44,12 @@ beforeEach(() => {
   dbCreate.mockReset();
   dbUpdate.mockReset();
   dbDelete.mockReset();
+  dbToggleFavorite.mockReset();
   authMock.mockResolvedValue({ user: { id: "user_demo" } });
   dbCreate.mockResolvedValue(SAVED);
   dbUpdate.mockResolvedValue(SAVED);
   dbDelete.mockResolvedValue(true);
+  dbToggleFavorite.mockResolvedValue(true);
 });
 
 describe("updateItem action", () => {
@@ -459,6 +469,58 @@ describe("deleteItem action", () => {
     expect(result).toEqual({
       success: false,
       error: "Could not delete this item. Please try again.",
+    });
+  });
+});
+
+describe("toggleItemFavorite action", () => {
+  it("toggles as the session user and returns the new state", async () => {
+    const result = await toggleItemFavorite("item_1");
+
+    expect(result).toEqual({ success: true, data: { isFavorite: true } });
+    expect(dbToggleFavorite).toHaveBeenCalledTimes(1);
+    expect(dbToggleFavorite.mock.calls[0][0]).toBe("user_demo");
+    expect(dbToggleFavorite.mock.calls[0][1]).toBe("item_1");
+  });
+
+  it("rejects an unauthenticated caller without touching the database", async () => {
+    authMock.mockResolvedValue(null);
+
+    const result = await toggleItemFavorite("item_1");
+
+    expect(result).toEqual({
+      success: false,
+      error: "You must be signed in to favorite items.",
+    });
+    expect(dbToggleFavorite).not.toHaveBeenCalled();
+  });
+
+  it("reports a missing or foreign item as not found", async () => {
+    dbToggleFavorite.mockResolvedValue(null);
+
+    const result = await toggleItemFavorite("item_1");
+
+    expect(result).toEqual({ success: false, error: "Item not found." });
+  });
+
+  it("rejects a blank id without spending a query on it", async () => {
+    for (const blank of ["", "   "]) {
+      await expect(toggleItemFavorite(blank)).resolves.toEqual({
+        success: false,
+        error: "Item not found.",
+      });
+    }
+    expect(dbToggleFavorite).not.toHaveBeenCalled();
+  });
+
+  it("surfaces an unexpected database failure as a friendly error", async () => {
+    dbToggleFavorite.mockRejectedValue(new Error("connection reset"));
+
+    const result = await toggleItemFavorite("item_1");
+
+    expect(result).toEqual({
+      success: false,
+      error: "Could not update this item. Please try again.",
     });
   });
 });

@@ -337,6 +337,30 @@ export async function deleteItem(
   return true;
 }
 
+/**
+ * Flips `isFavorite` for an item the user owns and returns the new value, or
+ * `null` when the item does not exist or belongs to someone else. Ownership
+ * is checked first, same reason as `updateItem`/`deleteItem`: no coupling to
+ * Prisma's `P2025`.
+ */
+export async function toggleItemFavorite(
+  userId: string,
+  itemId: string,
+): Promise<boolean | null> {
+  const owned = await prisma.item.findFirst({
+    where: { id: itemId, userId },
+    select: { isFavorite: true },
+  });
+  if (!owned) return null;
+
+  const updated = await prisma.item.update({
+    where: { id: itemId },
+    data: { isFavorite: !owned.isFavorite },
+    select: { isFavorite: true },
+  });
+  return updated.isFavorite;
+}
+
 export function getItemsCount(userId: string): Promise<number> {
   return prisma.item.count({ where: { userId } });
 }

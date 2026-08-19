@@ -192,6 +192,29 @@ export async function deleteCollection(
   return true;
 }
 
+/**
+ * Flips `isFavorite` for a collection the user owns and returns the new
+ * value, or `null` when it does not exist or belongs to someone else.
+ * Ownership is checked first, mirroring `updateCollection`/`deleteCollection`.
+ */
+export async function toggleCollectionFavorite(
+  userId: string,
+  collectionId: string,
+): Promise<boolean | null> {
+  const owned = await prisma.collection.findFirst({
+    where: { id: collectionId, userId },
+    select: { isFavorite: true },
+  });
+  if (!owned) return null;
+
+  const updated = await prisma.collection.update({
+    where: { id: collectionId },
+    data: { isFavorite: !owned.isFavorite },
+    select: { isFavorite: true },
+  });
+  return updated.isFavorite;
+}
+
 export async function getCollections(
   userId: string,
   window: PageWindow = {},

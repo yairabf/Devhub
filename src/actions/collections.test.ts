@@ -5,17 +5,20 @@ vi.mock("@/lib/db/collections", () => ({
   createCollection: vi.fn(),
   updateCollection: vi.fn(),
   deleteCollection: vi.fn(),
+  toggleCollectionFavorite: vi.fn(),
 }));
 
 import { auth } from "@/auth";
 import {
   createCollection as createCollectionInDb,
   deleteCollection as deleteCollectionInDb,
+  toggleCollectionFavorite as toggleCollectionFavoriteInDb,
   updateCollection as updateCollectionInDb,
 } from "@/lib/db/collections";
 import {
   createCollection,
   deleteCollection,
+  toggleCollectionFavorite,
   updateCollection,
 } from "@/actions/collections";
 
@@ -23,6 +26,7 @@ const authMock = auth as unknown as Mock;
 const dbCreate = createCollectionInDb as unknown as Mock;
 const dbUpdate = updateCollectionInDb as unknown as Mock;
 const dbDelete = deleteCollectionInDb as unknown as Mock;
+const dbToggleFavorite = toggleCollectionFavoriteInDb as unknown as Mock;
 
 const SAVED = {
   id: "col_1",
@@ -46,10 +50,12 @@ beforeEach(() => {
   dbCreate.mockReset();
   dbUpdate.mockReset();
   dbDelete.mockReset();
+  dbToggleFavorite.mockReset();
   authMock.mockResolvedValue({ user: { id: "user_demo" } });
   dbCreate.mockResolvedValue(SAVED);
   dbUpdate.mockResolvedValue(SAVED_META);
   dbDelete.mockResolvedValue(true);
+  dbToggleFavorite.mockResolvedValue(true);
 });
 
 describe("createCollection action", () => {
@@ -251,6 +257,58 @@ describe("deleteCollection action", () => {
     expect(result).toEqual({
       success: false,
       error: "Could not delete this collection. Please try again.",
+    });
+  });
+});
+
+describe("toggleCollectionFavorite action", () => {
+  it("toggles as the session user and returns the new state", async () => {
+    const result = await toggleCollectionFavorite("col_1");
+
+    expect(result).toEqual({ success: true, data: { isFavorite: true } });
+    expect(dbToggleFavorite).toHaveBeenCalledTimes(1);
+    expect(dbToggleFavorite.mock.calls[0][0]).toBe("user_demo");
+    expect(dbToggleFavorite.mock.calls[0][1]).toBe("col_1");
+  });
+
+  it("rejects an unauthenticated caller without touching the database", async () => {
+    authMock.mockResolvedValue(null);
+
+    const result = await toggleCollectionFavorite("col_1");
+
+    expect(result).toEqual({
+      success: false,
+      error: "You must be signed in to favorite collections.",
+    });
+    expect(dbToggleFavorite).not.toHaveBeenCalled();
+  });
+
+  it("reports a missing or foreign collection as not found", async () => {
+    dbToggleFavorite.mockResolvedValue(null);
+
+    const result = await toggleCollectionFavorite("col_1");
+
+    expect(result).toEqual({ success: false, error: "Collection not found." });
+  });
+
+  it("rejects a blank id without spending a query on it", async () => {
+    for (const blank of ["", "   "]) {
+      await expect(toggleCollectionFavorite(blank)).resolves.toEqual({
+        success: false,
+        error: "Collection not found.",
+      });
+    }
+    expect(dbToggleFavorite).not.toHaveBeenCalled();
+  });
+
+  it("surfaces an unexpected database failure as a friendly error", async () => {
+    dbToggleFavorite.mockRejectedValue(new Error("connection reset"));
+
+    const result = await toggleCollectionFavorite("col_1");
+
+    expect(result).toEqual({
+      success: false,
+      error: "Could not update this collection. Please try again.",
     });
   });
 });

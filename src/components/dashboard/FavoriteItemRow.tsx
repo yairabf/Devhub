@@ -1,3 +1,4 @@
+import { ItemFavoriteButton } from "@/components/dashboard/ItemFavoriteButton";
 import { Badge } from "@/components/ui/badge";
 import type { FavoriteItemData } from "@/lib/db/items";
 import { formatIsoDate } from "@/lib/format";
@@ -12,7 +13,10 @@ interface FavoriteItemRowProps {
 /**
  * The row's own layout/hover styling — kept here (server) rather than on the
  * `ItemCardTrigger` wrapper, since the trigger only needs to contribute
- * click/keyboard behavior for the favorites list.
+ * click/keyboard behavior for the favorites list. Every row here is
+ * favorited by definition (the page only lists favorites), so
+ * `ItemFavoriteButton` is always seeded `isFavorite`; unfavoriting removes
+ * the row on the next `router.refresh()` rather than updating in place.
  */
 export function FavoriteItemRow({ item }: FavoriteItemRowProps) {
   return (
@@ -24,6 +28,7 @@ export function FavoriteItemRow({ item }: FavoriteItemRowProps) {
       <span className="min-w-0 flex-1 truncate font-medium text-foreground">
         {item.title}
       </span>
+      <ItemFavoriteButton itemId={item.id} isFavorite className="shrink-0" />
       <Badge variant="outline" className="shrink-0">
         <TypeGlyph typeId={item.itemTypeId} className="size-3.5" />
         {item.itemTypeName}

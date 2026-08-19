@@ -28,6 +28,7 @@ import {
   getItemsByType,
   getRecentItems,
   getSearchableItems,
+  toggleItemFavorite,
   updateItem,
 } from "@/lib/db/items";
 
@@ -629,6 +630,46 @@ describe("deleteItem", () => {
     await expect(deleteItem("user_demo", "item_1")).resolves.toBe(true);
     expect(destroy).toHaveBeenCalledTimes(1);
     expect(destroy.mock.calls[0][0]).toEqual({ where: { id: "item_1" } });
+  });
+});
+
+describe("toggleItemFavorite", () => {
+  it("refuses to toggle an item the user does not own", async () => {
+    findFirst.mockResolvedValue(null as never);
+
+    await expect(toggleItemFavorite("user_other", "item_1")).resolves.toBeNull();
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it("checks ownership with both the item id and the user id", async () => {
+    findFirst.mockResolvedValue({ isFavorite: false } as never);
+    update.mockResolvedValue({ isFavorite: true } as never);
+
+    await toggleItemFavorite("user_demo", "item_1");
+
+    expect(findFirst.mock.calls[0][0]).toMatchObject({
+      where: { id: "item_1", userId: "user_demo" },
+    });
+  });
+
+  it("flips false to true and returns the new value", async () => {
+    findFirst.mockResolvedValue({ isFavorite: false } as never);
+    update.mockResolvedValue({ isFavorite: true } as never);
+
+    await expect(toggleItemFavorite("user_demo", "item_1")).resolves.toBe(true);
+    expect(update.mock.calls[0][0]).toEqual({
+      where: { id: "item_1" },
+      data: { isFavorite: true },
+      select: { isFavorite: true },
+    });
+  });
+
+  it("flips true to false and returns the new value", async () => {
+    findFirst.mockResolvedValue({ isFavorite: true } as never);
+    update.mockResolvedValue({ isFavorite: false } as never);
+
+    await expect(toggleItemFavorite("user_demo", "item_1")).resolves.toBe(false);
+    expect(update.mock.calls[0][0]).toMatchObject({ data: { isFavorite: false } });
   });
 });
 

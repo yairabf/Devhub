@@ -1,16 +1,34 @@
-# Current Feature
+# Current Feature: Favorite Toggle
 
 ## Status
 
-<!-- Not started -->
+Implemented and tested — awaiting review/commit
 
 ## Goals
 
-<!-- What this feature should accomplish -->
+- Make the Star affordance in the Item Drawer's action bar (`src/components/dashboard/ItemDrawer.tsx:133`, currently "Favorite — coming soon" and disabled) a working toggle for item favorite status.
+- Make the Star affordance in the Collection detail page's action bar (`src/components/dashboard/CollectionDetailHeader.tsx:53`, same "coming soon" disabled state) a working toggle for collection favorite status.
+- Make the Star menu item in the Collection card's 3-dot dropdown (`src/components/dashboard/CollectionCardMenu.tsx:55`) a working toggle for collection favorite status.
+- Make the trailing Star shown on `ItemCard` (`src/components/dashboard/ItemCard.tsx:38`) and `CollectionCard` (`src/components/dashboard/CollectionCard.tsx:33`) clickable to toggle favorite status directly from the grid, without opening the drawer / navigating to the collection.
+- Toggling from any surface should be reflected consistently everywhere the item/collection appears (dashboard Pinned/Recent, `/items/[type]`, `/collections`, `/collections/[id]`, `/favorites`, sidebar Favorites section, StatsGrid favorite counts, the drawer itself).
 
 ## Notes
 
-<!-- Constraints, links to specs, relevant files -->
+- All four current Star affordances are disabled placeholders showing state only ("Favorite — coming soon") — this feature turns them into real toggles, closing a known gap flagged repeatedly in the History below (Item Drawer, Item Delete, Collection Edit/Delete & Favorite Affordances, Favorites Page entries).
+- Follow the existing action pattern in this codebase: a Zod-free simple server action (`src/actions/items.ts` / `src/actions/collections.ts`) with `auth()` gate + `{ success, data, error }` envelope, calling an ownership-checked `lib/db` mutation (`findFirst({ id, userId })` before update), mirroring `updateItem`/`deleteItem`/`updateCollection`/`deleteCollection`.
+- `ItemCard`/`CollectionCard` are server components; toggling the Star on the card itself needs a small client wrapper (similar to `CopyButton`/`ItemCardTrigger`) with `stopPropagation()` so it doesn't also open the drawer / navigate.
+- After a card-level or menu-level toggle, use `router.refresh()` (matching the existing create/edit/delete convention) rather than local-only state, so counts and other sections stay correct.
+- Decide whether the drawer's Pin affordance stays out of scope (likely yes — only Favorite was requested).
+
+### Implementation summary
+
+Added `toggleItemFavorite(userId, itemId)` / `toggleCollectionFavorite(userId, collectionId)` to `src/lib/db/items.ts` / `src/lib/db/collections.ts` (ownership-checked, flips `isFavorite`, returns the new value or `null`), and matching `toggleItemFavorite`/`toggleCollectionFavorite` server actions (`auth()` gate, `{ success, data, error }` envelope). Added two small client hooks — `useItemFavorite`/`useCollectionFavorite` in `src/components/dashboard/` — holding optimistic local state that resyncs from the `isFavorite` prop via the render-time "adjust state" pattern (not an effect, to satisfy `react-hooks/set-state-in-effect`), and calling `router.refresh()` after a successful toggle. `ItemFavoriteButton`/`CollectionFavoriteButton` wrap those hooks as a `Button` + `Star` for `ItemCard`, `ItemDrawer`, `CollectionCard`, and `CollectionDetailHeader` (each `stopPropagation()`s so the click doesn't also open the drawer or navigate); `CollectionCardMenu` uses the `useCollectionFavorite` hook directly since its Favorite affordance is a `DropdownMenuItem`, not a `Button`.
+
+Also covered the `/favorites` page, which a first pass missed — it renders `FavoriteItemRow`/`FavoriteCollectionRow` (a narrow, always-favorited row shape), not `ItemCard`/`CollectionCard`, so the goal 5 ("reflected consistently everywhere") wouldn't have held without touching them too. `FavoriteItemRow` gained an `ItemFavoriteButton` (seeded `isFavorite`, since every row here is favorited by definition). `FavoriteCollectionRow` needed its wrapper changed from a plain `<Link>` to `CollectionCardTrigger` first — a real `<button>` can't nest inside an `<a>` — which meant giving `CollectionCardTrigger` the same optional `className` override `ItemCardTrigger` already had, so the row could keep its compact styling instead of the grid card's. Unfavoriting from either row has no special-case handling: the row simply disappears on the `router.refresh()` the toggle already triggers, since the page's own query only ever selects favorited rows.
+
+Known, accepted side effect: toggling favorite always bumps the row's `updatedAt` (Prisma's `@updatedAt` fires on any `.update()`, and there's no per-field opt-out short of raw SQL) — so favoriting a collection also reorders it to the top of "Recent Collections" and changes the drawer/footer "Updated" date, even though no content changed. Seen live: favoriting "Design Resources" moved it above collections that were actually edited more recently. Accepted rather than worked around, since avoiding it would mean bypassing the ORM's update path entirely.
+
+Tests: 4 new unit-test blocks (db + actions, item + collection) mirroring the existing `updateItem`/`deleteItem` shape — 266 unit tests passing, plus the full existing 78-spec Playwright suite re-run clean on a freshly restarted dev server (checked first for locator drift from the rewritten drawer/card markup — none found). `npm run build` and `npm run lint` clean (one pre-existing, unrelated `user.test.ts` type error confirmed present on `main` via `git stash`). Mutation-checked the ownership early-return in `toggleItemFavorite`: disabling it makes "refuses to toggle an item the user does not own" fail as expected. Verified live in the browser as the demo user: card-level toggle (dashboard grid, no navigation), drawer toggle (scoped inside the dialog — an earlier unscoped `document.querySelector` during testing was shown to hit a background card instead, a test-methodology bug rather than a real one, since a modal backdrop blocks real pointer clicks that a raw DOM `.click()` bypasses), collection dropdown-menu toggle (no navigation), both `/favorites` row types (toggle removes the row, no navigation), stats counts and sidebar Favorites section updating via `router.refresh()`, and DB state confirmed directly against the dev Neon branch before restoring the seed's original favorites (2 collections, 2 items — confirmed via `npm run db:test`). One transient `prisma:error Received network error` / dev-overlay runtime error appeared once during testing and once more at a subsequent dev-server cold start — traced to the Neon pooled/serverless websocket driver, not the new code; nothing failed because of it (the accompanying mutation had already committed) and it did not recur across either full Playwright run.
 
 ## History
 

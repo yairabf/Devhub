@@ -1,6 +1,5 @@
-import { Star } from "lucide-react";
-
 import { CollectionCardMenu } from "@/components/dashboard/CollectionCardMenu";
+import { CollectionFavoriteButton } from "@/components/dashboard/CollectionFavoriteButton";
 import {
   Card,
   CardContent,
@@ -30,13 +29,9 @@ export function CollectionCard({ collection }: CollectionCardProps) {
       <CardHeader className="flex-row items-start justify-between gap-2">
         <CardTitle className="leading-tight">{collection.name}</CardTitle>
         <div className="flex shrink-0 items-center gap-1">
-          <Star
-            className={cn(
-              "size-4",
-              collection.isFavorite
-                ? "fill-yellow-400 text-yellow-400"
-                : "text-muted-foreground"
-            )}
+          <CollectionFavoriteButton
+            collectionId={collection.id}
+            isFavorite={collection.isFavorite}
           />
           <CollectionCardMenu collection={collection} />
         </div>

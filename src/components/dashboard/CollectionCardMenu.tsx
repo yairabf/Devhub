@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 
 import { DeleteCollectionDialog } from "@/components/dashboard/DeleteCollectionDialog";
 import { EditCollectionDialog } from "@/components/dashboard/EditCollectionDialog";
+import { useCollectionFavorite } from "@/components/dashboard/useCollectionFavorite";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -32,6 +33,10 @@ export function CollectionCardMenu({ collection }: CollectionCardMenuProps) {
   const router = useRouter();
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const { favorite, toggle, pending } = useCollectionFavorite(
+    collection.id,
+    collection.isFavorite,
+  );
 
   return (
     <div onClick={event => event.stopPropagation()}>
@@ -51,19 +56,15 @@ export function CollectionCardMenu({ collection }: CollectionCardMenuProps) {
         />
         <DropdownMenuContent>
           <DropdownMenuItem
-            disabled
-            title="Favorite — coming soon"
-            aria-label={collection.isFavorite ? "Favorited" : "Not favorited"}
+            disabled={pending}
+            onClick={toggle}
+            aria-label={favorite ? "Unfavorite" : "Favorite"}
           >
             <Star
-              className={
-                collection.isFavorite
-                  ? "fill-yellow-400 text-yellow-400"
-                  : undefined
-              }
+              className={favorite ? "fill-yellow-400 text-yellow-400" : undefined}
               aria-hidden
             />
-            Favorite
+            {favorite ? "Unfavorite" : "Favorite"}
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setEditOpen(true)}>
             <Pencil aria-hidden />

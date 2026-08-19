@@ -20,6 +20,7 @@ import {
   getCollectionOptions,
   getCollections,
   getFavoriteCollectionsList,
+  toggleCollectionFavorite,
   updateCollection,
 } from "@/lib/db/collections";
 
@@ -322,6 +323,52 @@ describe("deleteCollection", () => {
     await expect(deleteCollection("user_demo", "col_1")).resolves.toBe(true);
     expect(destroy).toHaveBeenCalledTimes(1);
     expect(destroy.mock.calls[0][0]).toEqual({ where: { id: "col_1" } });
+  });
+});
+
+describe("toggleCollectionFavorite", () => {
+  it("refuses to toggle a collection the user does not own", async () => {
+    findFirst.mockResolvedValue(null as never);
+
+    await expect(
+      toggleCollectionFavorite("user_other", "col_1"),
+    ).resolves.toBeNull();
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it("checks ownership with both the collection id and the user id", async () => {
+    findFirst.mockResolvedValue({ isFavorite: false } as never);
+    update.mockResolvedValue({ isFavorite: true } as never);
+
+    await toggleCollectionFavorite("user_demo", "col_1");
+
+    expect(findFirst.mock.calls[0][0]).toMatchObject({
+      where: { id: "col_1", userId: "user_demo" },
+    });
+  });
+
+  it("flips false to true and returns the new value", async () => {
+    findFirst.mockResolvedValue({ isFavorite: false } as never);
+    update.mockResolvedValue({ isFavorite: true } as never);
+
+    await expect(
+      toggleCollectionFavorite("user_demo", "col_1"),
+    ).resolves.toBe(true);
+    expect(update.mock.calls[0][0]).toEqual({
+      where: { id: "col_1" },
+      data: { isFavorite: true },
+      select: { isFavorite: true },
+    });
+  });
+
+  it("flips true to false and returns the new value", async () => {
+    findFirst.mockResolvedValue({ isFavorite: true } as never);
+    update.mockResolvedValue({ isFavorite: false } as never);
+
+    await expect(
+      toggleCollectionFavorite("user_demo", "col_1"),
+    ).resolves.toBe(false);
+    expect(update.mock.calls[0][0]).toMatchObject({ data: { isFavorite: false } });
   });
 });
 

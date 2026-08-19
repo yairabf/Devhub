@@ -5,8 +5,13 @@ import { useRouter } from "next/navigation";
 interface CollectionCardTriggerProps {
   collectionId: string;
   name: string;
+  /** Overrides the default card-grid styling — e.g. for a compact list row. */
+  className?: string;
   children: React.ReactNode;
 }
+
+const DEFAULT_CLASS =
+  "h-full cursor-pointer rounded-xl outline-none focus-visible:ring-3 focus-visible:ring-ring/50";
 
 /**
  * Client wrapper that navigates to the collection's detail page. A div (not
@@ -17,6 +22,7 @@ interface CollectionCardTriggerProps {
 export function CollectionCardTrigger({
   collectionId,
   name,
+  className,
   children,
 }: CollectionCardTriggerProps) {
   const router = useRouter();
@@ -38,7 +44,7 @@ export function CollectionCardTrigger({
       aria-label={`Open ${name}`}
       onClick={navigate}
       onKeyDown={handleKeyDown}
-      className="h-full cursor-pointer rounded-xl outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+      className={className ?? DEFAULT_CLASS}
     >
       {children}
     </div>

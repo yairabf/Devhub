@@ -1,11 +1,12 @@
 "use client";
 
-import { Folder, Pencil, Pin, Star, Tag } from "lucide-react";
+import { Folder, Pencil, Pin, Tag } from "lucide-react";
 
 import { CodeEditor } from "@/components/dashboard/CodeEditor";
 import { CopyButton } from "@/components/dashboard/CopyButton";
 import { DeleteItemDialog } from "@/components/dashboard/DeleteItemDialog";
 import { ItemEditForm } from "@/components/dashboard/ItemEditForm";
+import { ItemFavoriteButton } from "@/components/dashboard/ItemFavoriteButton";
 import { MarkdownEditor } from "@/components/dashboard/MarkdownEditor";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -126,23 +127,11 @@ function ItemViewMode({
   return (
     <>
       <div className="flex items-center gap-1 border-b border-border px-4 py-2">
-        <Button
-          variant="ghost"
+        <ItemFavoriteButton
+          itemId={item.id}
+          isFavorite={item.isFavorite}
           size="icon-sm"
-          disabled
-          title="Favorite — coming soon"
-          aria-label={item.isFavorite ? "Favorited" : "Not favorited"}
-        >
-          <Star
-            className={cn(
-              "size-4",
-              item.isFavorite
-                ? "fill-yellow-400 text-yellow-400"
-                : "text-muted-foreground",
-            )}
-            aria-hidden
-          />
-        </Button>
+        />
         <Button
           variant="ghost"
           size="icon-sm"

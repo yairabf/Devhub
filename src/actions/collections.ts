@@ -6,6 +6,7 @@ import { auth } from "@/auth";
 import {
   createCollection as createCollectionInDb,
   deleteCollection as deleteCollectionInDb,
+  toggleCollectionFavorite as toggleCollectionFavoriteInDb,
   updateCollection as updateCollectionInDb,
   type CollectionCardData,
   type CollectionMeta,
@@ -104,6 +105,43 @@ export async function updateCollection(
     return {
       success: false,
       error: "Could not save this collection. Please try again.",
+    };
+  }
+}
+
+export type ToggleCollectionFavoriteResult =
+  | { success: true; data: { isFavorite: boolean } }
+  | { success: false; error: string };
+
+export async function toggleCollectionFavorite(
+  collectionId: string,
+): Promise<ToggleCollectionFavoriteResult> {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return {
+        success: false,
+        error: "You must be signed in to favorite collections.",
+      };
+    }
+
+    if (!collectionId?.trim()) {
+      return { success: false, error: "Collection not found." };
+    }
+
+    const isFavorite = await toggleCollectionFavoriteInDb(
+      session.user.id,
+      collectionId,
+    );
+    if (isFavorite === null) {
+      return { success: false, error: "Collection not found." };
+    }
+
+    return { success: true, data: { isFavorite } };
+  } catch {
+    return {
+      success: false,
+      error: "Could not update this collection. Please try again.",
     };
   }
 }

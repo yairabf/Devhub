@@ -1,14 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Pencil, Star, Trash2 } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
+import { CollectionFavoriteButton } from "@/components/dashboard/CollectionFavoriteButton";
 import { DeleteCollectionDialog } from "@/components/dashboard/DeleteCollectionDialog";
 import { EditCollectionDialog } from "@/components/dashboard/EditCollectionDialog";
 import { Button } from "@/components/ui/button";
 import type { CollectionMeta } from "@/lib/db/collections";
-import { cn } from "@/lib/utils";
 
 interface CollectionDetailHeaderProps {
   collection: CollectionMeta;
@@ -46,23 +46,11 @@ export function CollectionDetailHeader({
       </div>
 
       <div className="flex shrink-0 items-center gap-1">
-        <Button
-          variant="ghost"
+        <CollectionFavoriteButton
+          collectionId={collection.id}
+          isFavorite={collection.isFavorite}
           size="icon-sm"
-          disabled
-          title="Favorite — coming soon"
-          aria-label={collection.isFavorite ? "Favorited" : "Not favorited"}
-        >
-          <Star
-            className={cn(
-              "size-4",
-              collection.isFavorite
-                ? "fill-yellow-400 text-yellow-400"
-                : "text-muted-foreground"
-            )}
-            aria-hidden
-          />
-        </Button>
+        />
         <Button
           variant="ghost"
           size="icon-sm"

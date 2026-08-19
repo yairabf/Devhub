@@ -1,6 +1,5 @@
-import { Star } from "lucide-react";
-
 import { CopyButton } from "@/components/dashboard/CopyButton";
+import { ItemFavoriteButton } from "@/components/dashboard/ItemFavoriteButton";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -35,12 +34,7 @@ export function ItemCard({ item }: ItemCardProps) {
           {copyValue && (
             <CopyButton value={copyValue} label={`Copy ${item.itemTypeName.toLowerCase()}`} />
           )}
-          <Star
-            className={cn(
-              "size-4",
-              item.isFavorite ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground"
-            )}
-          />
+          <ItemFavoriteButton itemId={item.id} isFavorite={item.isFavorite} />
         </div>
       </CardHeader>
       <CardContent className="space-y-3 pt-0">
