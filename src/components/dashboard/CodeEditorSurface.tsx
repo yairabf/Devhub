@@ -23,6 +23,7 @@ import {
   EDITOR_VERTICAL_PADDING,
 } from "@/lib/code-editor";
 import { getMonacoLanguageId } from "@/lib/code-language";
+import type { EditorTheme } from "@/types/editor-preferences";
 
 /**
  * The Monaco surface, loaded lazily and client-only by `CodeEditor` — this
@@ -102,8 +103,46 @@ const LIGHT_COLORS = {
   "scrollbarSlider.activeBackground": "#7373738c",
 };
 
+/** Classic Monokai palette. Monaco only parses hex, so this is hand-picked, not derived. */
+const MONOKAI_COLORS = {
+  "editor.background": "#272822",
+  "editor.foreground": "#f8f8f2",
+  "editor.lineHighlightBackground": "#3e3d32",
+  "editor.selectionBackground": "#49483e",
+  "editorCursor.foreground": "#f8f8f0",
+  "editorLineNumber.foreground": "#90908a",
+  "editorLineNumber.activeForeground": "#f8f8f2",
+  "editorWidget.background": "#1e1f1c",
+  "editorWidget.border": "#414339",
+  "editorSuggestWidget.background": "#1e1f1c",
+  "input.background": "#272822",
+  "scrollbarSlider.background": "#90908a33",
+  "scrollbarSlider.hoverBackground": "#90908a66",
+  "scrollbarSlider.activeBackground": "#90908a99",
+};
+
+/** GitHub's dark theme palette, hand-picked the same way as Monokai above. */
+const GITHUB_DARK_COLORS = {
+  "editor.background": "#0d1117",
+  "editor.foreground": "#c9d1d9",
+  "editor.lineHighlightBackground": "#161b22",
+  "editor.selectionBackground": "#3b5070",
+  "editorCursor.foreground": "#58a6ff",
+  "editorLineNumber.foreground": "#6e7681",
+  "editorLineNumber.activeForeground": "#c9d1d9",
+  "editorWidget.background": "#161b22",
+  "editorWidget.border": "#30363d",
+  "editorSuggestWidget.background": "#161b22",
+  "input.background": "#0d1117",
+  "scrollbarSlider.background": "#6e768133",
+  "scrollbarSlider.hoverBackground": "#6e768166",
+  "scrollbarSlider.activeBackground": "#6e768199",
+};
+
 export const DARK_THEME = "devstash-dark";
 export const LIGHT_THEME = "devstash-light";
+const MONOKAI_THEME = "devstash-monokai";
+const GITHUB_DARK_THEME = "devstash-github-dark";
 
 monaco.editor.defineTheme(DARK_THEME, {
   base: "vs-dark",
@@ -119,6 +158,36 @@ monaco.editor.defineTheme(LIGHT_THEME, {
   colors: LIGHT_COLORS,
 });
 
+monaco.editor.defineTheme(MONOKAI_THEME, {
+  base: "vs-dark",
+  inherit: true,
+  rules: [],
+  colors: MONOKAI_COLORS,
+});
+
+monaco.editor.defineTheme(GITHUB_DARK_THEME, {
+  base: "vs-dark",
+  inherit: true,
+  rules: [],
+  colors: GITHUB_DARK_COLORS,
+});
+
+/**
+ * `vs-dark` (the default preference) reproduces the editor's original
+ * behavior exactly: it just follows the app's own light/dark theme. Picking
+ * `monokai` or `github-dark` is a deliberate, visible choice, so those always
+ * apply regardless of the app theme — a light-mode user who picks monokai
+ * should see monokai, not nothing.
+ */
+function getMonacoTheme(
+  appTheme: "light" | "dark",
+  editorTheme: EditorTheme,
+): string {
+  if (editorTheme === "monokai") return MONOKAI_THEME;
+  if (editorTheme === "github-dark") return GITHUB_DARK_THEME;
+  return appTheme === "dark" ? DARK_THEME : LIGHT_THEME;
+}
+
 const BASE_OPTIONS: monaco.editor.IStandaloneEditorConstructionOptions = {
   // The editor mounts inside an animating Sheet and a scrollable Dialog, both
   // of which mis-measure on first paint; this is what recovers from that.
@@ -126,11 +195,9 @@ const BASE_OPTIONS: monaco.editor.IStandaloneEditorConstructionOptions = {
   // Without this the editor always reports a content height of max-height
   // worth of empty space below the last line, so it could never hug content.
   scrollBeyondLastLine: false,
-  minimap: { enabled: false },
   overviewRulerLanes: 0,
   overviewRulerBorder: false,
   hideCursorInOverviewRuler: true,
-  fontSize: 12.5,
   lineHeight: EDITOR_LINE_HEIGHT,
   fontFamily: "var(--font-geist-mono), ui-monospace, monospace",
   fontLigatures: false,
@@ -142,7 +209,6 @@ const BASE_OPTIONS: monaco.editor.IStandaloneEditorConstructionOptions = {
     top: EDITOR_VERTICAL_PADDING / 2,
     bottom: EDITOR_VERTICAL_PADDING / 2,
   },
-  tabSize: 2,
   stickyScroll: { enabled: false },
   // Monaco's own menu is an IDE menu: it offers "Command Palette", which opens
   // a quick-input widget inside the item dialog, and it renders inside the
@@ -163,7 +229,14 @@ interface CodeEditorSurfaceProps {
   value: string;
   language: string | null | undefined;
   readOnly: boolean;
-  theme: "light" | "dark";
+  /** The app's own light/dark theme — only used when `editorTheme` is `vs-dark`. */
+  appTheme: "light" | "dark";
+  /** The user's saved editor-theme preference. */
+  editorTheme: EditorTheme;
+  fontSize: number;
+  tabSize: number;
+  wordWrap: boolean;
+  minimap: boolean;
   ariaLabel: string;
   onChange?: (value: string) => void;
 }
@@ -172,7 +245,12 @@ export function CodeEditorSurface({
   value,
   language,
   readOnly,
-  theme,
+  appTheme,
+  editorTheme,
+  fontSize,
+  tabSize,
+  wordWrap,
+  minimap,
   ariaLabel,
   onChange,
 }: CodeEditorSurfaceProps) {
@@ -208,7 +286,9 @@ export function CodeEditorSurface({
   );
 
   // Memoized because the library calls `updateOptions` whenever this object's
-  // identity changes — a fresh literal would do that on every keystroke.
+  // identity changes — a fresh literal would do that on every keystroke. Every
+  // preference that maps to a Monaco option must be listed in the deps below,
+  // or a saved change stops taking effect on an already-mounted editor.
   const options = useMemo(
     () => ({
       ...BASE_OPTIONS,
@@ -218,15 +298,19 @@ export function CodeEditorSurface({
       domReadOnly: readOnly,
       renderLineHighlight: readOnly ? ("none" as const) : ("line" as const),
       ariaLabel,
+      fontSize,
+      tabSize,
+      wordWrap: wordWrap ? ("on" as const) : ("off" as const),
+      minimap: { enabled: minimap },
     }),
-    [readOnly, ariaLabel],
+    [readOnly, ariaLabel, fontSize, tabSize, wordWrap, minimap],
   );
 
   return (
     <Editor
       value={value}
       language={getMonacoLanguageId(language)}
-      theme={theme === "dark" ? DARK_THEME : LIGHT_THEME}
+      theme={getMonacoTheme(appTheme, editorTheme)}
       height={height}
       onMount={handleMount}
       onChange={handleChange}

@@ -27,8 +27,9 @@ export function clampEditorHeight(height: number): number {
 /**
  * The height Monaco will most likely settle on, from the line count alone —
  * used to size the placeholder so the box does not collapse and jump while the
- * editor chunk loads. An estimate, not a measurement: it assumes no wrapping,
- * which holds because the editor scrolls horizontally instead.
+ * editor chunk loads. An estimate, not a measurement: word wrap is a per-user
+ * preference now, so a wrapped long line can still grow the box past this
+ * guess — `onDidContentSizeChange` in the surface corrects it once mounted.
  */
 export function estimateEditorHeight(value: string): number {
   const lines = value ? value.split("\n").length : 1;

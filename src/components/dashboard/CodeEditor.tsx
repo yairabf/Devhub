@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 
 import { CopyButton } from "@/components/dashboard/CopyButton";
+import { useEditorPreferences } from "@/components/editor-preferences/EditorPreferencesContext";
 import { useAppTheme } from "@/components/theme/useAppTheme";
 import { estimateEditorHeight } from "@/lib/code-editor";
 import { getLanguageLabel } from "@/lib/code-language";
@@ -46,7 +47,8 @@ export function CodeEditor({
   copyLabel = "Copy code",
   className,
 }: CodeEditorProps) {
-  const theme = useAppTheme();
+  const appTheme = useAppTheme();
+  const { preferences } = useEditorPreferences();
   const languageLabel = getLanguageLabel(language);
   const readOnly = !onChange || disabled;
 
@@ -84,7 +86,12 @@ export function CodeEditor({
         value={value}
         language={language}
         readOnly={readOnly}
-        theme={theme}
+        appTheme={appTheme}
+        editorTheme={preferences.theme}
+        fontSize={preferences.fontSize}
+        tabSize={preferences.tabSize}
+        wordWrap={preferences.wordWrap}
+        minimap={preferences.minimap}
         ariaLabel={ariaLabel}
         onChange={onChange}
       />

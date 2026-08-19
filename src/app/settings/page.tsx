@@ -4,9 +4,12 @@ import { ChevronLeft } from "lucide-react";
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { getEditorPreferences } from "@/lib/db/user";
 
+import { EditorPreferencesProvider } from "@/components/editor-preferences/EditorPreferencesContext";
 import { ChangePasswordForm } from "@/components/settings/ChangePasswordForm";
 import { DeleteAccountDialog } from "@/components/settings/DeleteAccountDialog";
+import { EditorPreferencesForm } from "@/components/settings/EditorPreferencesForm";
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +33,7 @@ export default async function SettingsPage() {
   }
 
   const hasPassword = !!user.password;
+  const editorPreferences = await getEditorPreferences(userId);
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-6 px-4 py-8 sm:py-12">
@@ -47,6 +51,10 @@ export default async function SettingsPage() {
           Manage your account security.
         </p>
       </header>
+
+      <EditorPreferencesProvider initialPreferences={editorPreferences}>
+        <EditorPreferencesForm />
+      </EditorPreferencesProvider>
 
       {hasPassword && <ChangePasswordForm />}
 

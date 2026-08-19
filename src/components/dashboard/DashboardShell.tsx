@@ -6,8 +6,10 @@ import { ItemDrawerProvider } from "./ItemDrawerProvider";
 import { TopBar } from "./TopBar";
 import { Sidebar, type SidebarData } from "./Sidebar";
 import type { UserMenuUser } from "./UserMenu";
+import { EditorPreferencesProvider } from "@/components/editor-preferences/EditorPreferencesContext";
 import type { CollectionOption } from "@/lib/db/collections";
 import type { SearchIndex } from "@/lib/search";
+import type { EditorPreferences } from "@/types/editor-preferences";
 
 interface DashboardShellProps {
   children: React.ReactNode;
@@ -16,6 +18,8 @@ interface DashboardShellProps {
   collectionOptions: CollectionOption[];
   /** Pre-fetched items + collections, searched client-side by the command palette. */
   searchIndex: SearchIndex;
+  /** Feeds every `CodeEditor` rendered under this shell (drawer, edit form, create dialog). */
+  editorPreferences: EditorPreferences;
   user: UserMenuUser;
 }
 
@@ -24,6 +28,7 @@ export function DashboardShell({
   sidebarData,
   collectionOptions,
   searchIndex,
+  editorPreferences,
   user,
 }: DashboardShellProps) {
   const [collapsed, setCollapsed] = useState(false);
@@ -44,33 +49,35 @@ export function DashboardShell({
   }, []);
 
   return (
-    <ItemDrawerProvider collectionOptions={collectionOptions}>
-      <div className="flex h-full flex-col">
-        <TopBar
-          onOpenDrawer={() => setDrawerOpen(true)}
-          onOpenSearch={() => setPaletteOpen(true)}
-          itemTypes={sidebarData.itemTypes}
-          collectionOptions={collectionOptions}
-        />
-        <div className="flex flex-1 overflow-hidden">
-          <Sidebar
-            collapsed={collapsed}
-            drawerOpen={drawerOpen}
-            onDrawerOpenChange={setDrawerOpen}
-            onToggleCollapsed={() => setCollapsed(c => !c)}
-            data={sidebarData}
-            user={user}
+    <EditorPreferencesProvider initialPreferences={editorPreferences}>
+      <ItemDrawerProvider collectionOptions={collectionOptions}>
+        <div className="flex h-full flex-col">
+          <TopBar
+            onOpenDrawer={() => setDrawerOpen(true)}
+            onOpenSearch={() => setPaletteOpen(true)}
+            itemTypes={sidebarData.itemTypes}
+            collectionOptions={collectionOptions}
           />
-          <main className="flex-1 overflow-auto bg-background p-6">
-            {children}
-          </main>
+          <div className="flex flex-1 overflow-hidden">
+            <Sidebar
+              collapsed={collapsed}
+              drawerOpen={drawerOpen}
+              onDrawerOpenChange={setDrawerOpen}
+              onToggleCollapsed={() => setCollapsed(c => !c)}
+              data={sidebarData}
+              user={user}
+            />
+            <main className="flex-1 overflow-auto bg-background p-6">
+              {children}
+            </main>
+          </div>
         </div>
-      </div>
-      <CommandPalette
-        open={paletteOpen}
-        onOpenChange={setPaletteOpen}
-        searchIndex={searchIndex}
-      />
-    </ItemDrawerProvider>
+        <CommandPalette
+          open={paletteOpen}
+          onOpenChange={setPaletteOpen}
+          searchIndex={searchIndex}
+        />
+      </ItemDrawerProvider>
+    </EditorPreferencesProvider>
   );
 }

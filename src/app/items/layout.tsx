@@ -8,6 +8,7 @@ import {
   getCollections,
 } from "@/lib/db/collections";
 import { getSearchableItems, getSystemItemTypes } from "@/lib/db/items";
+import { getEditorPreferences } from "@/lib/db/user";
 
 export const dynamic = "force-dynamic";
 
@@ -28,14 +29,21 @@ export default async function ItemsLayout({
     image: session.user.image ?? null,
   };
 
-  const [favoriteCollections, collections, itemTypes, collectionOptions, searchableItems] =
-    await Promise.all([
-      getFavoriteCollections(userId),
-      getCollections(userId),
-      getSystemItemTypes(),
-      getCollectionOptions(userId),
-      getSearchableItems(userId),
-    ]);
+  const [
+    favoriteCollections,
+    collections,
+    itemTypes,
+    collectionOptions,
+    searchableItems,
+    editorPreferences,
+  ] = await Promise.all([
+    getFavoriteCollections(userId),
+    getCollections(userId),
+    getSystemItemTypes(),
+    getCollectionOptions(userId),
+    getSearchableItems(userId),
+    getEditorPreferences(userId),
+  ]);
 
   return (
     <DashboardShell
@@ -53,6 +61,7 @@ export default async function ItemsLayout({
           itemCount: collection.itemCount,
         })),
       }}
+      editorPreferences={editorPreferences}
       user={user}
     >
       {children}
