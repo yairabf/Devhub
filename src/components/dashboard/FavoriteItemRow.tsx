@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import type { FavoriteItemData } from "@/lib/db/items";
 import { formatIsoDate } from "@/lib/format";
 import { TypeGlyph } from "@/lib/type-icons";
-import { getTypeTextClass } from "@/lib/type-colors";
+import { getTypeBadgeClass, getTypeTextClass } from "@/lib/type-colors";
 import { cn } from "@/lib/utils";
 
 interface FavoriteItemRowProps {
@@ -25,11 +25,19 @@ export function FavoriteItemRow({ item }: FavoriteItemRowProps) {
         typeId={item.itemTypeId}
         className={cn("size-4 shrink-0", getTypeTextClass(item.itemTypeId))}
       />
-      <span className="min-w-0 flex-1 truncate font-medium text-foreground">
+      <span
+        className={cn(
+          "min-w-0 flex-1 truncate font-medium",
+          getTypeTextClass(item.itemTypeId)
+        )}
+      >
         {item.title}
       </span>
       <ItemFavoriteButton itemId={item.id} isFavorite className="shrink-0" />
-      <Badge variant="outline" className="shrink-0">
+      <Badge
+        variant="outline"
+        className={cn("shrink-0", getTypeBadgeClass(item.itemTypeId))}
+      >
         <TypeGlyph typeId={item.itemTypeId} className="size-3.5" />
         {item.itemTypeName}
       </Badge>

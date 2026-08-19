@@ -1,16 +1,22 @@
-# Current Feature
+# Current Feature: Favorites Page Type Colors
 
 ## Status
 
-<!-- Not started -->
+In Progress
 
 ## Goals
 
-<!-- What this feature should accomplish -->
+- Add per-type color to the `/favorites` items list: the item title text and the type `Badge` should be colored to match that type's existing icon color (blue for Snippet, purple for Prompt, orange for Command, etc.).
+- Reuse `src/lib/type-colors.ts` rather than a new one-off mapping.
+- Scope is `FavoriteItemRow` only — the Collections rows have no single type and are unaffected.
 
 ## Notes
 
-<!-- Constraints, links to specs, relevant files -->
+- Added `getTypeBadgeClass(typeId)` to `src/lib/type-colors.ts` (border + text classes, e.g. `border-blue-500/40 text-blue-500`), alongside the existing `getTypeTextClass`/`getTypeDotClass`/`getTypeLeftBorderClass`.
+- `FavoriteItemRow.tsx`: title `<span>` now takes `getTypeTextClass`; the type `Badge` takes `getTypeBadgeClass` on top of its existing `outline` variant.
+
+- Added `getTypeBadgeClass(typeId)` to `src/lib/type-colors.ts` (border + text classes, e.g. `border-blue-500/40 text-blue-500`), alongside the existing `getTypeTextClass`/`getTypeDotClass`/`getTypeLeftBorderClass`.
+- `FavoriteItemRow.tsx`: title `<span>` now takes `getTypeTextClass`; the type `Badge` takes `getTypeBadgeClass` on top of its existing `outline` variant.
 
 ## History
 

@@ -28,6 +28,16 @@ const TYPE_TEXT_CLASS: Record<string, string> = {
   type_image: "text-pink-500",
 };
 
+const TYPE_BADGE_CLASS: Record<string, string> = {
+  type_snippet: "border-blue-500/40 text-blue-500",
+  type_prompt: "border-purple-500/40 text-purple-500",
+  type_command: "border-orange-500/40 text-orange-500",
+  type_note: "border-yellow-400/40 text-yellow-400",
+  type_link: "border-emerald-500/40 text-emerald-500",
+  type_file: "border-gray-500/40 text-gray-500",
+  type_image: "border-pink-500/40 text-pink-500",
+};
+
 export function getTypeLeftBorderClass(typeId: string | null): string {
   if (!typeId) return "border-l-border";
   return TYPE_LEFT_BORDER_CLASS[typeId] ?? "border-l-border";
@@ -41,4 +51,9 @@ export function getTypeDotClass(typeId: string | null): string {
 export function getTypeTextClass(typeId: string | null): string {
   if (!typeId) return "text-muted-foreground";
   return TYPE_TEXT_CLASS[typeId] ?? "text-muted-foreground";
+}
+
+export function getTypeBadgeClass(typeId: string | null): string {
+  if (!typeId) return "border-border text-foreground";
+  return TYPE_BADGE_CLASS[typeId] ?? "border-border text-foreground";
 }

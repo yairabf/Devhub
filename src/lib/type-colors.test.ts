@@ -3,6 +3,7 @@ import {
   getTypeLeftBorderClass,
   getTypeDotClass,
   getTypeTextClass,
+  getTypeBadgeClass,
 } from "@/lib/type-colors";
 
 describe("getTypeLeftBorderClass", () => {
@@ -47,5 +48,26 @@ describe("getTypeTextClass", () => {
 
   it("falls back to the muted class for null", () => {
     expect(getTypeTextClass(null)).toBe("text-muted-foreground");
+  });
+});
+
+describe("getTypeBadgeClass", () => {
+  it("returns the mapped border+text classes for a known type id", () => {
+    expect(getTypeBadgeClass("type_snippet")).toBe(
+      "border-blue-500/40 text-blue-500"
+    );
+    expect(getTypeBadgeClass("type_command")).toBe(
+      "border-orange-500/40 text-orange-500"
+    );
+  });
+
+  it("falls back to the default border/text classes for an unknown type id", () => {
+    expect(getTypeBadgeClass("type_unknown")).toBe(
+      "border-border text-foreground"
+    );
+  });
+
+  it("falls back to the default border/text classes for null", () => {
+    expect(getTypeBadgeClass(null)).toBe("border-border text-foreground");
   });
 });
