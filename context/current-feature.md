@@ -1,47 +1,16 @@
-# Current Feature: Favorite Toggle — Drawer Cache Sync via Context
+# Current Feature
 
 ## Status
 
-Complete
+<!-- Not started -->
 
 ## Goals
 
-- Route the drawer's flag-patch callback through `ItemDrawerContext` so that favoriting from **any** surface keeps the drawer's cached detail in sync — not just favoriting from inside the drawer itself.
-- Fix the documented staleness bug: favoriting an item via the star on `ItemCard` or `FavoriteItemRow` (both server components, which structurally cannot pass an `onToggled` prop) currently leaves `ItemDrawerProvider`'s `cache` entry and live `item` state holding the pre-toggle `isFavorite` value. Opening the drawer afterwards shows the wrong star state.
-- Expose the existing `handleFlagToggled` from `ItemDrawerProvider` on the context value (alongside `openItem`), and have `useItemFavorite` read it from context instead of requiring it to be threaded down as a prop.
-- Keep `useItemFavorite` usable outside an `ItemDrawerProvider` — the context lookup must be optional (non-throwing), unlike `useItemDrawer()`, which throws by design.
-- Remove the now-redundant `onToggled` prop threading from `ItemFavoriteButton` / `ItemDrawer` if context makes it dead, or keep it as an explicit override — decide during implementation, but do not leave two live mechanisms doing the same job silently.
-- Verify the same fix does not regress the pin path: `useItemPin` / `ItemPinButton` are drawer-only by spec and already receive `onFlagToggled` as a prop.
+<!-- What this feature should accomplish -->
 
 ## Notes
 
-### Origin
-
-Carried forward as a known limitation from the **Pinned Items** feature (2026-08-19). That entry fixed the drawer-originated staleness for both pin and favorite by adding `handleFlagToggled` to `ItemDrawerProvider` and threading it as `onFlagToggled` → `ItemDrawer` → both flag buttons. The fix only covers *that call site*: `useItemFavorite`'s third param is optional, and the card/row stars pass nothing.
-
-### Relevant files
-
-- `src/components/dashboard/ItemDrawerProvider.tsx` — owns `cache` (a `useRef<Map>`), live `item` state, and `handleFlagToggled`. Currently `ItemDrawerContextValue` exposes only `openItem`; `contextValue` is `useMemo`'d on `[openItem]` to keep card triggers from re-rendering when the drawer opens, so any added callback must be stable (`useCallback`) and added to the deps.
-- `src/components/dashboard/useItemFavorite.ts` — takes `onToggled?: (itemId, patch: ItemFlagPatch) => void` as a third param and calls it after a successful toggle.
-- `src/components/dashboard/ItemFavoriteButton.tsx` — passes `onToggled` straight through.
-- `src/components/dashboard/ItemCard.tsx:54` and `src/components/dashboard/FavoriteItemRow.tsx:36` — the two server-component call sites that pass no callback (the bug).
-- `src/components/dashboard/ItemDrawer.tsx` — passes `onFlagToggled` to both flag buttons in the action bar.
-- `src/components/dashboard/useItemPin.ts` / `ItemPinButton.tsx` — the sibling pin pair; drawer-only, so unaffected in behaviour but should stay consistent in shape.
-- `src/lib/db/items.ts` — exports `ItemFlagPatch` (`Partial<Pick<ItemDetailData, "isFavorite" | "isPinned" | "updatedAt">>`). Defined there deliberately so the buttons don't import from a module that transitively imports them; keep it that way.
-
-### Constraints / gotchas
-
-- **Do not make the context lookup throw.** `useItemDrawer()` throws outside a provider on purpose; a favorite star must still work on any future surface rendered outside `DashboardShell`. Use `useContext(...)` directly and treat `null` as "no drawer to patch".
-- `ItemFlagPatch` includes `updatedAt` — a toggle bumps it server-side (Prisma `@updatedAt`), and the drawer footer renders it. Any new patch path must carry `updatedAt` too, not just the boolean, or the footer strands on the old date.
-- **Do not** widen this into a per-card pin action or an out-of-band (other tab/device) sync mechanism. Both remain documented limitations.
-- Toggling still bumps `updatedAt` and therefore reorders listings — accepted side effect, unchanged by this fix.
-
-### Verification
-
-- Unit tests: extend `src/lib/db/items.test.ts` / `src/actions/items.test.ts` only if server logic changes (it should not — this is client-side wiring).
-- The real proof is E2E. Add a spec alongside `e2e/item-pin.spec.ts` / the favorite coverage: favorite an item **from its card**, then open the drawer and assert the action bar reads "Unfavorite"; also assert it survives Edit → Cancel (the remount path that `ItemViewMode` unmounting exposes). Mutation-check by reverting the context wiring — the spec must fail.
-- Run on a **freshly restarted** dev server with `.next` cleared, per this project's documented `reuseExistingServer` staleness gotcha.
-- `npm test`, `npm run lint`, `npm run build`, and `npm run db:test` afterwards; restore seed favorites if manual testing changes them.
+<!-- Constraints, links to specs, relevant files -->
 
 ## History
 
