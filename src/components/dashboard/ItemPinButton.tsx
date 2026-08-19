@@ -4,15 +4,12 @@ import { Pin } from "lucide-react";
 
 import { useItemPin } from "@/components/dashboard/useItemPin";
 import { Button } from "@/components/ui/button";
-import type { ItemFlagPatch } from "@/lib/db/items";
 import { cn } from "@/lib/utils";
 
 interface ItemPinButtonProps {
   itemId: string;
   isPinned: boolean;
   size?: "icon-xs" | "icon-sm";
-  /** Lets the drawer fold the new flag value into the detail it is holding. */
-  onToggled?: (itemId: string, patch: ItemFlagPatch) => void;
   className?: string;
 }
 
@@ -20,10 +17,9 @@ export function ItemPinButton({
   itemId,
   isPinned,
   size = "icon-xs",
-  onToggled,
   className,
 }: ItemPinButtonProps) {
-  const { pinned, toggle, pending } = useItemPin(itemId, isPinned, onToggled);
+  const { pinned, toggle, pending } = useItemPin(itemId, isPinned);
   const label = pinned ? "Unpin" : "Pin";
 
   return (

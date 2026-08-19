@@ -18,7 +18,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import type { CollectionOption } from "@/lib/db/collections";
-import type { ItemDetailData, ItemFlagPatch } from "@/lib/db/items";
+import type { ItemDetailData } from "@/lib/db/items";
 import { capitalize, formatIsoDate } from "@/lib/format";
 import { usesCodeEditor, usesMarkdownEditor } from "@/lib/item-form";
 import { getTypeTextClass } from "@/lib/type-colors";
@@ -46,8 +46,6 @@ interface ItemDrawerProps {
   onCancelEdit: () => void;
   onSaved: (updated: ItemDetailData) => void;
   onDeleted: (itemId: string) => void;
-  /** Fired after a favorite/pin toggle so the provider can fold in the new value. */
-  onFlagToggled: (itemId: string, patch: ItemFlagPatch) => void;
 }
 
 export function ItemDrawer({
@@ -61,7 +59,6 @@ export function ItemDrawer({
   onCancelEdit,
   onSaved,
   onDeleted,
-  onFlagToggled,
 }: ItemDrawerProps) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -81,12 +78,7 @@ export function ItemDrawer({
                 onSaved={onSaved}
               />
             ) : (
-              <ItemViewMode
-                item={item}
-                onEdit={onEdit}
-                onDeleted={onDeleted}
-                onFlagToggled={onFlagToggled}
-              />
+              <ItemViewMode item={item} onEdit={onEdit} onDeleted={onDeleted} />
             )}
             <ItemDrawerFooter item={item} />
           </>
@@ -126,30 +118,23 @@ function ItemViewMode({
   item,
   onEdit,
   onDeleted,
-  onFlagToggled,
 }: {
   item: ItemDetailData;
   onEdit: () => void;
   onDeleted: (itemId: string) => void;
-  onFlagToggled: (itemId: string, patch: ItemFlagPatch) => void;
 }) {
   const copyValue = item.content ?? item.url;
 
   return (
     <>
       <div className="flex items-center gap-1 border-b border-border px-4 py-2">
+        {/* Both toggles report back through ItemDrawerContext, not a prop. */}
         <ItemFavoriteButton
           itemId={item.id}
           isFavorite={item.isFavorite}
           size="icon-sm"
-          onToggled={onFlagToggled}
         />
-        <ItemPinButton
-          itemId={item.id}
-          isPinned={item.isPinned}
-          size="icon-sm"
-          onToggled={onFlagToggled}
-        />
+        <ItemPinButton itemId={item.id} isPinned={item.isPinned} size="icon-sm" />
         {copyValue && (
           <CopyButton
             value={copyValue}

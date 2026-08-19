@@ -5,26 +5,23 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { toggleItemPin } from "@/actions/items";
-import type { ItemFlagPatch } from "@/lib/db/items";
+import { useItemFlagSync } from "@/components/dashboard/ItemDrawerContext";
 
 /**
- * Optimistic pin toggle for an item. Shaped like `useItemFavorite`, with two
- * deliberate differences:
+ * Optimistic pin toggle for an item. Shaped like `useItemFavorite`, with one
+ * deliberate difference: it toasts on success as well as failure, per the
+ * feature spec. Favorite is silent on success; pinning moves the item to the top
+ * of listings the user may not be looking at, so the confirmation earns its
+ * keep.
  *
- * - It toasts on success as well as failure, per the feature spec. Favorite is
- *   silent on success; pinning moves the item to the top of listings the user
- *   may not be looking at, so the confirmation earns its keep.
- * - It takes an `onToggled` callback so the drawer can fold the new value into
- *   the detail it is holding. Without that, both closing/reopening and
- *   cancelling an edit replay a pre-toggle `isPinned` prop, and the adjust-state
- *   path below flips the icon back.
+ * It shares the drawer's flag sync from context, which folds the new value into
+ * the detail the drawer is holding. Without it, both closing/reopening and
+ * cancelling an edit replay a pre-toggle `isPinned` prop, and the adjust-state
+ * path below flips the icon back.
  */
-export function useItemPin(
-  itemId: string,
-  isPinned: boolean,
-  onToggled?: (itemId: string, patch: ItemFlagPatch) => void,
-) {
+export function useItemPin(itemId: string, isPinned: boolean) {
   const router = useRouter();
+  const notifyFlagToggled = useItemFlagSync();
   const [pinned, setPinned] = useState(isPinned);
   const [prevIsPinned, setPrevIsPinned] = useState(isPinned);
   const [pending, startTransition] = useTransition();
@@ -50,7 +47,7 @@ export function useItemPin(
       }
       setPinned(result.data.isPinned);
       toast.success(result.data.isPinned ? "Item pinned" : "Item unpinned");
-      onToggled?.(itemId, {
+      notifyFlagToggled?.(itemId, {
         isPinned: result.data.isPinned,
         updatedAt: result.data.updatedAt,
       });

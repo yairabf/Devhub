@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { toggleItemFavorite } from "@/actions/items";
-import type { ItemFlagPatch } from "@/lib/db/items";
+import { useItemFlagSync } from "@/components/dashboard/ItemDrawerContext";
 
 /**
  * Optimistic favorite toggle for an item, shared by the card grid and the
@@ -15,16 +15,15 @@ import type { ItemFlagPatch } from "@/lib/db/items";
  * effect, since this is deriving state from a prop, not synchronizing with
  * an external system.
  *
- * `onToggled` lets the drawer fold the new value into the detail it is holding,
- * so neither reopening nor cancelling an edit replays a pre-toggle
- * `isFavorite` prop.
+ * The drawer's flag sync comes from context, not a prop: it lets the drawer fold
+ * the new value into the detail it is holding, so neither reopening nor
+ * cancelling an edit replays a pre-toggle `isFavorite`. It has to be context
+ * because `ItemCard` and `FavoriteItemRow` are server components — they render
+ * the star but cannot hand it a callback.
  */
-export function useItemFavorite(
-  itemId: string,
-  isFavorite: boolean,
-  onToggled?: (itemId: string, patch: ItemFlagPatch) => void,
-) {
+export function useItemFavorite(itemId: string, isFavorite: boolean) {
   const router = useRouter();
+  const notifyFlagToggled = useItemFlagSync();
   const [favorite, setFavorite] = useState(isFavorite);
   const [prevIsFavorite, setPrevIsFavorite] = useState(isFavorite);
   const [pending, startTransition] = useTransition();
@@ -46,7 +45,7 @@ export function useItemFavorite(
         return;
       }
       setFavorite(result.data.isFavorite);
-      onToggled?.(itemId, {
+      notifyFlagToggled?.(itemId, {
         isFavorite: result.data.isFavorite,
         updatedAt: result.data.updatedAt,
       });

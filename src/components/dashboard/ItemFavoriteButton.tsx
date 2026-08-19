@@ -4,15 +4,12 @@ import { Star } from "lucide-react";
 
 import { useItemFavorite } from "@/components/dashboard/useItemFavorite";
 import { Button } from "@/components/ui/button";
-import type { ItemFlagPatch } from "@/lib/db/items";
 import { cn } from "@/lib/utils";
 
 interface ItemFavoriteButtonProps {
   itemId: string;
   isFavorite: boolean;
   size?: "icon-xs" | "icon-sm";
-  /** Lets the drawer fold the new flag value into the detail it is holding. */
-  onToggled?: (itemId: string, patch: ItemFlagPatch) => void;
   className?: string;
 }
 
@@ -20,14 +17,9 @@ export function ItemFavoriteButton({
   itemId,
   isFavorite,
   size = "icon-xs",
-  onToggled,
   className,
 }: ItemFavoriteButtonProps) {
-  const { favorite, toggle, pending } = useItemFavorite(
-    itemId,
-    isFavorite,
-    onToggled,
-  );
+  const { favorite, toggle, pending } = useItemFavorite(itemId, isFavorite);
 
   return (
     <Button
