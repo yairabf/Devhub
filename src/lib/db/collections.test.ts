@@ -19,6 +19,7 @@ import {
   getCollectionById,
   getCollectionOptions,
   getCollections,
+  getFavoriteCollectionsList,
   updateCollection,
 } from "@/lib/db/collections";
 
@@ -123,6 +124,43 @@ describe("getCollections", () => {
     // The seed writes every collection in one transaction, so updatedAt values
     // collide and Postgres is free to return them in any order without this.
     expect(findMany.mock.calls[0][0]).toMatchObject({
+      orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
+    });
+  });
+});
+
+describe("getFavoriteCollectionsList", () => {
+  it("flattens the raw Prisma row into FavoriteCollectionData", async () => {
+    const updatedAt = new Date("2026-08-18T00:00:00.000Z");
+    findMany.mockResolvedValue([
+      {
+        id: "col_react_patterns",
+        name: "React Patterns",
+        updatedAt,
+        _count: { items: 5 },
+      },
+    ] as never);
+
+    const result = await getFavoriteCollectionsList("user_demo");
+
+    expect(result).toEqual([
+      {
+        id: "col_react_patterns",
+        name: "React Patterns",
+        itemCount: 5,
+        updatedAt,
+      },
+    ]);
+  });
+
+  it("scopes to the user and favorited collections, sorted by recency", async () => {
+    findMany.mockResolvedValue([] as never);
+
+    await getFavoriteCollectionsList("user_demo");
+
+    const args = findMany.mock.calls[0][0];
+    expect(args).toMatchObject({
+      where: { userId: "user_demo", isFavorite: true },
       orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
     });
   });

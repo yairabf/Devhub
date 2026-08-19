@@ -1,12 +1,14 @@
 "use client";
 
-import { Menu, Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Menu, Search, Star } from "lucide-react";
+import Link from "next/link";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { NewCollectionDialog } from "@/components/dashboard/NewCollectionDialog";
 import { NewItemDialog } from "@/components/dashboard/NewItemDialog";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import type { CollectionOption } from "@/lib/db/collections";
 import type { SidebarItemType } from "@/lib/db/items";
+import { cn } from "@/lib/utils";
 
 interface TopBarProps {
   onOpenDrawer: () => void;
@@ -46,6 +48,22 @@ export function TopBar({
         </button>
       </div>
       <div className="flex items-center gap-2">
+        {/*
+          A styled <Link>, not a <Button render={<Link/>}>: base-ui's useButton
+          merges role="button" onto whatever it renders, which would override the
+          anchor's link role and hide the fact that this navigates.
+        */}
+        <Link
+          href="/favorites"
+          aria-label="Favorites"
+          title="Favorites"
+          className={cn(
+            buttonVariants({ variant: "ghost", size: "icon" }),
+            "text-muted-foreground hover:text-foreground",
+          )}
+        >
+          <Star className="h-4 w-4" />
+        </Link>
         <ThemeToggle />
         <NewCollectionDialog />
         <NewItemDialog itemTypes={itemTypes} collectionOptions={collectionOptions} />

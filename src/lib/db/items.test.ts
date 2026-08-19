@@ -22,6 +22,7 @@ import {
   countItemsByType,
   createItem,
   deleteItem,
+  getFavoriteItems,
   getItemDetail,
   getItemsByCollection,
   getItemsByType,
@@ -99,6 +100,45 @@ describe("getRecentItems", () => {
 
     const args = findMany.mock.calls[0][0];
     expect(args).toMatchObject({ take: 5 });
+  });
+});
+
+describe("getFavoriteItems", () => {
+  it("flattens the raw Prisma row into FavoriteItemData", async () => {
+    const updatedAt = new Date("2026-08-04T00:00:00.000Z");
+    findMany.mockResolvedValue([
+      {
+        id: "item_1",
+        title: "Senior Code Review",
+        itemTypeId: "type_prompt",
+        itemType: { name: "Prompt" },
+        updatedAt,
+      },
+    ] as never);
+
+    const result = await getFavoriteItems("user_demo");
+
+    expect(result).toEqual([
+      {
+        id: "item_1",
+        title: "Senior Code Review",
+        itemTypeId: "type_prompt",
+        itemTypeName: "Prompt",
+        updatedAt,
+      },
+    ]);
+  });
+
+  it("scopes to the user and favorited items, sorted by recency", async () => {
+    findMany.mockResolvedValue([] as never);
+
+    await getFavoriteItems("user_demo");
+
+    const args = findMany.mock.calls[0][0];
+    expect(args).toMatchObject({
+      where: { userId: "user_demo", isFavorite: true },
+      orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
+    });
   });
 });
 

@@ -345,6 +345,37 @@ export function getFavoriteItemsCount(userId: string): Promise<number> {
   return prisma.item.count({ where: { userId, isFavorite: true } });
 }
 
+/** The narrow shape the favorites list row needs — no content/tags/url. */
+export interface FavoriteItemData {
+  id: string;
+  title: string;
+  itemTypeId: string;
+  itemTypeName: string;
+  updatedAt: Date;
+}
+
+export async function getFavoriteItems(userId: string): Promise<FavoriteItemData[]> {
+  const items = await prisma.item.findMany({
+    where: { userId, isFavorite: true },
+    orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
+    select: {
+      id: true,
+      title: true,
+      itemTypeId: true,
+      itemType: { select: { name: true } },
+      updatedAt: true,
+    },
+  });
+
+  return items.map(item => ({
+    id: item.id,
+    title: item.title,
+    itemTypeId: item.itemTypeId,
+    itemTypeName: item.itemType.name,
+    updatedAt: item.updatedAt,
+  }));
+}
+
 export interface SidebarItemType {
   id: string;
   name: string;

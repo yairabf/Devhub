@@ -1,35 +1,35 @@
-# Current Feature: Editor Preferences Settings
+# Current Feature: Favorites Page
 
 ## Status
 
-Completed
+In Progress
 
 ## Goals
 
-- Add an "Editor Preferences" section to the `/settings` page
-- Font size dropdown
-- Tab size dropdown
-- Word wrap toggle (default: on)
-- Minimap toggle (default: off)
-- Editor theme dropdown: `vs-dark`, `monokai`, `github-dark` (default: `vs-dark`)
-- Store preferences in a JSON column `editorPreferences` on the `User` model
-- Create and run a Prisma migration for the schema change (`prisma migrate dev` — never `db push`)
-- Create a server action to update preferences
-- Apply the saved settings to the Monaco editor component
-- Auto-save on change (no save button)
-- Show a success toast on save
-- Create an `EditorPreferencesContext` for client components
+- Add a star icon button to the TopBar linking to `/favorites`
+- Create the `/favorites` route with auth protection
+- Fetch all of the user's favorited items and collections
+- Compact list view (VS Code / terminal style — not cards)
+- Each row shows: type icon, title, type badge, date added
+- Separate sections for items and collections, each with a count
+- Clicking an item opens the `ItemDrawer`; clicking a collection navigates to `/collections/[id]`
+- Empty state when there are no favorites
+- Sort by most recently favorited (`updatedAt`)
+- UI style: monospace / semi-monospace font, minimal padding, high density, subtle hover states, no cards or heavy borders — clean lines only
 
 ## Notes
 
-- Spec: `context/features/editor-settings-spec.md`
-- Settings page already exists at `src/app/settings/` (auth-gated, added 2026-08-19) alongside `ChangePasswordForm` and `DeleteAccountDialog` in `src/components/settings/`
-- Monaco lives in `src/components/dashboard/CodeEditor.tsx` (chrome) and `CodeEditorSurface.tsx` (monaco import, `ssr: false`); options are `useMemo`'d and themes are defined via `defineTheme` (`devstash-dark` / `devstash-light`) — the new theme dropdown must be reconciled with the existing app-theme-following behaviour (`useAppTheme`)
-- Monaco's `defineTheme` only parses **hex** colors, so `monokai` / `github-dark` need hex palettes
-- Height clamping constants live in `src/lib/code-editor.ts`; keep numeric constants out of `CodeEditorSurface` so monaco isn't pulled into the parent chunk
-- Server action pattern: `auth()` gate + Zod validation + `{ success, data, error }` envelope (see `src/actions/items.ts` / `src/actions/collections.ts`)
-- Toasts use `sonner` via `src/components/theme/ThemeToaster.tsx`
-- Unit tests (Vitest) required for any new `lib/*`, `lib/db`, or server-action logic; run `npm test` and `npm run build` before committing
+- Spec: `context/features/favorites-spec.md`
+- No `/favorites` route exists yet. Add `/favorites` to **both** `PROTECTED_PREFIXES` and `config.matcher` in `src/proxy.ts` (defense-in-depth pattern established by Profile/Settings), plus a page-level `redirect("/sign-in?callbackUrl=/favorites")`
+- The route needs its own `favorites/layout.tsx` mirroring `items/layout.tsx` / `collections/layout.tsx` so it renders inside `DashboardShell` — this is what puts `ItemDrawerProvider` in scope, which the "click item opens ItemDrawer" goal requires
+- **That layout must also fetch and thread `editorPreferences`** (`getEditorPreferences` in `src/lib/db/user.ts`): `useEditorPreferences()` throws outside a provider, so a layout missing it will crash as soon as a snippet/command opens in the drawer. All four layouts fetch the same six things in one `Promise.all`
+- `getFavoriteCollections(userId)` already exists in `src/lib/db/collections.ts` but returns only `id`/`name`/`isFavorite` for the sidebar — the page needs `updatedAt` and a type/count, so either extend it or add a sibling. There is **no** `getFavoriteItems` yet (only `getFavoriteItemsCount`); add one following the `ITEM_SELECT`/`toCardData` conventions in `src/lib/db/items.ts`
+- There is no `favoritedAt` column — `updatedAt` is a proxy for "recently favorited" and any edit bumps it. Per the spec this is acceptable; the "date added" column should be labelled accordingly rather than implying a true favorite timestamp
+- `SidebarNav.tsx` already renders a "Favorites" link pointing at `/dashboard/favorites`, which is a **dead link** (that route doesn't exist). Repoint it at the new `/favorites`. (`/dashboard/recent` is dead the same way but is out of scope.)
+- Type icons come from `TypeGlyph` / `getTypeIcon` in `src/lib/type-icons.tsx`; colors from `getTypeDotClass` / `getTypeTextClass` / `getTypeLeftBorderClass` in `src/lib/type-colors.ts`
+- Opening the drawer is client-side via `useItemDrawer().openItem(id)` — see `ItemCardTrigger` for the existing "server-rendered row + thin client trigger" split; keep the row itself a server component
+- Favorite **toggling** is still unimplemented app-wide (the drawer's Favorite button and the collection menu's Favorite item are both display-only placeholders). This spec only asks to *list* favorites. **Decision: unfavoriting from this page is out of scope.** The page is read-only — rows navigate (item → drawer, collection → detail) and nothing mutates `isFavorite`. Adding a toggle here would mean building the first favorite mutation in the app while leaving the drawer's and collection menu's existing Favorite affordances inert, so the three surfaces would disagree; toggling should land as its own feature covering all three at once
+- Unit tests (Vitest) required for any new `lib/*` or `lib/db` logic; run `npm test`, `npm run lint`, and `npm run build` before committing
 
 ## History
 
