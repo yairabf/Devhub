@@ -1,16 +1,30 @@
-# Current Feature
+# Current Feature: Settings Page
 
 ## Status
 
-<!-- Not started -->
+In Progress
 
 ## Goals
 
-<!-- What this feature should accomplish -->
+- Create a new `/settings` page for account settings.
+- Protect the route: add `/settings` to `PROTECTED_PREFIXES` and the `matcher` in `src/proxy.ts`, plus a page-level `auth()` check with `redirect("/sign-in?callbackUrl=/settings")` (the defense-in-depth pattern used by `/profile`).
+- Add a "Settings" link to the sidebar `UserMenu` dropdown (the user-icon menu at the bottom of the sidebar), alongside the existing Profile link and above Sign out.
+- Move the account actions off `/profile` and onto `/settings`:
+  - `ChangePasswordForm` — still rendered only when `User.password` is not null (skips GitHub-OAuth-only accounts).
+  - `DeleteAccountDialog` — needs the user's `email` for the type-to-confirm gate.
+- Leave `/profile` as read-only identity + usage: `ProfileUserInfo` and `ProfileStats` only.
 
 ## Notes
 
-<!-- Constraints, links to specs, relevant files -->
+- Clarification on wording: the profile page has **Change Password** (`ChangePasswordForm` → `POST /api/auth/change-password`), not "forgot password". Forgot/reset password lives in the unauthenticated `(auth)` flow (`/forgot-password`, `/reset-password`) and is **not** moving. Treating "forgot password" in the request as the profile's Change Password card — flag if that's wrong.
+- Relevant files:
+  - `src/app/profile/page.tsx` — remove the two account-action renders and the now-unused `password` select field / `hasPassword` derivation.
+  - `src/components/profile/ChangePasswordForm.tsx`, `src/components/profile/DeleteAccountDialog.tsx` — consider moving to `src/components/settings/` to match the new route (per `context/coding-standards.md` file organization: `src/components/[feature]/`).
+  - `src/components/dashboard/UserMenu.tsx` — add the Settings link (Lucide `Settings` icon, same styling as the Profile link, `onClick={() => setOpen(false)}`).
+  - `src/proxy.ts` — `PROTECTED_PREFIXES` + `config.matcher`.
+  - `src/app/settings/page.tsx` — new. Mirror `/profile`'s standalone layout (`mx-auto max-w-3xl`, "Back to dashboard" link, `force-dynamic`); `/profile` is **not** inside `DashboardShell`, so no `settings/layout.tsx` is needed.
+- No API/route-handler changes: `POST /api/auth/change-password` and `DELETE /api/auth/delete-account` are session-based and work unchanged from the new page.
+- No new `lib/db` or server-action logic expected, so no new unit tests are likely warranted — but verify with `npm test`, `npm run lint`, and `npm run build` per the workflow. Verify the moved actions still work end-to-end in the browser (change password round-trip, delete-account confirm gate enabling on exact email).
 
 ## History
 

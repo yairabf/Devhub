@@ -12,8 +12,6 @@ import { getCollectionsCount } from "@/lib/db/collections";
 
 import { ProfileUserInfo } from "@/components/profile/ProfileUserInfo";
 import { ProfileStats } from "@/components/profile/ProfileStats";
-import { ChangePasswordForm } from "@/components/profile/ChangePasswordForm";
-import { DeleteAccountDialog } from "@/components/profile/DeleteAccountDialog";
 
 export const dynamic = "force-dynamic";
 
@@ -32,7 +30,6 @@ export default async function ProfilePage() {
         name: true,
         email: true,
         image: true,
-        password: true,
         createdAt: true,
       },
     }),
@@ -44,8 +41,6 @@ export default async function ProfilePage() {
   if (!user) {
     redirect("/sign-in");
   }
-
-  const hasPassword = !!user.password;
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-6 px-4 py-8 sm:py-12">
@@ -60,7 +55,7 @@ export default async function ProfilePage() {
       <header>
         <h1 className="text-2xl font-semibold text-foreground">Profile</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Manage your account and review your usage.
+          Review your account details and usage.
         </p>
       </header>
 
@@ -76,10 +71,6 @@ export default async function ProfilePage() {
         collectionsCount={collectionsCount}
         breakdown={breakdown}
       />
-
-      {hasPassword && <ChangePasswordForm />}
-
-      <DeleteAccountDialog email={user.email} />
     </div>
   );
 }
