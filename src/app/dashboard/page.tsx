@@ -82,7 +82,7 @@ export default async function DashboardPage() {
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             {pinnedItems.map(item => (
               <ItemCardTrigger key={item.id} itemId={item.id} title={item.title}>
-                <ItemCard item={item} />
+                <ItemCard item={item} showPinIndicator={false} />
               </ItemCardTrigger>
             ))}
           </div>

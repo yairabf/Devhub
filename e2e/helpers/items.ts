@@ -47,6 +47,23 @@ export function createTestItem(
   return fixture<SeededTestItem>("create", suffix, title ?? "", itemTypeId ?? "");
 }
 
+/**
+ * Forces an item's `updatedAt` back to `iso`. Needed because `formatIsoDate` is
+ * day-granular: without an older starting point, a spec cannot tell a real
+ * timestamp bump from a stale value re-rendered.
+ */
+export async function backdateTestItem(
+  id: string,
+  iso: string,
+): Promise<string | null> {
+  const { updatedAt } = await fixture<{ updatedAt: string | null }>(
+    "backdate",
+    id,
+    iso,
+  );
+  return updatedAt;
+}
+
 /** Idempotent cleanup — safe to call when the spec already deleted the item. */
 export async function removeTestItem(id: string): Promise<void> {
   await fixture<{ removed: boolean }>("remove", id);

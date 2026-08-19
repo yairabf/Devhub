@@ -1,3 +1,5 @@
+import { Pin } from "lucide-react";
+
 import { CopyButton } from "@/components/dashboard/CopyButton";
 import { ItemFavoriteButton } from "@/components/dashboard/ItemFavoriteButton";
 import { Badge } from "@/components/ui/badge";
@@ -15,9 +17,15 @@ import { cn } from "@/lib/utils";
 
 interface ItemCardProps {
   item: ItemCardData;
+  /**
+   * Off for the dashboard's "Pinned Items" section, where every card is pinned
+   * by definition — the badge adds nothing there, and it would make each card
+   * announce "Pinned" inside a heading that already says so.
+   */
+  showPinIndicator?: boolean;
 }
 
-export function ItemCard({ item }: ItemCardProps) {
+export function ItemCard({ item, showPinIndicator = true }: ItemCardProps) {
   const borderClass = getTypeLeftBorderClass(item.itemTypeId);
   const copyValue = item.content ?? item.url;
 
@@ -31,6 +39,15 @@ export function ItemCard({ item }: ItemCardProps) {
       <CardHeader className="flex-row items-start justify-between gap-2">
         <CardTitle className="leading-tight">{item.title}</CardTitle>
         <div className="flex shrink-0 items-center gap-1">
+          {item.isPinned && showPinIndicator && (
+            // Indicator only — pinning is done from the item drawer. No Button
+            // wrapper, so it needs to carry its own accessible name.
+            <Pin
+              role="img"
+              aria-label="Pinned"
+              className="size-3.5 shrink-0 fill-foreground text-foreground"
+            />
+          )}
           {copyValue && (
             <CopyButton value={copyValue} label={`Copy ${item.itemTypeName.toLowerCase()}`} />
           )}

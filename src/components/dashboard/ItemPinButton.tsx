@@ -1,33 +1,30 @@
 "use client";
 
-import { Star } from "lucide-react";
+import { Pin } from "lucide-react";
 
-import { useItemFavorite } from "@/components/dashboard/useItemFavorite";
+import { useItemPin } from "@/components/dashboard/useItemPin";
 import { Button } from "@/components/ui/button";
 import type { ItemFlagPatch } from "@/lib/db/items";
 import { cn } from "@/lib/utils";
 
-interface ItemFavoriteButtonProps {
+interface ItemPinButtonProps {
   itemId: string;
-  isFavorite: boolean;
+  isPinned: boolean;
   size?: "icon-xs" | "icon-sm";
   /** Lets the drawer fold the new flag value into the detail it is holding. */
   onToggled?: (itemId: string, patch: ItemFlagPatch) => void;
   className?: string;
 }
 
-export function ItemFavoriteButton({
+export function ItemPinButton({
   itemId,
-  isFavorite,
+  isPinned,
   size = "icon-xs",
   onToggled,
   className,
-}: ItemFavoriteButtonProps) {
-  const { favorite, toggle, pending } = useItemFavorite(
-    itemId,
-    isFavorite,
-    onToggled,
-  );
+}: ItemPinButtonProps) {
+  const { pinned, toggle, pending } = useItemPin(itemId, isPinned, onToggled);
+  const label = pinned ? "Unpin" : "Pin";
 
   return (
     <Button
@@ -36,18 +33,18 @@ export function ItemFavoriteButton({
       size={size}
       disabled={pending}
       onClick={event => {
-        // The card this sits in may itself be a drawer trigger.
+        // Whatever this sits in may itself be a drawer trigger.
         event.stopPropagation();
         toggle();
       }}
-      aria-label={favorite ? "Unfavorite" : "Favorite"}
-      title={favorite ? "Unfavorite" : "Favorite"}
+      aria-label={label}
+      title={label}
       className={cn("shrink-0 text-muted-foreground hover:text-foreground", className)}
     >
-      <Star
+      <Pin
         className={cn(
           "size-4",
-          favorite ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground",
+          pinned ? "fill-foreground text-foreground" : "text-muted-foreground",
         )}
         aria-hidden
       />

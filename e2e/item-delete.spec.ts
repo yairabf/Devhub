@@ -54,7 +54,8 @@ test.describe("ItemDrawer — delete affordance", () => {
 
     await expect(deleteTrigger(page)).toBeEnabled();
     await expect(deleteTrigger(page)).toHaveAttribute("title", "Delete item");
-    // Favorite and Pin are still deliberate placeholders — delete must not be.
+    // No action in this bar is a placeholder any more — Favorite and Pin were
+    // the last two, and both are live.
     await expect(drawer(page).getByRole("button", { name: /coming soon/i })).toHaveCount(0);
   });
 });

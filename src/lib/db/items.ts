@@ -1,3 +1,4 @@
+import { DASHBOARD_PINNED_ITEMS_LIMIT } from "@/lib/constants";
 import type { PageWindow } from "@/lib/pagination";
 import { prisma } from "@/lib/prisma";
 
@@ -13,10 +14,21 @@ export interface ItemCardData {
   content: string | null;
   url: string | null;
   isFavorite: boolean;
+  isPinned: boolean;
   itemTypeId: string;
   itemTypeName: string;
   tags: ItemTagData[];
 }
+
+/**
+ * The fields a drawer action can change on its own, without going through a full
+ * save. Used to keep the drawer's fetched detail in step with a toggle —
+ * `updatedAt` is included because Prisma's `@updatedAt` fires on any write, so a
+ * toggle moves it and the drawer footer renders it.
+ */
+export type ItemFlagPatch = Partial<
+  Pick<ItemDetailData, "isFavorite" | "isPinned" | "updatedAt">
+>;
 
 export interface ItemCollectionData {
   id: string;
@@ -26,7 +38,6 @@ export interface ItemCollectionData {
 /** Full item detail, fetched on demand by the item drawer. */
 export interface ItemDetailData extends ItemCardData {
   language: string | null;
-  isPinned: boolean;
   collections: ItemCollectionData[];
   /** ISO string — the drawer receives this over JSON. */
   createdAt: string;
@@ -40,6 +51,7 @@ const ITEM_SELECT = {
   content: true,
   url: true,
   isFavorite: true,
+  isPinned: true,
   itemTypeId: true,
   itemType: { select: { name: true } },
   tags: { select: { id: true, name: true } },
@@ -52,6 +64,7 @@ type RawItem = {
   content: string | null;
   url: string | null;
   isFavorite: boolean;
+  isPinned: boolean;
   itemTypeId: string;
   itemType: { name: string };
   tags: { id: string; name: string }[];
@@ -65,6 +78,7 @@ function toCardData(item: RawItem): ItemCardData {
     content: item.content,
     url: item.url,
     isFavorite: item.isFavorite,
+    isPinned: item.isPinned,
     itemTypeId: item.itemTypeId,
     itemTypeName: item.itemType.name,
     tags: item.tags,
@@ -78,7 +92,9 @@ export async function getItemsByCollection(
 ): Promise<ItemCardData[]> {
   const items = await prisma.item.findMany({
     where: { userId, collections: { some: { collectionId } } },
-    orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
+    // Pinned first, then the standard recency order. Applied in the query
+    // rather than after, so it stays correct across paginated windows.
+    orderBy: [{ isPinned: "desc" }, { updatedAt: "desc" }, { id: "desc" }],
     skip: window.skip,
     take: window.take,
     select: ITEM_SELECT,
@@ -100,10 +116,24 @@ export function countItemsByCollection(
   });
 }
 
-export async function getPinnedItems(userId: string): Promise<ItemCardData[]> {
+/**
+ * Backs the dashboard's "Pinned Items" section. No `isPinned` sort key here —
+ * every row already is. Recency stands in for "recently pinned": there is no
+ * `pinnedAt` column, and since a pin toggle bumps `updatedAt`, the item the user
+ * just pinned lands at the front, which is the order that reads correctly.
+ *
+ * Capped like its sibling dashboard sections. Pinning used to be seed-only (two
+ * rows); now that anyone can pin, an uncapped fetch would put every pinned item's
+ * `content` on the wire on every render of this `force-dynamic` page.
+ */
+export async function getPinnedItems(
+  userId: string,
+  limit = DASHBOARD_PINNED_ITEMS_LIMIT,
+): Promise<ItemCardData[]> {
   const items = await prisma.item.findMany({
     where: { userId, isPinned: true },
     orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
+    take: limit,
     select: ITEM_SELECT,
   });
   return items.map(toCardData);
@@ -129,7 +159,8 @@ export async function getItemsByType(
 ): Promise<ItemCardData[]> {
   const items = await prisma.item.findMany({
     where: { userId, itemTypeId },
-    orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
+    // Pinned first — see getItemsByCollection.
+    orderBy: [{ isPinned: "desc" }, { updatedAt: "desc" }, { id: "desc" }],
     skip: window.skip,
     take: window.take,
     select: ITEM_SELECT,
@@ -148,7 +179,6 @@ export function countItemsByType(
 const ITEM_DETAIL_SELECT = {
   ...ITEM_SELECT,
   language: true,
-  isPinned: true,
   createdAt: true,
   updatedAt: true,
   collections: {
@@ -159,7 +189,6 @@ const ITEM_DETAIL_SELECT = {
 
 type RawDetailItem = RawItem & {
   language: string | null;
-  isPinned: boolean;
   createdAt: Date;
   updatedAt: Date;
   collections: { collection: ItemCollectionData }[];
@@ -169,7 +198,6 @@ function toDetailData(item: RawDetailItem): ItemDetailData {
   return {
     ...toCardData(item),
     language: item.language,
-    isPinned: item.isPinned,
     collections: item.collections.map(link => link.collection),
     createdAt: item.createdAt.toISOString(),
     updatedAt: item.updatedAt.toISOString(),
@@ -346,19 +374,42 @@ export async function deleteItem(
 export async function toggleItemFavorite(
   userId: string,
   itemId: string,
-): Promise<boolean | null> {
+): Promise<{ isFavorite: boolean; updatedAt: Date } | null> {
   const owned = await prisma.item.findFirst({
     where: { id: itemId, userId },
     select: { isFavorite: true },
   });
   if (!owned) return null;
 
-  const updated = await prisma.item.update({
+  return prisma.item.update({
     where: { id: itemId },
     data: { isFavorite: !owned.isFavorite },
-    select: { isFavorite: true },
+    // updatedAt comes back because @updatedAt moved it and the drawer footer
+    // shows it — without this the caller would patch a stale timestamp forward.
+    select: { isFavorite: true, updatedAt: true },
   });
-  return updated.isFavorite;
+}
+
+/**
+ * Flips `isPinned` on an item the user owns and returns the new value plus the
+ * bumped `updatedAt`, or `null` when the item is missing or belongs to someone
+ * else. Mirrors `toggleItemFavorite`.
+ */
+export async function toggleItemPin(
+  userId: string,
+  itemId: string,
+): Promise<{ isPinned: boolean; updatedAt: Date } | null> {
+  const owned = await prisma.item.findFirst({
+    where: { id: itemId, userId },
+    select: { isPinned: true },
+  });
+  if (!owned) return null;
+
+  return prisma.item.update({
+    where: { id: itemId },
+    data: { isPinned: !owned.isPinned },
+    select: { isPinned: true, updatedAt: true },
+  });
 }
 
 export function getItemsCount(userId: string): Promise<number> {

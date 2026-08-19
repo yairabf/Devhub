@@ -1,12 +1,13 @@
 "use client";
 
-import { Folder, Pencil, Pin, Tag } from "lucide-react";
+import { Folder, Pencil, Tag } from "lucide-react";
 
 import { CodeEditor } from "@/components/dashboard/CodeEditor";
 import { CopyButton } from "@/components/dashboard/CopyButton";
 import { DeleteItemDialog } from "@/components/dashboard/DeleteItemDialog";
 import { ItemEditForm } from "@/components/dashboard/ItemEditForm";
 import { ItemFavoriteButton } from "@/components/dashboard/ItemFavoriteButton";
+import { ItemPinButton } from "@/components/dashboard/ItemPinButton";
 import { MarkdownEditor } from "@/components/dashboard/MarkdownEditor";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,7 +18,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import type { CollectionOption } from "@/lib/db/collections";
-import type { ItemDetailData } from "@/lib/db/items";
+import type { ItemDetailData, ItemFlagPatch } from "@/lib/db/items";
 import { capitalize, formatIsoDate } from "@/lib/format";
 import { usesCodeEditor, usesMarkdownEditor } from "@/lib/item-form";
 import { getTypeTextClass } from "@/lib/type-colors";
@@ -45,6 +46,8 @@ interface ItemDrawerProps {
   onCancelEdit: () => void;
   onSaved: (updated: ItemDetailData) => void;
   onDeleted: (itemId: string) => void;
+  /** Fired after a favorite/pin toggle so the provider can fold in the new value. */
+  onFlagToggled: (itemId: string, patch: ItemFlagPatch) => void;
 }
 
 export function ItemDrawer({
@@ -58,6 +61,7 @@ export function ItemDrawer({
   onCancelEdit,
   onSaved,
   onDeleted,
+  onFlagToggled,
 }: ItemDrawerProps) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -77,7 +81,12 @@ export function ItemDrawer({
                 onSaved={onSaved}
               />
             ) : (
-              <ItemViewMode item={item} onEdit={onEdit} onDeleted={onDeleted} />
+              <ItemViewMode
+                item={item}
+                onEdit={onEdit}
+                onDeleted={onDeleted}
+                onFlagToggled={onFlagToggled}
+              />
             )}
             <ItemDrawerFooter item={item} />
           </>
@@ -117,10 +126,12 @@ function ItemViewMode({
   item,
   onEdit,
   onDeleted,
+  onFlagToggled,
 }: {
   item: ItemDetailData;
   onEdit: () => void;
   onDeleted: (itemId: string) => void;
+  onFlagToggled: (itemId: string, patch: ItemFlagPatch) => void;
 }) {
   const copyValue = item.content ?? item.url;
 
@@ -131,24 +142,14 @@ function ItemViewMode({
           itemId={item.id}
           isFavorite={item.isFavorite}
           size="icon-sm"
+          onToggled={onFlagToggled}
         />
-        <Button
-          variant="ghost"
+        <ItemPinButton
+          itemId={item.id}
+          isPinned={item.isPinned}
           size="icon-sm"
-          disabled
-          title="Pin — coming soon"
-          aria-label={item.isPinned ? "Pinned" : "Not pinned"}
-        >
-          <Pin
-            className={cn(
-              "size-4",
-              item.isPinned
-                ? "fill-foreground text-foreground"
-                : "text-muted-foreground",
-            )}
-            aria-hidden
-          />
-        </Button>
+          onToggled={onFlagToggled}
+        />
         {copyValue && (
           <CopyButton
             value={copyValue}

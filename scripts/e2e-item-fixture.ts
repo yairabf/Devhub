@@ -18,6 +18,10 @@ import { DEMO_USER_ID } from "../src/lib/constants";
  *                             create a throwaway item at a known id; defaults to
  *                             a snippet, pass type_note/type_prompt for prose
  *   remove <id>               delete by id
+ *   backdate <id> <iso>       force `updatedAt` to an older instant, so a spec can
+ *                             tell a real timestamp bump from a stale render
+ *                             (`formatIsoDate` is day-granular, so a same-day
+ *                             bump is invisible in the UI)
  *   exists <id>               report whether the id is present
  *   findByTitle <title>       read back an item the UI created (ids are cuids)
  *   removeByTitle <title>     clean up items the UI created
@@ -189,6 +193,19 @@ async function main() {
     case "remove":
       await prisma.item.deleteMany({ where: { id: requireArg(command, arg) } });
       return { removed: true };
+    case "backdate": {
+      const iso = requireArg(`${command} <id>`, title);
+      // Raw SQL: `updatedAt` carries @updatedAt, so Prisma's own update path
+      // would overwrite whatever value we passed with `now()`.
+      await prisma.$executeRaw`
+        UPDATE "Item" SET "updatedAt" = ${new Date(iso)} WHERE "id" = ${requireArg(command, arg)}
+      `;
+      const item = await prisma.item.findUnique({
+        where: { id: requireArg(command, arg) },
+        select: { updatedAt: true },
+      });
+      return { updatedAt: item?.updatedAt.toISOString() ?? null };
+    }
     case "exists":
       return {
         exists:

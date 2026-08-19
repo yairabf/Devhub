@@ -15,7 +15,7 @@ import {
   type ItemDrawerErrorState,
 } from "@/components/dashboard/ItemDrawer";
 import type { CollectionOption } from "@/lib/db/collections";
-import type { ItemDetailData } from "@/lib/db/items";
+import type { ItemDetailData, ItemFlagPatch } from "@/lib/db/items";
 
 const GENERIC_ERROR: ItemDrawerErrorState = {
   title: "Something went wrong",
@@ -150,6 +150,26 @@ export function ItemDrawerProvider({
     [router],
   );
 
+  /**
+   * A favorite/pin toggle mutates one boolean behind the drawer's back. Patch it
+   * into both copies of the detail rather than evicting: the toggle button owns
+   * its own optimistic state only while mounted, and `ItemViewMode` unmounts
+   * entirely while editing — so on cancel the action bar remounts straight from
+   * `item`, and a stale flag there would offer to pin an already-pinned item.
+   * Patching fixes that and keeps the cached reopen instant.
+   */
+  const handleFlagToggled = useCallback(
+    (itemId: string, patch: ItemFlagPatch) => {
+      const cached = cache.current.get(itemId);
+      if (cached) cache.current.set(itemId, { ...cached, ...patch });
+      // Id-guarded: the user may have opened a different item by now.
+      setItem(current =>
+        current?.id === itemId ? { ...current, ...patch } : current,
+      );
+    },
+    [],
+  );
+
   const handleDeleted = useCallback(
     (itemId: string) => {
       // Evict, don't replace: a stale cache entry would let openItem render a
@@ -181,6 +201,7 @@ export function ItemDrawerProvider({
         onCancelEdit={() => setEditing(false)}
         onSaved={handleSaved}
         onDeleted={handleDeleted}
+        onFlagToggled={handleFlagToggled}
       />
     </ItemDrawerContext.Provider>
   );

@@ -16,6 +16,7 @@ vi.mock("@/lib/prisma", () => ({
   },
 }));
 
+import { DASHBOARD_PINNED_ITEMS_LIMIT } from "@/lib/constants";
 import { prisma } from "@/lib/prisma";
 import {
   countItemsByCollection,
@@ -26,11 +27,16 @@ import {
   getItemDetail,
   getItemsByCollection,
   getItemsByType,
+  getPinnedItems,
   getRecentItems,
   getSearchableItems,
   toggleItemFavorite,
+  toggleItemPin,
   updateItem,
 } from "@/lib/db/items";
+
+/** Fixed so the toggle tests can assert the timestamp they hand back. */
+const STAMP = new Date("2026-08-19T10:00:00.000Z");
 
 const findMany = vi.mocked(prisma.item.findMany);
 const findFirst = vi.mocked(prisma.item.findFirst);
@@ -61,6 +67,7 @@ describe("getRecentItems", () => {
         content: "const x = 1;",
         url: null,
         isFavorite: true,
+        isPinned: true,
         itemTypeId: "type_snippet",
         itemType: { name: "Snippet" },
         tags: [{ id: "tag_1", name: "react" }],
@@ -77,6 +84,7 @@ describe("getRecentItems", () => {
         content: "const x = 1;",
         url: null,
         isFavorite: true,
+        isPinned: true,
         itemTypeId: "type_snippet",
         itemTypeName: "Snippet",
         tags: [{ id: "tag_1", name: "react" }],
@@ -239,6 +247,70 @@ describe("getSearchableItems", () => {
   });
 });
 
+describe("getPinnedItems", () => {
+  it("caps the dashboard section instead of fetching every pinned row", async () => {
+    findMany.mockResolvedValue([] as never);
+
+    await getPinnedItems("user_demo");
+
+    // Pinning used to be seed-only (2 rows); now any user can pin without
+    // limit, and this section sits above two already-capped siblings.
+    expect(findMany.mock.calls[0][0]).toMatchObject({
+      take: DASHBOARD_PINNED_ITEMS_LIMIT,
+    });
+  });
+
+  it("honours an explicit limit", async () => {
+    findMany.mockResolvedValue([] as never);
+
+    await getPinnedItems("user_demo", 3);
+
+    expect(findMany.mock.calls[0][0]).toMatchObject({ take: 3 });
+  });
+});
+
+describe("pinned-first ordering", () => {
+  it.each([
+    ["getItemsByType", () => getItemsByType("user_demo", "type_snippet")],
+    [
+      "getItemsByCollection",
+      () => getItemsByCollection("user_demo", "col_react_patterns"),
+    ],
+  ])("sorts pinned items to the top in %s", async (_name, call) => {
+    findMany.mockResolvedValue([] as never);
+
+    await call();
+
+    // In the query, not after it: these listings are paginated, so sorting a
+    // single page in memory would leave pinned items stranded on later pages.
+    expect(findMany.mock.calls[0][0]).toMatchObject({
+      orderBy: [{ isPinned: "desc" }, { updatedAt: "desc" }, { id: "desc" }],
+    });
+  });
+
+  it.each([
+    ["getRecentItems", () => getRecentItems("user_demo")],
+    ["getFavoriteItems", () => getFavoriteItems("user_demo")],
+    ["getSearchableItems", () => getSearchableItems("user_demo")],
+    ["getPinnedItems", () => getPinnedItems("user_demo")],
+  ])("leaves %s on plain recency order", async (_name, call) => {
+    findMany.mockResolvedValue([] as never);
+
+    await call();
+
+    // Deliberate exclusions. "Recent" means recently touched, and a permanent
+    // pinned-first key would park pinned items at its head and crowd out the
+    // actual recent activity the section exists to show. (It does *not* prevent
+    // overlap with the Pinned section above it — a pin bumps updatedAt, so the
+    // item surfaces in Recent regardless.) /favorites re-sorts client-side by
+    // the user's chosen key; the search index is ranked by fuzzy score, not DB
+    // order; and getPinnedItems already filters to isPinned, so a key there
+    // could never do anything.
+    const orderBy = findMany.mock.calls[0][0]?.orderBy;
+    expect(orderBy).not.toContainEqual({ isPinned: "desc" });
+  });
+});
+
 describe("paginated listings", () => {
   it("passes the page window through to Prisma for a type listing", async () => {
     findMany.mockResolvedValue([] as never);
@@ -325,10 +397,10 @@ describe("getItemsByCollection", () => {
 
     await getItemsByCollection("user_demo", "col_react_patterns");
 
-    // Matches every other list query in this module; the seed writes items in
-    // one transaction, so updatedAt values collide.
+    // Pinned first, then recency; updatedAt ties break on id because the seed
+    // writes items in one transaction, so those values collide.
     expect(findMany.mock.calls[0][0]).toMatchObject({
-      orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
+      orderBy: [{ isPinned: "desc" }, { updatedAt: "desc" }, { id: "desc" }],
     });
   });
 
@@ -341,6 +413,7 @@ describe("getItemsByCollection", () => {
         content: "const x = 1;",
         url: null,
         isFavorite: true,
+        isPinned: true,
         itemTypeId: "type_snippet",
         itemType: { name: "Snippet" },
         tags: [{ id: "tag_1", name: "react" }],
@@ -357,6 +430,7 @@ describe("getItemsByCollection", () => {
         content: "const x = 1;",
         url: null,
         isFavorite: true,
+        isPinned: true,
         itemTypeId: "type_snippet",
         itemTypeName: "Snippet",
         tags: [{ id: "tag_1", name: "react" }],
@@ -643,7 +717,7 @@ describe("toggleItemFavorite", () => {
 
   it("checks ownership with both the item id and the user id", async () => {
     findFirst.mockResolvedValue({ isFavorite: false } as never);
-    update.mockResolvedValue({ isFavorite: true } as never);
+    update.mockResolvedValue({ isFavorite: true, updatedAt: STAMP } as never);
 
     await toggleItemFavorite("user_demo", "item_1");
 
@@ -654,22 +728,87 @@ describe("toggleItemFavorite", () => {
 
   it("flips false to true and returns the new value", async () => {
     findFirst.mockResolvedValue({ isFavorite: false } as never);
-    update.mockResolvedValue({ isFavorite: true } as never);
+    update.mockResolvedValue({ isFavorite: true, updatedAt: STAMP } as never);
 
-    await expect(toggleItemFavorite("user_demo", "item_1")).resolves.toBe(true);
+    // The bumped timestamp comes back with the flag: @updatedAt moves on every
+    // write, and the drawer footer renders it.
+    await expect(toggleItemFavorite("user_demo", "item_1")).resolves.toEqual({
+      isFavorite: true,
+      updatedAt: STAMP,
+    });
     expect(update.mock.calls[0][0]).toEqual({
       where: { id: "item_1" },
       data: { isFavorite: true },
-      select: { isFavorite: true },
+      select: { isFavorite: true, updatedAt: true },
     });
   });
 
   it("flips true to false and returns the new value", async () => {
     findFirst.mockResolvedValue({ isFavorite: true } as never);
-    update.mockResolvedValue({ isFavorite: false } as never);
+    update.mockResolvedValue({ isFavorite: false, updatedAt: STAMP } as never);
 
-    await expect(toggleItemFavorite("user_demo", "item_1")).resolves.toBe(false);
+    await expect(toggleItemFavorite("user_demo", "item_1")).resolves.toMatchObject({
+      isFavorite: false,
+    });
     expect(update.mock.calls[0][0]).toMatchObject({ data: { isFavorite: false } });
+  });
+});
+
+describe("toggleItemPin", () => {
+  it("refuses to toggle an item the user does not own", async () => {
+    findFirst.mockResolvedValue(null as never);
+
+    await expect(toggleItemPin("user_other", "item_1")).resolves.toBeNull();
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it("checks ownership with both the item id and the user id", async () => {
+    findFirst.mockResolvedValue({ isPinned: false } as never);
+    update.mockResolvedValue({ isPinned: true, updatedAt: STAMP } as never);
+
+    await toggleItemPin("user_demo", "item_1");
+
+    expect(findFirst.mock.calls[0][0]).toMatchObject({
+      where: { id: "item_1", userId: "user_demo" },
+    });
+  });
+
+  it("flips false to true and returns the new value", async () => {
+    findFirst.mockResolvedValue({ isPinned: false } as never);
+    update.mockResolvedValue({ isPinned: true, updatedAt: STAMP } as never);
+
+    // The bumped timestamp comes back with the flag: @updatedAt moves on every
+    // write, and the drawer footer renders it.
+    await expect(toggleItemPin("user_demo", "item_1")).resolves.toEqual({
+      isPinned: true,
+      updatedAt: STAMP,
+    });
+    expect(update.mock.calls[0][0]).toEqual({
+      where: { id: "item_1" },
+      data: { isPinned: true },
+      select: { isPinned: true, updatedAt: true },
+    });
+  });
+
+  it("flips true to false and returns the new value", async () => {
+    findFirst.mockResolvedValue({ isPinned: true } as never);
+    update.mockResolvedValue({ isPinned: false, updatedAt: STAMP } as never);
+
+    await expect(toggleItemPin("user_demo", "item_1")).resolves.toMatchObject({
+      isPinned: false,
+    });
+    expect(update.mock.calls[0][0]).toMatchObject({ data: { isPinned: false } });
+  });
+
+  it("leaves isFavorite alone", async () => {
+    findFirst.mockResolvedValue({ isPinned: false } as never);
+    update.mockResolvedValue({ isPinned: true, updatedAt: STAMP } as never);
+
+    await toggleItemPin("user_demo", "item_1");
+
+    // Pin and favorite are independent flags; writing both here would clobber
+    // whichever one the user did not touch.
+    expect(update.mock.calls[0][0].data).not.toHaveProperty("isFavorite");
   });
 });
 

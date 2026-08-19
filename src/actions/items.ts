@@ -7,6 +7,7 @@ import {
   createItem as createItemInDb,
   deleteItem as deleteItemInDb,
   toggleItemFavorite as toggleItemFavoriteInDb,
+  toggleItemPin as toggleItemPinInDb,
   updateItem as updateItemInDb,
   type ItemDetailData,
 } from "@/lib/db/items";
@@ -176,7 +177,7 @@ export async function updateItem(
 }
 
 export type ToggleItemFavoriteResult =
-  | { success: true; data: { isFavorite: boolean } }
+  | { success: true; data: { isFavorite: boolean; updatedAt: string } }
   | { success: false; error: string };
 
 export async function toggleItemFavorite(
@@ -192,12 +193,57 @@ export async function toggleItemFavorite(
       return { success: false, error: "Item not found." };
     }
 
-    const isFavorite = await toggleItemFavoriteInDb(session.user.id, itemId);
-    if (isFavorite === null) {
+    const toggled = await toggleItemFavoriteInDb(session.user.id, itemId);
+    if (!toggled) {
       return { success: false, error: "Item not found." };
     }
 
-    return { success: true, data: { isFavorite } };
+    // ISO, matching ItemDetailData — the client never receives a Date.
+    return {
+      success: true,
+      data: {
+        isFavorite: toggled.isFavorite,
+        updatedAt: toggled.updatedAt.toISOString(),
+      },
+    };
+  } catch {
+    return {
+      success: false,
+      error: "Could not update this item. Please try again.",
+    };
+  }
+}
+
+export type ToggleItemPinResult =
+  | { success: true; data: { isPinned: boolean; updatedAt: string } }
+  | { success: false; error: string };
+
+export async function toggleItemPin(
+  itemId: string,
+): Promise<ToggleItemPinResult> {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return { success: false, error: "You must be signed in to pin items." };
+    }
+
+    if (!itemId?.trim()) {
+      return { success: false, error: "Item not found." };
+    }
+
+    const toggled = await toggleItemPinInDb(session.user.id, itemId);
+    if (!toggled) {
+      return { success: false, error: "Item not found." };
+    }
+
+    // ISO, matching ItemDetailData — the client never receives a Date.
+    return {
+      success: true,
+      data: {
+        isPinned: toggled.isPinned,
+        updatedAt: toggled.updatedAt.toISOString(),
+      },
+    };
   } catch {
     return {
       success: false,

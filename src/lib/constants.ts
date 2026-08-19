@@ -16,3 +16,5 @@ export const COLLECTIONS_PER_PAGE = 21;
  */
 export const DASHBOARD_COLLECTIONS_LIMIT = 6;
 export const DASHBOARD_RECENT_ITEMS_LIMIT = 10;
+/** Matches the Recent Collections cap — one full 3-column row at `lg`, doubled. */
+export const DASHBOARD_PINNED_ITEMS_LIMIT = 6;

@@ -6,6 +6,7 @@ vi.mock("@/lib/db/items", () => ({
   updateItem: vi.fn(),
   deleteItem: vi.fn(),
   toggleItemFavorite: vi.fn(),
+  toggleItemPin: vi.fn(),
 }));
 
 import { auth } from "@/auth";
@@ -13,12 +14,14 @@ import {
   createItem as createItemInDb,
   deleteItem as deleteItemInDb,
   toggleItemFavorite as toggleItemFavoriteInDb,
+  toggleItemPin as toggleItemPinInDb,
   updateItem as updateItemInDb,
 } from "@/lib/db/items";
 import {
   createItem,
   deleteItem,
   toggleItemFavorite,
+  toggleItemPin,
   updateItem,
 } from "@/actions/items";
 
@@ -27,6 +30,11 @@ const dbCreate = createItemInDb as unknown as Mock;
 const dbUpdate = updateItemInDb as unknown as Mock;
 const dbDelete = deleteItemInDb as unknown as Mock;
 const dbToggleFavorite = toggleItemFavoriteInDb as unknown as Mock;
+const dbTogglePin = toggleItemPinInDb as unknown as Mock;
+
+/** The toggles now hand back the bumped timestamp alongside the flag. */
+const STAMP = new Date("2026-08-19T10:00:00.000Z");
+const STAMP_ISO = "2026-08-19T10:00:00.000Z";
 
 const VALID = {
   title: "useDebounce",
@@ -45,11 +53,13 @@ beforeEach(() => {
   dbUpdate.mockReset();
   dbDelete.mockReset();
   dbToggleFavorite.mockReset();
+  dbTogglePin.mockReset();
   authMock.mockResolvedValue({ user: { id: "user_demo" } });
   dbCreate.mockResolvedValue(SAVED);
   dbUpdate.mockResolvedValue(SAVED);
   dbDelete.mockResolvedValue(true);
-  dbToggleFavorite.mockResolvedValue(true);
+  dbToggleFavorite.mockResolvedValue({ isFavorite: true, updatedAt: STAMP });
+  dbTogglePin.mockResolvedValue({ isPinned: true, updatedAt: STAMP });
 });
 
 describe("updateItem action", () => {
@@ -477,7 +487,11 @@ describe("toggleItemFavorite action", () => {
   it("toggles as the session user and returns the new state", async () => {
     const result = await toggleItemFavorite("item_1");
 
-    expect(result).toEqual({ success: true, data: { isFavorite: true } });
+    // updatedAt crosses as an ISO string, never a Date.
+    expect(result).toEqual({
+      success: true,
+      data: { isFavorite: true, updatedAt: STAMP_ISO },
+    });
     expect(dbToggleFavorite).toHaveBeenCalledTimes(1);
     expect(dbToggleFavorite.mock.calls[0][0]).toBe("user_demo");
     expect(dbToggleFavorite.mock.calls[0][1]).toBe("item_1");
@@ -517,6 +531,82 @@ describe("toggleItemFavorite action", () => {
     dbToggleFavorite.mockRejectedValue(new Error("connection reset"));
 
     const result = await toggleItemFavorite("item_1");
+
+    expect(result).toEqual({
+      success: false,
+      error: "Could not update this item. Please try again.",
+    });
+  });
+});
+
+describe("toggleItemPin action", () => {
+  it("toggles as the session user and returns the new state", async () => {
+    const result = await toggleItemPin("item_1");
+
+    // updatedAt crosses as an ISO string, never a Date.
+    expect(result).toEqual({
+      success: true,
+      data: { isPinned: true, updatedAt: STAMP_ISO },
+    });
+    expect(dbTogglePin).toHaveBeenCalledTimes(1);
+    // The owner comes from the session, never from the caller — a client-sent
+    // userId would let anyone pin anyone else's item.
+    expect(dbTogglePin.mock.calls[0][0]).toBe("user_demo");
+    expect(dbTogglePin.mock.calls[0][1]).toBe("item_1");
+  });
+
+  it("reports the unpinned state back when the flag flips off", async () => {
+    dbTogglePin.mockResolvedValue({ isPinned: false, updatedAt: STAMP });
+
+    await expect(toggleItemPin("item_1")).resolves.toEqual({
+      success: true,
+      data: { isPinned: false, updatedAt: STAMP_ISO },
+    });
+  });
+
+  it("rejects an unauthenticated caller without touching the database", async () => {
+    authMock.mockResolvedValue(null);
+
+    const result = await toggleItemPin("item_1");
+
+    expect(result).toEqual({
+      success: false,
+      error: "You must be signed in to pin items.",
+    });
+    expect(dbTogglePin).not.toHaveBeenCalled();
+  });
+
+  it("rejects a session with no user id", async () => {
+    authMock.mockResolvedValue({ user: { email: "demo@devstash.io" } });
+
+    const result = await toggleItemPin("item_1");
+
+    expect(result).toMatchObject({ success: false });
+    expect(dbTogglePin).not.toHaveBeenCalled();
+  });
+
+  it("reports a missing or foreign item as not found", async () => {
+    dbTogglePin.mockResolvedValue(null);
+
+    const result = await toggleItemPin("item_1");
+
+    expect(result).toEqual({ success: false, error: "Item not found." });
+  });
+
+  it("rejects a blank id without spending a query on it", async () => {
+    for (const blank of ["", "   "]) {
+      await expect(toggleItemPin(blank)).resolves.toEqual({
+        success: false,
+        error: "Item not found.",
+      });
+    }
+    expect(dbTogglePin).not.toHaveBeenCalled();
+  });
+
+  it("surfaces an unexpected database failure as a friendly error", async () => {
+    dbTogglePin.mockRejectedValue(new Error("connection reset"));
+
+    const result = await toggleItemPin("item_1");
 
     expect(result).toEqual({
       success: false,
