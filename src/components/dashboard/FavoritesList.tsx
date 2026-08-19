@@ -1,17 +1,22 @@
 "use client";
 
+import { ArrowDown, ArrowUp } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { FavoriteCollectionRow } from "@/components/dashboard/FavoriteCollectionRow";
 import { FavoriteItemRow } from "@/components/dashboard/FavoriteItemRow";
 import { ItemCardTrigger } from "@/components/dashboard/ItemCardTrigger";
+import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import type { FavoriteCollectionData } from "@/lib/db/collections";
 import type { FavoriteItemData } from "@/lib/db/items";
 import {
+  DEFAULT_SORT_DIRECTION,
   FAVORITES_SORT_OPTIONS,
+  getSortDirectionLabel,
   sortFavoriteCollections,
   sortFavoriteItems,
+  type FavoritesSortDirection,
   type FavoritesSortKey,
 } from "@/lib/favorites-sort";
 
@@ -48,11 +53,22 @@ function FavoritesSection({
 /** Owns the sort state so `/favorites` can stay a server component for the initial fetch. */
 export function FavoritesList({ items, collections }: FavoritesListProps) {
   const [sortKey, setSortKey] = useState<FavoritesSortKey>("date");
+  const [direction, setDirection] = useState<FavoritesSortDirection>(
+    DEFAULT_SORT_DIRECTION.date,
+  );
 
-  const sortedItems = useMemo(() => sortFavoriteItems(items, sortKey), [items, sortKey]);
+  function handleSortKeyChange(key: FavoritesSortKey) {
+    setSortKey(key);
+    setDirection(DEFAULT_SORT_DIRECTION[key]);
+  }
+
+  const sortedItems = useMemo(
+    () => sortFavoriteItems(items, sortKey, direction),
+    [items, sortKey, direction],
+  );
   const sortedCollections = useMemo(
-    () => sortFavoriteCollections(collections, sortKey),
-    [collections, sortKey],
+    () => sortFavoriteCollections(collections, sortKey, direction),
+    [collections, sortKey, direction],
   );
 
   const isEmpty = items.length === 0 && collections.length === 0;
@@ -75,7 +91,7 @@ export function FavoritesList({ items, collections }: FavoritesListProps) {
           id="favorites-sort"
           className="w-auto"
           value={sortKey}
-          onChange={event => setSortKey(event.target.value as FavoritesSortKey)}
+          onChange={event => handleSortKeyChange(event.target.value as FavoritesSortKey)}
         >
           {FAVORITES_SORT_OPTIONS.map(option => (
             <option key={option.value} value={option.value}>
@@ -83,6 +99,20 @@ export function FavoritesList({ items, collections }: FavoritesListProps) {
             </option>
           ))}
         </Select>
+        <Button
+          type="button"
+          variant="outline"
+          size="icon-sm"
+          aria-label={getSortDirectionLabel(sortKey, direction)}
+          title={getSortDirectionLabel(sortKey, direction)}
+          onClick={() => setDirection(current => (current === "asc" ? "desc" : "asc"))}
+        >
+          {direction === "asc" ? (
+            <ArrowUp className="size-3.5" />
+          ) : (
+            <ArrowDown className="size-3.5" />
+          )}
+        </Button>
       </div>
 
       <div className="space-y-8">

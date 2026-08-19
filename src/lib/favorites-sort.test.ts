@@ -1,6 +1,10 @@
 import { describe, it, expect } from "vitest";
 
-import { sortFavoriteCollections, sortFavoriteItems } from "@/lib/favorites-sort";
+import {
+  getSortDirectionLabel,
+  sortFavoriteCollections,
+  sortFavoriteItems,
+} from "@/lib/favorites-sort";
 import type { FavoriteCollectionData } from "@/lib/db/collections";
 import type { FavoriteItemData } from "@/lib/db/items";
 
@@ -66,6 +70,20 @@ describe("sortFavoriteItems", () => {
     sortFavoriteItems(input, "name");
     expect(input).toEqual(original);
   });
+
+  it("sorts by name descending (Z to A) when direction is 'desc'", () => {
+    const sorted = sortFavoriteItems([zebra, apple, mango], "name", "desc");
+    expect(sorted.map(item => item.title)).toEqual([
+      "Zebra Snippet",
+      "Mango Command",
+      "Apple Prompt",
+    ]);
+  });
+
+  it("sorts by date ascending (oldest first) when direction is 'asc'", () => {
+    const sorted = sortFavoriteItems([zebra, apple, mango], "date", "asc");
+    expect(sorted.map(item => item.id)).toEqual(["1", "3", "2"]);
+  });
 });
 
 describe("sortFavoriteCollections", () => {
@@ -97,5 +115,33 @@ describe("sortFavoriteCollections", () => {
     const original = [...input];
     sortFavoriteCollections(input, "name");
     expect(input).toEqual(original);
+  });
+
+  it("sorts by name descending (Z to A) when direction is 'desc'", () => {
+    const sorted = sortFavoriteCollections([zebra, apple, mango], "name", "desc");
+    expect(sorted.map(c => c.name)).toEqual([
+      "Zebra Collection",
+      "Mango Collection",
+      "Apple Collection",
+    ]);
+  });
+
+  it("sorts by date ascending (oldest first) when direction is 'asc'", () => {
+    const sorted = sortFavoriteCollections([zebra, apple, mango], "date", "asc");
+    expect(sorted.map(c => c.id)).toEqual(["1", "3", "2"]);
+  });
+});
+
+describe("getSortDirectionLabel", () => {
+  it("describes date direction as newest/oldest first", () => {
+    expect(getSortDirectionLabel("date", "desc")).toBe("Newest first");
+    expect(getSortDirectionLabel("date", "asc")).toBe("Oldest first");
+  });
+
+  it("describes name/type direction as A to Z / Z to A", () => {
+    expect(getSortDirectionLabel("name", "asc")).toBe("A to Z");
+    expect(getSortDirectionLabel("name", "desc")).toBe("Z to A");
+    expect(getSortDirectionLabel("type", "asc")).toBe("A to Z");
+    expect(getSortDirectionLabel("type", "desc")).toBe("Z to A");
   });
 });

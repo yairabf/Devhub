@@ -1,16 +1,18 @@
-# Current Feature
+# Current Feature: Favorites Page Sort Direction
 
 ## Status
 
-<!-- Not started -->
+In Progress
 
 ## Goals
 
-<!-- What this feature should accomplish -->
+- The existing "Sort by" control (Date/Name/Item Type) on `/favorites` only let you pick the key, not the direction.
+- Add a direction toggle so Date can go newest-first/oldest-first and Name/Item Type can go A→Z/Z→A.
 
 ## Notes
 
-<!-- Constraints, links to specs, relevant files -->
+- Added `FavoritesSortDirection`, `DEFAULT_SORT_DIRECTION`, and `getSortDirectionLabel` to `src/lib/favorites-sort.ts`; `sortFavoriteItems`/`sortFavoriteCollections` take an optional `direction` param (defaults to the key's natural direction, so existing 2-arg call sites/tests are unaffected).
+- `FavoritesList.tsx` owns `direction` state alongside `sortKey`; changing the sort key resets direction to that key's default rather than persisting an unrelated direction across keys. A small icon `Button` next to the `Select` toggles asc/desc, with an `aria-label`/`title` describing the current direction ("Newest first", "A to Z", etc).
 
 ## History
 
