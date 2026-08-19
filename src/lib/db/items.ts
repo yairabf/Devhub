@@ -1,3 +1,4 @@
+import type { PageWindow } from "@/lib/pagination";
 import { prisma } from "@/lib/prisma";
 
 export interface ItemTagData {
@@ -73,13 +74,30 @@ function toCardData(item: RawItem): ItemCardData {
 export async function getItemsByCollection(
   userId: string,
   collectionId: string,
+  window: PageWindow = {},
 ): Promise<ItemCardData[]> {
   const items = await prisma.item.findMany({
     where: { userId, collections: { some: { collectionId } } },
     orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
+    skip: window.skip,
+    take: window.take,
     select: ITEM_SELECT,
   });
   return items.map(toCardData);
+}
+
+/**
+ * The total behind `getItemsByCollection`, for the page count. Scoped to the
+ * owner as well as the collection, so it can never report rows the listing
+ * itself would refuse to show.
+ */
+export function countItemsByCollection(
+  userId: string,
+  collectionId: string,
+): Promise<number> {
+  return prisma.item.count({
+    where: { userId, collections: { some: { collectionId } } },
+  });
 }
 
 export async function getPinnedItems(userId: string): Promise<ItemCardData[]> {
@@ -107,13 +125,24 @@ export async function getRecentItems(
 export async function getItemsByType(
   userId: string,
   itemTypeId: string,
+  window: PageWindow = {},
 ): Promise<ItemCardData[]> {
   const items = await prisma.item.findMany({
     where: { userId, itemTypeId },
     orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
+    skip: window.skip,
+    take: window.take,
     select: ITEM_SELECT,
   });
   return items.map(toCardData);
+}
+
+/** The total behind `getItemsByType`, for the page count. */
+export function countItemsByType(
+  userId: string,
+  itemTypeId: string,
+): Promise<number> {
+  return prisma.item.count({ where: { userId, itemTypeId } });
 }
 
 const ITEM_DETAIL_SELECT = {

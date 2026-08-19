@@ -17,10 +17,19 @@ const searchInput = (page: Page) => palette(page).getByRole("combobox");
 const drawer = (page: Page) => page.locator('[data-slot="sheet-content"]');
 
 async function openPalette(page: Page) {
-  await page.keyboard.press(
-    process.platform === "darwin" ? "Meta+k" : "Control+k",
-  );
-  await expect(palette(page)).toBeVisible();
+  const shortcut = process.platform === "darwin" ? "Meta+k" : "Control+k";
+
+  // The shortcut is served by a keydown listener attached in a client effect,
+  // so it does nothing until the page has hydrated — and `goto` resolves
+  // before that. A single press is therefore droppable, which showed up as an
+  // intermittent failure under full-suite load. Retrying is safe because the
+  // handler only ever opens the palette; it never toggles it shut.
+  await expect
+    .poll(async () => {
+      await page.keyboard.press(shortcut);
+      return palette(page).isVisible();
+    })
+    .toBe(true);
 }
 
 let item: SeededTestItem;

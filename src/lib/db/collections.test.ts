@@ -87,26 +87,32 @@ describe("getCollections", () => {
     expect(collection.dominantTypeId).toBeNull();
   });
 
-  it("passes the userId and limit through to Prisma", async () => {
+  it("passes the userId and page window through to Prisma", async () => {
     findMany.mockResolvedValue([] as never);
 
-    await getCollections("user_demo", 3);
+    await getCollections("user_demo", { skip: 21, take: 3 });
 
     expect(findMany).toHaveBeenCalledTimes(1);
     const args = findMany.mock.calls[0][0];
-    expect(args).toMatchObject({ where: { userId: "user_demo" }, take: 3 });
+    expect(args).toMatchObject({
+      where: { userId: "user_demo" },
+      skip: 21,
+      take: 3,
+    });
   });
 
-  it("omits the take clause entirely when no limit is given", async () => {
+  it("omits skip and take entirely when no window is given", async () => {
     findMany.mockResolvedValue([] as never);
 
     await getCollections("user_demo");
 
     // Prisma treats `undefined` as "argument not supplied", which is what lets
-    // one function serve both the capped dashboard and the full list page.
+    // one function serve the capped dashboard, the paginated list page, and
+    // the unbounded search-index fetch in the layouts.
     const args = findMany.mock.calls[0][0];
     expect(args).toBeDefined();
     expect(args?.take).toBeUndefined();
+    expect(args?.skip).toBeUndefined();
   });
 
   it("breaks updatedAt ties on id so the order is deterministic", async () => {

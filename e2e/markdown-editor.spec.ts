@@ -367,8 +367,13 @@ test.describe("MarkdownEditor — height", () => {
 
     await page.setViewportSize({ width: 420, height: 800 });
 
-    const narrow = await markdownPaneHeight(markdownInput(drawer(page)));
-    expect(narrow).toBeGreaterThan(wide);
+    // Polled, not measured once: the re-fit runs off a ResizeObserver, so the
+    // new height lands a frame or more after `setViewportSize` returns. A
+    // single immediate read races that and fails intermittently under load.
+    // This still fails if the box never grows — which is the guard.
+    await expect
+      .poll(() => markdownPaneHeight(markdownInput(drawer(page))))
+      .toBeGreaterThan(wide);
     // Grown to fit rather than left scrolling inside a stale box.
     expect(
       await markdownInput(drawer(page)).evaluate(

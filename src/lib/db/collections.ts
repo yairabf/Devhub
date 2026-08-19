@@ -1,3 +1,4 @@
+import type { PageWindow } from "@/lib/pagination";
 import { prisma } from "@/lib/prisma";
 
 export interface CollectionCardData {
@@ -158,14 +159,15 @@ export async function deleteCollection(
 
 export async function getCollections(
   userId: string,
-  limit?: number,
+  window: PageWindow = {},
 ): Promise<CollectionCardData[]> {
   const collections = await prisma.collection.findMany({
     where: { userId },
     orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
-    // Prisma drops an `undefined` argument entirely, so omitting the limit
+    // Prisma drops an `undefined` argument entirely, so an empty window
     // returns every collection.
-    take: limit,
+    skip: window.skip,
+    take: window.take,
     select: {
       id: true,
       name: true,

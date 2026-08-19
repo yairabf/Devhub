@@ -8,6 +8,10 @@ import { ItemCard } from "@/components/dashboard/ItemCard";
 import { ItemCardTrigger } from "@/components/dashboard/ItemCardTrigger";
 import { StatsGrid } from "@/components/dashboard/StatsGrid";
 import {
+  DASHBOARD_COLLECTIONS_LIMIT,
+  DASHBOARD_RECENT_ITEMS_LIMIT,
+} from "@/lib/constants";
+import {
   getCollectionsCount,
   getFavoriteCollectionsCount,
   getCollections,
@@ -37,9 +41,9 @@ export default async function DashboardPage() {
     favoriteItemsCount,
     favoriteCollectionsCount,
   ] = await Promise.all([
-    getCollections(userId, 6),
+    getCollections(userId, { take: DASHBOARD_COLLECTIONS_LIMIT }),
     getPinnedItems(userId),
-    getRecentItems(userId, 10),
+    getRecentItems(userId, DASHBOARD_RECENT_ITEMS_LIMIT),
     getCollectionsCount(userId),
     getItemsCount(userId),
     getFavoriteItemsCount(userId),

@@ -1,16 +1,24 @@
-# Current Feature
+# Current Feature: Pagination
 
 ## Status
 
-<!-- Not started -->
+In Progress
 
 ## Goals
 
-<!-- What are we building? -->
+- Add pagination to `/items/[type]` and `/collections/[id]` pages
+- Pagination controls at the bottom of each page with numbered page links and prev/next links
+- Disable (grey out) prev/next controls when not available (first/last page)
+- Use constants: `ITEMS_PER_PAGE = 21`, `COLLECTIONS_PER_PAGE = 21`
+- Dashboard limits: `DASHBOARD_COLLECTIONS_LIMIT = 6`, `DASHBOARD_RECENT_ITEMS_LIMIT = 10`
+- Only fetch the amount of data a given page needs — no fetch-all-then-slice
 
 ## Notes
 
-<!-- Implementation notes, constraints, decisions -->
+- Spec source: `context/features/pagination-spec.md`
+- Likely touches `src/lib/db/items.ts` (`getItemsByType`) and `src/lib/db/collections.ts` (`getItemsByCollection`) to add pagination params (skip/take) instead of unbounded fetches
+- Dashboard's recent collections/items fetches should be checked against the new `DASHBOARD_COLLECTIONS_LIMIT`/`DASHBOARD_RECENT_ITEMS_LIMIT` constants (currently hardcoded limits per `current-feature.md` history — verify current values in code, not history, since history is a decision log, not current state)
+- Need a shared pagination UI component (numbered pages + prev/next) usable by both `/items/[type]` and `/collections/[id]`
 
 ## History
 

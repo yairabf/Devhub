@@ -8,6 +8,7 @@ vi.mock("@/lib/prisma", () => ({
       create: vi.fn(),
       update: vi.fn(),
       delete: vi.fn(),
+      count: vi.fn(),
     },
     collection: {
       findMany: vi.fn(),
@@ -17,10 +18,13 @@ vi.mock("@/lib/prisma", () => ({
 
 import { prisma } from "@/lib/prisma";
 import {
+  countItemsByCollection,
+  countItemsByType,
   createItem,
   deleteItem,
   getItemDetail,
   getItemsByCollection,
+  getItemsByType,
   getRecentItems,
   getSearchableItems,
   updateItem,
@@ -31,6 +35,7 @@ const findFirst = vi.mocked(prisma.item.findFirst);
 const create = vi.mocked(prisma.item.create);
 const update = vi.mocked(prisma.item.update);
 const destroy = vi.mocked(prisma.item.delete);
+const count = vi.mocked(prisma.item.count);
 const collectionFindMany = vi.mocked(prisma.collection.findMany);
 
 beforeEach(() => {
@@ -39,6 +44,7 @@ beforeEach(() => {
   create.mockReset();
   update.mockReset();
   destroy.mockReset();
+  count.mockReset();
   collectionFindMany.mockReset();
   collectionFindMany.mockResolvedValue([] as never);
 });
@@ -189,6 +195,70 @@ describe("getSearchableItems", () => {
 
     const args = findMany.mock.calls[0][0];
     expect(args).toMatchObject({ take: 500 });
+  });
+});
+
+describe("paginated listings", () => {
+  it("passes the page window through to Prisma for a type listing", async () => {
+    findMany.mockResolvedValue([] as never);
+
+    await getItemsByType("user_demo", "type_snippet", { skip: 21, take: 21 });
+
+    expect(findMany.mock.calls[0][0]).toMatchObject({ skip: 21, take: 21 });
+  });
+
+  it("passes the page window through to Prisma for a collection listing", async () => {
+    findMany.mockResolvedValue([] as never);
+
+    await getItemsByCollection("user_demo", "col_react_patterns", {
+      skip: 42,
+      take: 21,
+    });
+
+    expect(findMany.mock.calls[0][0]).toMatchObject({ skip: 42, take: 21 });
+  });
+
+  it.each([
+    ["getItemsByType", () => getItemsByType("user_demo", "type_snippet")],
+    [
+      "getItemsByCollection",
+      () => getItemsByCollection("user_demo", "col_react_patterns"),
+    ],
+  ])("omits skip and take when %s is called without a window", async (_name, call) => {
+    findMany.mockResolvedValue([] as never);
+
+    await call();
+
+    // The unpaginated callers rely on this: Prisma drops `undefined`, so one
+    // function serves both the windowed page and a full fetch.
+    const args = findMany.mock.calls[0][0];
+    expect(args?.skip).toBeUndefined();
+    expect(args?.take).toBeUndefined();
+  });
+
+  it("counts a type listing scoped to the owner", async () => {
+    count.mockResolvedValue(37 as never);
+
+    await expect(countItemsByType("user_demo", "type_snippet")).resolves.toBe(37);
+    expect(count.mock.calls[0][0]).toMatchObject({
+      where: { userId: "user_demo", itemTypeId: "type_snippet" },
+    });
+  });
+
+  it("counts a collection listing scoped to the owner as well as the collection", async () => {
+    count.mockResolvedValue(5 as never);
+
+    await expect(
+      countItemsByCollection("user_demo", "col_react_patterns"),
+    ).resolves.toBe(5);
+    // Dropping userId here would leak another user's total as a page count,
+    // even though the listing itself refuses to show the rows.
+    expect(count.mock.calls[0][0]).toMatchObject({
+      where: {
+        userId: "user_demo",
+        collections: { some: { collectionId: "col_react_patterns" } },
+      },
+    });
   });
 });
 

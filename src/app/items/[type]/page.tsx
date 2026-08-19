@@ -3,15 +3,20 @@ import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { ItemCard } from "@/components/dashboard/ItemCard";
 import { ItemCardTrigger } from "@/components/dashboard/ItemCardTrigger";
-import { getItemsByType, getSystemItemTypes } from "@/lib/db/items";
+import { Pagination } from "@/components/dashboard/Pagination";
+import { ITEMS_PER_PAGE } from "@/lib/constants";
+import { countItemsByType, getItemsByType, getSystemItemTypes } from "@/lib/db/items";
 import { capitalize, getTypeSlug } from "@/lib/format";
+import { getPagination, parsePageParam } from "@/lib/pagination";
 
 export const dynamic = "force-dynamic";
 
 export default async function ItemsByTypePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ type: string }>;
+  searchParams: Promise<{ page?: string | string[] }>;
 }) {
   const { type: slug } = await params;
 
@@ -20,11 +25,27 @@ export default async function ItemsByTypePage({
     redirect(`/sign-in?callbackUrl=/items/${slug}`);
   }
 
-  const itemTypes = await getSystemItemTypes();
+  const [itemTypes, { page: rawPage }] = await Promise.all([
+    getSystemItemTypes(),
+    searchParams,
+  ]);
   const itemType = itemTypes.find(type => getTypeSlug(type.name) === slug);
   if (!itemType) notFound();
 
-  const items = await getItemsByType(session.user.id, itemType.id);
+  // The count can only run once the slug has resolved to a type id, and the
+  // total has to land before the window: it decides the page count, which is
+  // what a `?page=` past the end clamps against.
+  const total = await countItemsByType(session.user.id, itemType.id);
+  const { page, pageCount, skip, take } = getPagination(
+    parsePageParam(rawPage),
+    total,
+    ITEMS_PER_PAGE,
+  );
+
+  const items = await getItemsByType(session.user.id, itemType.id, {
+    skip,
+    take,
+  });
 
   return (
     <div className="space-y-6">
@@ -33,11 +54,12 @@ export default async function ItemsByTypePage({
           {capitalize(itemType.name)}s
         </h1>
         <p className="text-sm text-muted-foreground">
-          {items.length} {items.length === 1 ? "item" : "items"}
+          {total} {total === 1 ? "item" : "items"}
+          {pageCount > 1 && ` · page ${page} of ${pageCount}`}
         </p>
       </div>
 
-      {items.length === 0 ? (
+      {total === 0 ? (
         <p className="text-sm text-muted-foreground">
           No {itemType.name} items yet.
         </p>
@@ -50,6 +72,12 @@ export default async function ItemsByTypePage({
           ))}
         </div>
       )}
+
+      <Pagination
+        page={page}
+        pageCount={pageCount}
+        basePath={`/items/${slug}`}
+      />
     </div>
   );
 }

@@ -88,12 +88,104 @@ async function create(
   return { id, title };
 }
 
+/**
+ * Bulk variant for the pagination specs, which need more rows than a page
+ * holds. One subprocess for the whole batch: the per-item `create` helper
+ * would mean ~25 `tsx` startups, which dominates the spec's runtime.
+ *
+ * Titles are zero-padded so they sort predictably when read back, and every
+ * row shares the `prefix` so cleanup is a single `deleteMany`.
+ */
+async function createMany(prefix: string, count: number, itemTypeId?: string) {
+  const type = itemTypeId || "type_snippet";
+  const created: { id: string; title: string }[] = [];
+
+  for (let i = 0; i < count; i++) {
+    const ordinal = String(i + 1).padStart(3, "0");
+    const id = `item_e2e_${prefix}_${ordinal}`;
+    const title = `${prefix} ${ordinal}`;
+    await prisma.item.deleteMany({ where: { id } });
+    await prisma.item.create({
+      data: {
+        id,
+        title,
+        contentType: "text",
+        content: CODE_CONTENT,
+        description: "Created by the Playwright suite — safe to delete.",
+        language: "typescript",
+        userId: DEMO_USER_ID,
+        itemTypeId: type,
+        // Linked like the single-item fixture, so one batch can exercise both
+        // the by-type listing and the collection detail listing.
+        collections: { create: { collectionId: "col_react_patterns" } },
+      },
+    });
+    created.push({ id, title });
+  }
+
+  return { created: created.length, items: created };
+}
+
+/**
+ * Throwaway collections for the `/collections` pagination spec, which needs
+ * more than a page holds. Same prefix/cleanup contract as `createMany`.
+ */
+async function createManyCollections(prefix: string, count: number) {
+  const created: { id: string; name: string }[] = [];
+
+  for (let i = 0; i < count; i++) {
+    const ordinal = String(i + 1).padStart(3, "0");
+    const id = `col_e2e_${prefix}_${ordinal}`;
+    const name = `${prefix} ${ordinal}`;
+    await prisma.collection.deleteMany({ where: { id } });
+    await prisma.collection.create({
+      data: {
+        id,
+        name,
+        description: "Created by the Playwright suite — safe to delete.",
+        userId: DEMO_USER_ID,
+      },
+    });
+    created.push({ id, name });
+  }
+
+  return { created: created.length, collections: created };
+}
+
 async function main() {
   const [command, arg, title, itemTypeId] = process.argv.slice(2);
 
   switch (command) {
     case "create":
       return create(requireArg(command, arg), title, itemTypeId);
+    case "createMany": {
+      const count = Number(title);
+      if (!Number.isInteger(count) || count < 1) {
+        throw new Error(`"createMany" requires a positive count, got: ${title}`);
+      }
+      return createMany(requireArg(command, arg), count, itemTypeId);
+    }
+    case "removeMany": {
+      const { count } = await prisma.item.deleteMany({
+        where: { id: { startsWith: `item_e2e_${requireArg(command, arg)}_` } },
+      });
+      return { removed: count };
+    }
+    case "createManyCollections": {
+      const count = Number(title);
+      if (!Number.isInteger(count) || count < 1) {
+        throw new Error(
+          `"createManyCollections" requires a positive count, got: ${title}`,
+        );
+      }
+      return createManyCollections(requireArg(command, arg), count);
+    }
+    case "removeManyCollections": {
+      const { count } = await prisma.collection.deleteMany({
+        where: { id: { startsWith: `col_e2e_${requireArg(command, arg)}_` } },
+      });
+      return { removed: count };
+    }
     case "remove":
       await prisma.item.deleteMany({ where: { id: requireArg(command, arg) } });
       return { removed: true };

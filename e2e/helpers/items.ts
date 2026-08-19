@@ -52,6 +52,37 @@ export async function removeTestItem(id: string): Promise<void> {
   await fixture<{ removed: boolean }>("remove", id);
 }
 
+/**
+ * Bulk-creates `count` throwaway items sharing `prefix`, for specs that need
+ * more rows than a page holds. Returns them in creation order — note the
+ * listings sort newest-first, so the last created lands on page 1.
+ */
+export function createTestItems(
+  prefix: string,
+  count: number,
+  itemTypeId?: string,
+): Promise<{ created: number; items: SeededTestItem[] }> {
+  return fixture("createMany", prefix, String(count), itemTypeId ?? "");
+}
+
+/** Removes every item created by `createTestItems` under `prefix`. */
+export async function removeTestItems(prefix: string): Promise<void> {
+  await fixture<{ removed: number }>("removeMany", prefix);
+}
+
+/** Bulk-creates throwaway collections, for the `/collections` paging spec. */
+export function createTestCollections(
+  prefix: string,
+  count: number,
+): Promise<{ created: number; collections: { id: string; name: string }[] }> {
+  return fixture("createManyCollections", prefix, String(count));
+}
+
+/** Removes every collection created by `createTestCollections`. */
+export async function removeTestCollections(prefix: string): Promise<void> {
+  await fixture<{ removed: number }>("removeManyCollections", prefix);
+}
+
 export async function itemExists(id: string): Promise<boolean> {
   const { exists } = await fixture<{ exists: boolean }>("exists", id);
   return exists;
