@@ -49,3 +49,6 @@ next-env.d.ts
 /e2e/.auth
 /test-results
 /playwright-report
+
+# graphify knowledge-graph output (local tool cache)
+/graphify-out

@@ -1,16 +1,31 @@
-# Current Feature
+# Current Feature: Homepage Mockup
 
 ## Status
 
-<!-- Not started -->
+In Progress
 
 ## Goals
 
-<!-- What this feature should accomplish -->
+- Build a standalone marketing homepage mockup at `prototypes/homepage/` with three files: `index.html`, `styles.css`, `script.js` (static prototype — not part of the Next.js app).
+- Apply a dark theme using the spec's item-type accent palette: Snippet `#3b82f6`, Prompt `#f59e0b`, Command `#06b6d4`, Note `#22c55e`, File `#64748b`, Image `#ec4899`, URL `#6366f1`.
+- Hero (main focus) — three elements side by side: a "Your knowledge today..." chaos container holding 8 floating source icons (Notion, GitHub, Slack, VS Code, browser tabs, terminal, text file, bookmark); a pulsing transform arrow; and a "...with DevStash" dashboard preview (sidebar nav + card grid with colored top borders).
+- Animate the chaos icons with `requestAnimationFrame`: random drift, wall bouncing, subtle rotation/scale pulsing, and repulsion from the mouse cursor.
+- Fixed top navigation with logo, Features/Pricing links, and Sign In / Get Started buttons; becomes more opaque on scroll.
+- Hero text above the visual: "Stop Losing Your Developer Knowledge" headline with gradient text, subheadline about scattered knowledge, and CTA buttons.
+- Features section: 6 cards (Code Snippets, AI Prompts, Instant Search, Commands, Files & Docs, Collections), each using its item-type accent color.
+- AI section: two columns — "Pro Feature" badge plus a checklist of AI capabilities on the left, a code-editor mockup demoing "AI Generated Tags" on the right.
+- Pricing section: Free ($0, 50 items, 3 collections) vs Pro ($8/mo, unlimited, AI features), Pro highlighted with a "Most Popular" badge, plus a monthly/yearly toggle showing the $72 yearly option.
+- CTA section ("Ready to Organize Your Knowledge?") and a footer with logo, link columns, and copyright using the current year.
+- Scroll-triggered fade-in for sections as they enter the viewport.
+- Responsive: chaos/arrow/dashboard stack vertically on mobile with single-column grids, and the arrow rotates 90° to point down.
 
 ## Notes
 
-<!-- Constraints, links to specs, relevant files -->
+- Spec: `context/features/homepage-mockup-spec.md`.
+- This is a **static prototype**, not a Next.js route — plain HTML/CSS/JS under `prototypes/homepage/`, so the project's Tailwind v4 / ShadCN / server-component standards do not apply here. No new dependencies.
+- Because it adds no server actions, `lib/db` helpers, or utilities under `src/lib`, no Vitest unit tests are warranted per the project's testing scope. Verification is browser-based (desktop + mobile widths, animation behavior, console clean).
+- Open question to resolve during implementation: the palette here differs from the app's own type colors in `src/lib/type-colors.ts` (e.g. Prompt is amber here vs. purple in-app, Command cyan vs. orange, Note green vs. yellow). The spec's palette wins for the mockup; flag whether the app should later align.
+- "URL" in the palette corresponds to the app's "Link" type.
 
 ## History
 
