@@ -1,16 +1,25 @@
-# Current Feature
+# Current Feature: Favorites Page Client-Side Sorting
 
 ## Status
 
-<!-- Not started -->
+In Progress
 
 ## Goals
 
-<!-- What this feature should accomplish -->
+- Add a sort control to the `/favorites` page letting users reorder the favorited items/collections list by:
+  - **Name** (alphabetical A–Z)
+  - **Date** (by `updatedAt`, most recent first — matches current default order)
+  - **Item Type** (grouped/sorted by `itemTypeName`)
+- Sorting must be **client-side** — apply purely in the browser against already-fetched data, no server round-trip or full page refresh.
+- Preserve today's default order (`updatedAt desc`) as the initial state when the page loads.
 
 ## Notes
 
-<!-- Constraints, links to specs, relevant files -->
+- Current implementation: `src/app/favorites/page.tsx` is a server component; `getFavoriteItems` (`src/lib/db/items.ts`) and `getFavoriteCollectionsList` (`src/lib/db/collections.ts`) fetch with a fixed `orderBy: [{ updatedAt: "desc" }, { id: "desc" }]`. Rows render via `FavoriteItemRow` / `FavoriteCollectionRow` (`src/components/dashboard/`).
+- Since sorting is client-side, the list needs a `"use client"` wrapper that owns sort state and re-orders the already-fetched arrays; the page itself can stay a server component for the initial data fetch.
+- Open question: Favorite Collections have no `itemTypeId` — decide how "sort by item type" applies to the Collections section (e.g. treat all as a single "Collection" type, fall back to name, or scope type-sort to the Items section only).
+- Open question: one shared sort control for both Items and Collections sections, or independent per-section controls.
+- Existing patterns to reuse: `src/components/ui/dropdown-menu.tsx` or `src/components/ui/select.tsx` for the "Sort by" control; `CollectionCardMenu.tsx` shows the `stopPropagation` pattern needed since rows are wrapped in click triggers (`ItemCardTrigger`/`CollectionCardTrigger`).
 
 ## History
 
