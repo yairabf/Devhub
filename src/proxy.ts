@@ -1,7 +1,13 @@
 import { auth } from "@/auth";
 import authConfig from "@/auth.config";
 
-const PROTECTED_PREFIXES = ["/dashboard", "/profile", "/items", "/collections"];
+const PROTECTED_PREFIXES = [
+  "/dashboard",
+  "/profile",
+  "/settings",
+  "/items",
+  "/collections",
+];
 
 export const proxy = auth((req) => {
   const isProtected = PROTECTED_PREFIXES.some((p) =>
@@ -18,6 +24,7 @@ export const config = {
   matcher: [
     "/dashboard/:path*",
     "/profile/:path*",
+    "/settings/:path*",
     "/items/:path*",
     "/collections/:path*",
   ],

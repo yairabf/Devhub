@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ChevronUp, LogOut, User } from "lucide-react";
+import { ChevronUp, LogOut, Settings, User } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import { UserAvatar } from "./UserAvatar";
@@ -51,6 +51,14 @@ export function UserMenu({ collapsed, user }: UserMenuProps) {
             >
               <User className="h-4 w-4" />
               Profile
+            </Link>
+            <Link
+              href="/settings"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+            >
+              <Settings className="h-4 w-4" />
+              Settings
             </Link>
             <button
               onClick={() => signOut({ callbackUrl: "/sign-in" })}
