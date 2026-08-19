@@ -1,6 +1,6 @@
 "use client";
 
-import { useItemDrawer } from "@/components/dashboard/ItemDrawerProvider";
+import { useItemDrawer } from "@/components/dashboard/ItemDrawerContext";
 
 interface ItemCardTriggerProps {
   itemId: string;

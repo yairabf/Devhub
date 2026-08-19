@@ -21,7 +21,7 @@ import {
   DialogDescription,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useItemDrawer } from "@/components/dashboard/ItemDrawerProvider";
+import { useItemDrawer } from "@/components/dashboard/ItemDrawerContext";
 import { capitalize } from "@/lib/format";
 import { searchIndex, type SearchIndex } from "@/lib/search";
 import { TypeGlyph } from "@/lib/type-icons";

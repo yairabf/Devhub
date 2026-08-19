@@ -1,19 +1,13 @@
 "use client";
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import {
   ItemDrawer,
   type ItemDrawerErrorState,
 } from "@/components/dashboard/ItemDrawer";
+import { ItemDrawerContextProvider } from "@/components/dashboard/ItemDrawerContext";
 import type { CollectionOption } from "@/lib/db/collections";
 import type { ItemDetailData, ItemFlagPatch } from "@/lib/db/items";
 
@@ -31,25 +25,11 @@ const MISSING_ERROR: ItemDrawerErrorState = {
   message: "This item no longer exists — it may have been deleted.",
 };
 
-interface ItemDrawerContextValue {
-  openItem: (itemId: string) => void;
-}
-
 /** Shape of the `GET /api/items/[id]` envelope. */
 interface ItemDetailResponse {
   success: boolean;
   item?: ItemDetailData;
   error?: string;
-}
-
-const ItemDrawerContext = createContext<ItemDrawerContextValue | null>(null);
-
-export function useItemDrawer(): ItemDrawerContextValue {
-  const context = useContext(ItemDrawerContext);
-  if (!context) {
-    throw new Error("useItemDrawer must be used inside an ItemDrawerProvider");
-  }
-  return context;
 }
 
 interface ItemDrawerProviderProps {
@@ -157,6 +137,10 @@ export function ItemDrawerProvider({
    * entirely while editing — so on cancel the action bar remounts straight from
    * `item`, and a stale flag there would offer to pin an already-pinned item.
    * Patching fixes that and keeps the cached reopen instant.
+   *
+   * Published on the context rather than passed down, so a toggle from a card or
+   * a `/favorites` row reaches it too. Those are server components and cannot
+   * hand a callback to the star they render.
    */
   const handleFlagToggled = useCallback(
     (itemId: string, patch: ItemFlagPatch) => {
@@ -185,10 +169,14 @@ export function ItemDrawerProvider({
   );
 
   // Stable value: otherwise every card trigger re-renders when the drawer opens.
-  const contextValue = useMemo(() => ({ openItem }), [openItem]);
+  // Both callbacks are `useCallback`'d with stable deps, so it holds.
+  const contextValue = useMemo(
+    () => ({ openItem, notifyFlagToggled: handleFlagToggled }),
+    [openItem, handleFlagToggled],
+  );
 
   return (
-    <ItemDrawerContext.Provider value={contextValue}>
+    <ItemDrawerContextProvider value={contextValue}>
       {children}
       <ItemDrawer
         open={open}
@@ -201,8 +189,7 @@ export function ItemDrawerProvider({
         onCancelEdit={() => setEditing(false)}
         onSaved={handleSaved}
         onDeleted={handleDeleted}
-        onFlagToggled={handleFlagToggled}
       />
-    </ItemDrawerContext.Provider>
+    </ItemDrawerContextProvider>
   );
 }
