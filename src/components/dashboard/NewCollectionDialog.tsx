@@ -87,9 +87,9 @@ export function NewCollectionDialog() {
           and returns focus here on close. */}
       <DialogTrigger
         render={
-          <Button variant="outline">
-            <FolderPlus className="mr-2 h-4 w-4" aria-hidden />
-            New Collection
+          <Button variant="outline" aria-label="New Collection">
+            <FolderPlus className="h-4 w-4 sm:mr-2" aria-hidden />
+            <span className="hidden sm:inline">New Collection</span>
           </Button>
         }
       />

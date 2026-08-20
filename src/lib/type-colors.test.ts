@@ -4,6 +4,8 @@ import {
   getTypeDotClass,
   getTypeTextClass,
   getTypeBadgeClass,
+  getTypeTopBorderClass,
+  getTypeSoftBgClass,
 } from "@/lib/type-colors";
 
 describe("getTypeLeftBorderClass", () => {
@@ -69,5 +71,35 @@ describe("getTypeBadgeClass", () => {
 
   it("falls back to the default border/text classes for null", () => {
     expect(getTypeBadgeClass(null)).toBe("border-border text-foreground");
+  });
+});
+
+describe("getTypeTopBorderClass", () => {
+  it("returns the mapped class for a known type id", () => {
+    expect(getTypeTopBorderClass("type_snippet")).toBe("border-t-blue-500");
+    expect(getTypeTopBorderClass("type_file")).toBe("border-t-gray-500");
+  });
+
+  it("falls back to the border class for an unknown type id", () => {
+    expect(getTypeTopBorderClass("type_unknown")).toBe("border-t-border");
+  });
+
+  it("falls back to the border class for null", () => {
+    expect(getTypeTopBorderClass(null)).toBe("border-t-border");
+  });
+});
+
+describe("getTypeSoftBgClass", () => {
+  it("returns the mapped class for a known type id", () => {
+    expect(getTypeSoftBgClass("type_prompt")).toBe("bg-purple-500/10");
+    expect(getTypeSoftBgClass("type_link")).toBe("bg-emerald-500/10");
+  });
+
+  it("falls back to the muted class for an unknown type id", () => {
+    expect(getTypeSoftBgClass("type_unknown")).toBe("bg-muted");
+  });
+
+  it("falls back to the muted class for null", () => {
+    expect(getTypeSoftBgClass(null)).toBe("bg-muted");
   });
 });

@@ -327,6 +327,134 @@
   border-radius: var(--radius-md);
 }
 
+/* ---------- Marketing homepage ----------
+   Decorative styling with no Tailwind equivalent. Colours reference Tailwind's own
+   theme variables so no new hex values enter the palette. */
+
+/* The in-page #features / #pricing anchors want smooth scrolling, but only here. */
+html:has(.home-root) {
+  scroll-behavior: smooth;
+}
+
+.home-root {
+  position: relative;
+  isolation: isolate;
+}
+
+/* Ambient glow behind the whole page. */
+.home-root::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(760px 420px at 12% -6%, color-mix(in srgb, var(--foreground) 7%, transparent), transparent 70%),
+    radial-gradient(680px 400px at 88% 4%, color-mix(in srgb, var(--foreground) 5%, transparent), transparent 70%),
+    radial-gradient(620px 460px at 50% 108%, color-mix(in srgb, var(--foreground) 4%, transparent), transparent 70%);
+}
+
+/* Selection and focus are part of the page, not browser leftovers. */
+.home-root ::selection {
+  background: color-mix(in srgb, var(--foreground) 22%, transparent);
+  color: var(--foreground);
+}
+
+.home-cta-glow {
+  background:
+    radial-gradient(700px 220px at 50% 0%, color-mix(in srgb, var(--foreground) 8%, transparent), transparent 70%),
+    var(--card);
+}
+
+/* Faint graph paper behind the drifting icons. */
+.home-chaos-field {
+  background:
+    linear-gradient(color-mix(in srgb, var(--foreground) 4%, transparent) 1px, transparent 1px) 0 0 / 100% 26px,
+    linear-gradient(90deg, color-mix(in srgb, var(--foreground) 4%, transparent) 1px, transparent 1px) 0 0 / 26px 100%,
+    var(--background);
+}
+
+/* ChaosField writes --tx/--ty/--rot/--scale straight to these elements each frame. */
+.home-chaos-icon {
+  will-change: transform;
+  transform: translate3d(var(--tx, 0px), var(--ty, 0px), 0) rotate(var(--rot, 0deg))
+    scale(var(--scale, 1));
+}
+
+.home-arrow {
+  animation: home-arrow-pulse 2.1s ease-in-out infinite;
+}
+
+@keyframes home-arrow-pulse {
+  0%,
+  100% {
+    transform: translateX(-6px);
+    opacity: 0.55;
+  }
+  50% {
+    transform: translateX(6px);
+    opacity: 1;
+  }
+}
+
+.home-spark {
+  animation: home-spark 1.9s ease-in-out infinite;
+}
+
+@keyframes home-spark {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+
+.home-tag {
+  animation: home-tag-in 0.45s ease both;
+  animation-delay: calc(0.05s + var(--tag-index, 0) * 0.1s);
+}
+
+@keyframes home-tag-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.home-tag[data-tag-index="0"] { --tag-index: 0; }
+.home-tag[data-tag-index="1"] { --tag-index: 1; }
+.home-tag[data-tag-index="2"] { --tag-index: 2; }
+.home-tag[data-tag-index="3"] { --tag-index: 3; }
+.home-tag[data-tag-index="4"] { --tag-index: 4; }
+
+/* Line-number gutter in the AI section's code sample. */
+.home-code-line {
+  display: inline-block;
+  width: 26px;
+  color: var(--muted-foreground);
+  opacity: 0.55;
+  user-select: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:has(.home-root) {
+    scroll-behavior: auto;
+  }
+  .home-arrow,
+  .home-spark,
+  .home-tag {
+    animation: none;
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

@@ -11,7 +11,7 @@ export async function sendPasswordResetEmail(email: string, token: string) {
   await resend.emails.send({
     from: FROM_EMAIL,
     to: email,
-    subject: "Reset your DevStash password",
+    subject: "Reset your DevHub password",
     html: `
       <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px">
         <h1 style="font-size:20px;font-weight:600;margin-bottom:8px">Reset your password</h1>
@@ -36,7 +36,7 @@ export async function sendVerificationEmail(email: string, token: string) {
   await resend.emails.send({
     from: FROM_EMAIL,
     to: email,
-    subject: "Verify your DevStash email",
+    subject: "Verify your DevHub email",
     html: `
       <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px">
         <h1 style="font-size:20px;font-weight:600;margin-bottom:8px">Verify your email</h1>
@@ -48,7 +48,7 @@ export async function sendVerificationEmail(email: string, token: string) {
           Verify email
         </a>
         <p style="color:#999;font-size:12px;margin-top:24px">
-          If you didn't create a DevStash account, you can safely ignore this email.
+          If you didn't create a DevHub account, you can safely ignore this email.
         </p>
       </div>
     `,
