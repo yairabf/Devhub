@@ -1,16 +1,30 @@
-# Current Feature
+# Current Feature: Homepage
 
 ## Status
 
-<!-- Not started -->
+In Progress
 
 ## Goals
 
-<!-- What this feature should accomplish -->
+- Replace the `src/app/page.tsx` stub with the real marketing homepage at `/`, ported from `prototypes/homepage/` — public route, no `DashboardShell`, own page `metadata`
+- Server components by default under `src/components/home/`; exactly four client components: `SiteNav` (scroll state), `Reveal` (IntersectionObserver), `PricingToggle` (billing cycle), `ChaosField` (rAF animation)
+- Port the chaos-field animation with particle state in refs (never `useState` at 60fps), pointer repulsion, debounced resize, the `dt` cap, the `prefers-reduced-motion` gate, and full unmount cleanup
+- Keep content DRY — typed consts + one `.map()` each for feature cards, pricing tiers, checklists, footer columns, chaos icons; shared `SectionHeading` and `CheckItem`
+- Style with Tailwind v4 + existing ShadCN primitives; route item-type colour through `src/lib/type-colors.ts`; scoped decorative CSS in `globals.css` (gradient text, ambient glow, arrow pulse), following the `.markdown-preview` precedent
+- CTAs are plain `next/link` + `buttonVariants()` (never `Button render={<Link/>}`); every link resolves — no `href="#"` anywhere
+- Responsive: chaos → arrow → dashboard stacks on mobile with the arrow rotated 90°, grids collapse to one column
+- Verify: `npm run build`, `npm run lint`, `npm test`, browser check at desktop and mobile widths
 
 ## Notes
 
-<!-- Constraints, links to specs, relevant files -->
+Spec: `context/features/homepage-spec.md`. Prototype source: `prototypes/homepage/{index.html,styles.css,script.js}`.
+
+Decisions carried from the spec:
+- **Palette:** the app's `type-colors.ts` wins over the mockup's hexes (5 of 7 types diverge — prompt, command, note, link, file). Deliberately reverses `homepage-mockup-spec.md`. No new hex values.
+- **Signed-in visitors:** `/` stays public and is never redirected; nav CTAs collapse to "Open Dashboard" when `auth()` returns a session.
+- **Theme:** page follows the app theme via theme tokens, not a forced-dark wrapper — a wrapper cannot reach the `colorScheme` the root layout's script sets on `<html>`.
+- **Footer:** placeholder columns (Changelog, Docs, Blog, Privacy, Terms…) are dropped rather than shipped as `href="#"`.
+- No server actions or `lib/db` helpers, so no Vitest tests beyond any pure helper extracted.
 
 ## History
 

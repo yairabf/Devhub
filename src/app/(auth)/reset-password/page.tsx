@@ -16,7 +16,7 @@ export default async function ResetPasswordPage({ searchParams }: Props) {
     <div className="w-full max-w-sm">
       <div className="mb-8 text-center">
         <span className="font-mono text-xl font-semibold tracking-tight text-foreground">
-          DevStash
+          DevHub
         </span>
         <p className="mt-1 text-sm text-muted-foreground">
           {invalid ? "Invalid reset link" : "Set a new password"}

@@ -63,7 +63,7 @@ function SidebarInner({
             href="/dashboard"
             className="text-sm font-semibold text-sidebar-foreground hover:text-sidebar-foreground/80 transition-colors"
           >
-            DevStash
+            DevHub
           </Link>
         )}
         {showToggle && (

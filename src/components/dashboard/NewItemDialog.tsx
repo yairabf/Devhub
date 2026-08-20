@@ -111,9 +111,9 @@ export function NewItemDialog({ itemTypes, collectionOptions }: NewItemDialogPro
           and returns focus here on close. */}
       <DialogTrigger
         render={
-          <Button>
-            <Plus className="mr-2 h-4 w-4" aria-hidden />
-            New Item
+          <Button aria-label="New Item">
+            <Plus className="h-4 w-4 sm:mr-2" aria-hidden />
+            <span className="hidden sm:inline">New Item</span>
           </Button>
         }
       />

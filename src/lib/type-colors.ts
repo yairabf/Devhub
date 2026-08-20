@@ -18,6 +18,26 @@ const TYPE_DOT_CLASS: Record<string, string> = {
   type_image: "bg-pink-500",
 };
 
+const TYPE_TOP_BORDER_CLASS: Record<string, string> = {
+  type_snippet: "border-t-blue-500",
+  type_prompt: "border-t-purple-500",
+  type_command: "border-t-orange-500",
+  type_note: "border-t-yellow-400",
+  type_link: "border-t-emerald-500",
+  type_file: "border-t-gray-500",
+  type_image: "border-t-pink-500",
+};
+
+const TYPE_SOFT_BG_CLASS: Record<string, string> = {
+  type_snippet: "bg-blue-500/10",
+  type_prompt: "bg-purple-500/10",
+  type_command: "bg-orange-500/10",
+  type_note: "bg-yellow-400/10",
+  type_link: "bg-emerald-500/10",
+  type_file: "bg-gray-500/10",
+  type_image: "bg-pink-500/10",
+};
+
 const TYPE_TEXT_CLASS: Record<string, string> = {
   type_snippet: "text-blue-500",
   type_prompt: "text-purple-500",
@@ -56,4 +76,14 @@ export function getTypeTextClass(typeId: string | null): string {
 export function getTypeBadgeClass(typeId: string | null): string {
   if (!typeId) return "border-border text-foreground";
   return TYPE_BADGE_CLASS[typeId] ?? "border-border text-foreground";
+}
+
+export function getTypeTopBorderClass(typeId: string | null): string {
+  if (!typeId) return "border-t-border";
+  return TYPE_TOP_BORDER_CLASS[typeId] ?? "border-t-border";
+}
+
+export function getTypeSoftBgClass(typeId: string | null): string {
+  if (!typeId) return "bg-muted";
+  return TYPE_SOFT_BG_CLASS[typeId] ?? "bg-muted";
 }
