@@ -41,7 +41,13 @@ export function ThemeToggle() {
       onClick={handleToggle}
       role="switch"
       aria-checked={isDark}
-      aria-label={isDark ? "Switch to light theme" : "Switch to dark theme"}
+      /*
+        Named for what it controls, not for the action. Naming it "Switch to
+        light theme" while aria-checked was true announced "Switch to light
+        theme, switch, on" — the name and the state contradicting each other.
+        The title stays action-phrased; it is the sighted mouse hint.
+      */
+      aria-label="Dark mode"
       title={isDark ? "Switch to light theme" : "Switch to dark theme"}
       className="relative overflow-hidden text-muted-foreground hover:text-foreground"
     >

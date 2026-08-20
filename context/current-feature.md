@@ -1,16 +1,54 @@
-# Current Feature
+# Current Feature: UI Review Fixes
 
 ## Status
 
-<!-- Not started -->
+In Progress — P1 + P2 implemented and verified; awaiting review + permission to commit.
 
 ## Goals
 
-<!-- What this feature should accomplish -->
+Spec: `context/features/ui-review-fixes-spec.md` (23 findings, tiered P1-P5). Recommended scope for this pass: **P1 + P2**.
+
+**P1 — Verified defects**
+
+- Make homepage body CTAs session-aware — `src/app/page.tsx:27` passes the session only to `SiteNav`, so a signed-in visitor is invited to create an account five times on one page (hero, both pricing CTAs, closing CTA, two footer links, all hardcoded `/register`)
+
+- Remove the dead sidebar "Recent" link (`SidebarNav.tsx:11` → `/dashboard/recent`, no such route) — it lands on Next's unstyled 404 and Next prefetches it on every sidebar render, producing a console 404 per page load. Building the route is a separate backlog item, not this pass
+
+- Add a mobile menu to the homepage nav — `SiteNav.tsx:36` is `hidden … md:flex`, so Features/Pricing vanish below 768px with no hamburger and no substitute
+
+- Fix `ItemCard`'s content preview clipping text mid-glyph (`ItemCard.tsx:64`) — the most-repeated component in the app slices glyphs horizontally instead of ellipsing. Reproduce and confirm the mechanism first; the review's stated cause is probably a mis-measurement of the wrapper
+
+**P2 — Accessibility**
+
+- Name the 17 collapsed sidebar links (`SidebarLink.tsx:31`) — currently anonymous to keyboard and screen-reader users; WCAG 2.4.4 / 4.1.2
+
+- Stop leaking raw type ids into `aria-label`/`title` (`CollectionCard.tsx:53-54` announces `type_prompt`)
+
+- Fix the theme switch's contradictory name/state (`ThemeToggle.tsx:42-44` reads "Switch to light theme, switch, on" while in dark mode)
+
+- Make focus rings consistent — the designed 3px ring is missing on the sidebar logo, Collapse, "All Items", and the homepage logo/Features/Pricing/billing toggle. Fix at the shared level
+
+- Drawer + mobile a11y nits: duplicate "Copy snippet" accessible name, read-only Monaco announced as an editable textbox, mobile nav drawer with no close button or accessible name, homepage footer h2 → h4 skip
+
+**Done this pass (all 12 P1 + P2 items)**
+
+- All twelve implemented, each verified in the browser at the width/theme the review recorded. `npm test` 309 → 328, `npm run build`, `npx eslint src e2e`, `npm run db:test`, and the full 88-spec Playwright suite (fresh dev server, cleared `.next`) all pass. Overflow sweep: 5 pages x 5 widths x signed-out/signed-in = 30 checks, 0 overflow, 0 console errors — the `/dashboard/recent` prefetch 404 is gone
+
+**Deferred (in the spec, not this pass)**
+
+- P3 responsive (6 findings), P4 craft (5 grouped), P5 search — tags are not in the search index (`search.ts:87`)
 
 ## Notes
 
-<!-- Constraints, links to specs, relevant files -->
+- **Decided 2026-08-20 — pricing CTAs branch on `isPro`.** A signed-in *free* user still sees "Go Pro" (upgrade path preserved); a signed-in *Pro* user gets a dashboard link instead. So `src/app/page.tsx` must pass both `isSignedIn` and `isPro` down, not just `isSignedIn`. Non-pricing CTAs (hero, closing CTA, footer) point at `/dashboard` for any signed-in visitor
+
+- Findings are tagged **[verified]** (confirmed against source during triage, cites file:line) or **[reported]** (browser review only — reproduce before fixing, do not trust the stated cause)
+
+- Source: 2026-08-20 browser-driven UI review at 1440 / 768 / 600 / 390px, both themes, homepage signed-out and signed-in. Read-only against the seeded demo user; no seed data mutated. Screenshots in `.playwright-mcp/` (gitignored)
+
+- Explicitly out of scope: free-tier limits, retuning the fuzzy scorer, `prototypes/homepage/`, rewriting `/favorites` away from its terminal-row style, and adding an `IntersectionObserver` feature check to `Reveal` (known and accepted limitation from Homepage)
+
+- Verification bar from the spec: reproduce each finding at its recorded width/theme before fixing; keep the two historical regression bands clean (hero preview <640, dashboard overflow <563); zero document overflow at all four widths in both themes; the `/dashboard/recent` console 404 count must reach zero; `npm test` / `npm run build` / `npm run lint`, and e2e on a **freshly restarted** dev server since findings 4, 5 and 23 touch markup existing specs locate against
 
 ## History
 

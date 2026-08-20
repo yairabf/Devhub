@@ -28,22 +28,26 @@ export function SidebarLink({ href, icon, label, collapsed, trailingIcon }: Side
       )}
     >
       <span className="shrink-0 leading-none">{icon}</span>
-      {!collapsed && (
-        <>
-          <span className="flex-1 truncate">{label}</span>
-          {trailingIcon}
-        </>
-      )}
+      {/*
+        Always rendered — visually hidden when collapsed rather than dropped.
+        It is the link's only accessible name in that state, and the tooltip
+        cannot supply one: a tooltip contributes a *description*, and base-ui
+        puts its aria wiring on the trigger element, not on this anchor.
+      */}
+      <span className={cn("flex-1 truncate", collapsed && "sr-only")}>
+        {label}
+      </span>
+      {!collapsed && trailingIcon}
     </Link>
   );
 
   if (!collapsed) return linkEl;
 
+  // The trigger renders *as* the anchor, so the tooltip's aria wiring lands on
+  // the link instead of on a wrapper span that nothing else refers to.
   return (
     <Tooltip>
-      <TooltipTrigger render={<span className="block" />}>
-        {linkEl}
-      </TooltipTrigger>
+      <TooltipTrigger render={linkEl} />
       <TooltipContent side="right">{label}</TooltipContent>
     </Tooltip>
   );
