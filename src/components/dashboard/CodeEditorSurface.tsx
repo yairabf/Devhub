@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Editor,
   loader,
@@ -255,8 +255,38 @@ export function CodeEditorSurface({
   onChange,
 }: CodeEditorSurfaceProps) {
   const [height, setHeight] = useState(EDITOR_MIN_HEIGHT);
+  const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
+  // Mount happens in a microtask, after the first effect pass, so the effect
+  // below needs an explicit signal to re-run. Keying it on `height` instead
+  // looked like it worked only because most content changes the height —
+  // a one-line command sits exactly on the floor, `setHeight` no-ops, and the
+  // attribute was never applied.
+  const [editorReady, setEditorReady] = useState(false);
+
+  /**
+   * Monaco puts an explicit `role="textbox"` on its hidden textarea, and an
+   * explicit ARIA role overrides the element's native semantics — so the
+   * `readonly` attribute `domReadOnly` sets is not exposed, and a read-only
+   * editor was announced as editable. `aria-readonly` is the only thing a
+   * screen reader will honour here. Kept in an effect rather than done once at
+   * mount so it follows the prop when the same editor flips modes.
+   */
+  useEffect(() => {
+    if (!editorReady) return;
+    const textarea = editorRef.current
+      ?.getDomNode()
+      ?.querySelector("textarea");
+    if (!textarea) return;
+    if (readOnly) {
+      textarea.setAttribute("aria-readonly", "true");
+    } else {
+      textarea.removeAttribute("aria-readonly");
+    }
+  }, [readOnly, editorReady]);
 
   const handleMount = useCallback<OnMount>(editor => {
+    editorRef.current = editor;
+    setEditorReady(true);
     /**
      * Pin the model to LF. Monaco decides a model's EOL when it is created and
      * then rewrites every subsequent edit to match it, so setting it once here

@@ -149,20 +149,21 @@ export const PREVIEW_CARDS: PreviewCard[] = [
   { typeId: "type_image", typeName: "Image", title: "arch-diagram", meta: "design" },
 ];
 
-/** Only routes that exist — the mockup's placeholder columns are deliberately dropped. */
-export const FOOTER_COLUMNS = [
-  {
-    heading: "Product",
-    links: [
-      { label: "Features", href: "#features" },
-      { label: "Pricing", href: "#pricing" },
-    ],
-  },
-  {
-    heading: "Account",
-    links: [
-      { label: "Sign in", href: "/sign-in" },
-      { label: "Create account", href: "/register" },
-    ],
-  },
+/** The marketing nav's in-page links, shared by the desktop nav and the mobile menu. */
+export const NAV_LINKS = [
+  { label: "Features", href: "#features" },
+  { label: "Pricing", href: "#pricing" },
 ];
+
+/**
+ * Only routes that exist — the mockup's placeholder columns are deliberately
+ * dropped. The Account column is not here because it depends on the viewer;
+ * see `getFooterColumns` in `@/lib/home-cta`.
+ */
+export const FOOTER_PRODUCT_COLUMN = {
+  heading: "Product",
+  links: [
+    { label: "Features", href: "#features" },
+    { label: "Pricing", href: "#pricing" },
+  ],
+};

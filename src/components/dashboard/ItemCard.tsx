@@ -61,9 +61,22 @@ export function ItemCard({ item, showPinIndicator = true }: ItemCardProps) {
           </p>
         )}
         {item.content ? (
-          <pre className="line-clamp-3 rounded-md bg-muted px-3 py-2 font-mono text-xs whitespace-pre-wrap text-foreground/90">
-            {item.content}
-          </pre>
+          /*
+            The padding lives on the wrapper, never on the clipped element.
+            `-webkit-line-clamp` is inert in current Chrome (`display:-webkit-box`
+            computes to `flow-root`, even set inline), so this <pre> is really
+            just cropped by `overflow:hidden`. With padding on the <pre> itself
+            the crop landed 8px past the third line, so a fourth line rendered
+            into the bottom padding and was sliced through the middle of its
+            glyphs. Cropping at exactly 3 x 16px instead keeps the cut on a line
+            boundary. `line-clamp-3` stays for engines that do honour it — it
+            clamps to the same three lines and adds an ellipsis.
+          */
+          <div className="rounded-md bg-muted px-3 py-2">
+            <pre className="line-clamp-3 max-h-12 overflow-hidden font-mono text-xs leading-4 whitespace-pre-wrap text-foreground/90">
+              {item.content}
+            </pre>
+          </div>
         ) : item.url ? (
           <p className="truncate rounded-md bg-muted px-3 py-2 font-mono text-xs text-muted-foreground">
             {item.url}

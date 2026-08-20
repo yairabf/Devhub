@@ -5,14 +5,12 @@ import { useEffect, useState } from "react";
 
 import { CtaLink } from "@/components/home/CtaLink";
 import { Logo } from "@/components/home/Logo";
+import { MobileNav } from "@/components/home/MobileNav";
+import type { HomeViewer } from "@/lib/home-cta";
+import { NAV_LINKS } from "@/lib/home-content";
 import { cn } from "@/lib/utils";
 
-const NAV_LINKS = [
-  { label: "Features", href: "#features" },
-  { label: "Pricing", href: "#pricing" },
-];
-
-export function SiteNav({ isSignedIn }: { isSignedIn: boolean }) {
+export function SiteNav({ viewer }: { viewer: HomeViewer }) {
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -45,16 +43,19 @@ export function SiteNav({ isSignedIn }: { isSignedIn: boolean }) {
           ))}
         </nav>
         <div className="ml-auto flex items-center gap-2.5 md:ml-0">
-          {isSignedIn ? (
+          {viewer.isSignedIn ? (
             <CtaLink href="/dashboard">Open Dashboard</CtaLink>
           ) : (
             <>
-              <CtaLink href="/sign-in" variant="ghost">
+              {/* Hidden on the narrowest widths so the primary CTA keeps its
+                  room; the mobile menu carries a Sign In link instead. */}
+              <CtaLink href="/sign-in" variant="ghost" className="hidden sm:inline-flex">
                 Sign In
               </CtaLink>
               <CtaLink href="/register">Get Started</CtaLink>
             </>
           )}
+          <MobileNav viewer={viewer} />
         </div>
       </div>
     </header>

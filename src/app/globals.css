@@ -459,6 +459,17 @@ html:has(.home-root) {
   * {
     @apply border-border outline-ring/50;
   }
+  /*
+    One focus indicator for the whole app. Components that carry the designed
+    ring (Button, Input) set `outline-none` in the utilities layer, which wins
+    over this, so it only reaches the elements that were falling back to the
+    browser's 1px default — the sidebar logo, plain nav links, the collapse
+    control, the billing toggle.
+  */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
   body {
     @apply bg-background text-foreground;
   }

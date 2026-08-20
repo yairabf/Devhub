@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { CheckItem } from "@/components/home/CheckItem";
 import { CtaLink, PRIMARY_SURFACE } from "@/components/home/CtaLink";
+import type { HomeCta } from "@/lib/home-cta";
 import {
   PRO_PLAN_FEATURES,
   PRO_PRICING,
@@ -23,8 +24,10 @@ const CYCLES: { value: BillingCycle; label: string; save?: string }[] = [
  */
 export function PricingToggle({
   freePlanCard,
+  proCta,
 }: {
   freePlanCard: React.ReactNode;
+  proCta: HomeCta;
 }) {
   const [cycle, setCycle] = useState<BillingCycle>("monthly");
   const pricing = PRO_PRICING[cycle];
@@ -101,8 +104,8 @@ export function PricingToggle({
               <CheckItem key={feature.label} label={feature.label} />
             ))}
           </ul>
-          <CtaLink href="/register" size="lg" className="mt-auto w-full">
-            Go Pro
+          <CtaLink href={proCta.href} size="lg" className="mt-auto w-full">
+            {proCta.label}
           </CtaLink>
         </article>
       </div>

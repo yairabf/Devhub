@@ -8,6 +8,8 @@ import { PricingSection } from "@/components/home/PricingSection";
 import { SiteFooter } from "@/components/home/SiteFooter";
 import { SiteNav } from "@/components/home/SiteNav";
 import { auth } from "@/auth";
+import { isUserPro } from "@/lib/db/user";
+import type { HomeViewer } from "@/lib/home-cta";
 
 export const metadata: Metadata = {
   title: "DevHub — Stop Losing Your Developer Knowledge",
@@ -16,23 +18,29 @@ export const metadata: Metadata = {
 };
 
 /**
- * Marketing homepage. Public: a signed-in visitor is never redirected away, the nav
- * just points them at the dashboard instead of sign-up.
+ * Marketing homepage. Public: a signed-in visitor is never redirected away, every
+ * CTA just points them at the dashboard instead of sign-up. `isPro` is read from
+ * the database because the JWT session carries only `user.id`.
  */
 export default async function Home() {
   const session = await auth();
+  const userId = session?.user?.id;
+  const viewer: HomeViewer = {
+    isSignedIn: Boolean(userId),
+    isPro: userId ? await isUserPro(userId) : false,
+  };
 
   return (
     <div className="home-root min-h-screen bg-background">
-      <SiteNav isSignedIn={Boolean(session?.user)} />
+      <SiteNav viewer={viewer} />
       <main>
-        <HeroSection />
+        <HeroSection viewer={viewer} />
         <FeaturesSection />
         <AiSection />
-        <PricingSection />
-        <CtaSection />
+        <PricingSection viewer={viewer} />
+        <CtaSection viewer={viewer} />
       </main>
-      <SiteFooter />
+      <SiteFooter viewer={viewer} />
     </div>
   );
 }

@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import type { CollectionCardData } from "@/lib/db/collections";
-import { getTypeIcon } from "@/lib/type-icons";
+import { getTypeIcon, getTypeName } from "@/lib/type-icons";
 import { getTypeLeftBorderClass } from "@/lib/type-colors";
 import { cn } from "@/lib/utils";
 
@@ -50,8 +50,8 @@ export function CollectionCard({ collection }: CollectionCardProps) {
             return (
               <span
                 key={typeId}
-                aria-label={typeId}
-                title={typeId}
+                aria-label={getTypeName(typeId)}
+                title={getTypeName(typeId)}
                 className="flex size-6 items-center justify-center rounded-md bg-muted text-muted-foreground"
               >
                 <Icon className="size-3.5" />

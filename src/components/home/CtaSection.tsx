@@ -1,7 +1,10 @@
 import { CtaLink } from "@/components/home/CtaLink";
 import { Reveal } from "@/components/home/Reveal";
+import { getClosingCta, type HomeViewer } from "@/lib/home-cta";
 
-export function CtaSection() {
+export function CtaSection({ viewer }: { viewer: HomeViewer }) {
+  const cta = getClosingCta(viewer);
+
   return (
     <section className="px-4 pt-8 pb-28 sm:px-6">
       <Reveal className="mx-auto w-full max-w-3xl">
@@ -13,8 +16,8 @@ export function CtaSection() {
             Free forever for your first 50 items. No credit card, no setup, no
             excuses.
           </p>
-          <CtaLink href="/register" size="lg">
-            Create Your Account
+          <CtaLink href={cta.href} size="lg">
+            {cta.label}
           </CtaLink>
         </div>
       </Reveal>

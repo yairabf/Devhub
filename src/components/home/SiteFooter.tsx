@@ -1,9 +1,9 @@
 import Link from "next/link";
 
 import { Logo } from "@/components/home/Logo";
-import { FOOTER_COLUMNS } from "@/lib/home-content";
+import { getFooterColumns, type HomeViewer } from "@/lib/home-cta";
 
-export function SiteFooter() {
+export function SiteFooter({ viewer }: { viewer: HomeViewer }) {
   // Server-rendered: no need for the prototype's client-side year script.
   const year = new Date().getFullYear();
 
@@ -19,11 +19,13 @@ export function SiteFooter() {
             </p>
           </div>
           <div className="grid grid-cols-2 gap-7 sm:grid-cols-3">
-            {FOOTER_COLUMNS.map((column) => (
+            {getFooterColumns(viewer).map((column) => (
               <div key={column.heading} className="flex flex-col gap-2.5">
-                <h4 className="mb-1 text-[13px] font-bold tracking-widest uppercase">
+                {/* h2, not h4: the footer is a top-level landmark with no
+                    intervening heading, so h4 skipped two levels. */}
+                <h2 className="mb-1 text-[13px] font-bold tracking-widest uppercase">
                   {column.heading}
-                </h4>
+                </h2>
                 {column.links.map((link) => (
                   <Link
                     key={link.href}

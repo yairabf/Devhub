@@ -174,13 +174,17 @@ function ItemViewMode({
                 value={item.content}
                 language={item.language}
                 ariaLabel={`${item.title} content`}
-                copyLabel={`Copy ${item.itemTypeName.toLowerCase()}`}
+                /*
+                  No copyLabel override: the action bar above already owns
+                  "Copy <type>", and two buttons with the same accessible name
+                  in one dialog are indistinguishable. The editors' own
+                  defaults ("Copy code" / "Copy markdown") say which is which.
+                */
               />
             ) : usesMarkdownEditor(item.itemTypeId) ? (
               <MarkdownEditor
                 value={item.content}
                 ariaLabel={`${item.title} content`}
-                copyLabel={`Copy ${item.itemTypeName.toLowerCase()}`}
               />
             ) : (
               <pre className="max-h-[28rem] overflow-auto rounded-lg bg-muted px-3 py-2.5 font-mono text-xs whitespace-pre-wrap text-foreground/90">

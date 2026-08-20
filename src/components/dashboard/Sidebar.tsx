@@ -5,7 +5,7 @@ import { Bookmark, ChevronLeft, ChevronRight, Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import type { CollectionCardData, SidebarCollection } from "@/lib/db/collections";
 import type { SidebarItemType } from "@/lib/db/items";
@@ -225,7 +225,12 @@ export function Sidebar({
 
       {/* Mobile drawer */}
       <Sheet open={drawerOpen} onOpenChange={onDrawerOpenChange}>
-        <SheetContent side="left" showCloseButton={false} className="!w-60 p-0">
+        {/* The close button and title are not optional here: without them the
+            drawer had no dismiss control and no accessible name, unlike the
+            item drawer. The title is visually hidden — the sidebar's own logo
+            already labels the region on screen. */}
+        <SheetContent side="left" className="!w-60 p-0">
+          <SheetTitle className="sr-only">Navigation menu</SheetTitle>
           <SidebarInner
             collapsed={false}
             onToggleCollapsed={() => onDrawerOpenChange(false)}

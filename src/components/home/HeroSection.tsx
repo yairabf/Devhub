@@ -4,6 +4,7 @@ import { ChaosField } from "@/components/home/ChaosField";
 import { CtaLink } from "@/components/home/CtaLink";
 import { DashboardPreview } from "@/components/home/DashboardPreview";
 import { Reveal } from "@/components/home/Reveal";
+import { getHeroCta, type HomeViewer } from "@/lib/home-cta";
 import { cn } from "@/lib/utils";
 
 function PanelLabel({
@@ -25,7 +26,9 @@ function PanelLabel({
   );
 }
 
-export function HeroSection() {
+export function HeroSection({ viewer }: { viewer: HomeViewer }) {
+  const cta = getHeroCta(viewer);
+
   return (
     <section className="px-4 pt-32 pb-20 sm:px-6 md:pt-36">
       <div className="mx-auto w-full max-w-[1180px]">
@@ -46,8 +49,8 @@ export function HeroSection() {
             of it into one searchable place built for developers.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3.5">
-            <CtaLink href="/register" size="lg">
-              Get Started Free
+            <CtaLink href={cta.href} size="lg">
+              {cta.label}
             </CtaLink>
             <CtaLink href="#features" variant="outline" size="lg">
               See Features

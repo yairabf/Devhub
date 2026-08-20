@@ -24,3 +24,15 @@ export async function updateEditorPreferences(
   });
   return parseEditorPreferences(updated.editorPreferences);
 }
+
+/**
+ * The homepage needs the plan to decide what its pricing CTAs should say, and
+ * `isPro` is not carried on the JWT session — only `user.id` is.
+ */
+export async function isUserPro(userId: string): Promise<boolean> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { isPro: true },
+  });
+  return user?.isPro ?? false;
+}

@@ -10,7 +10,11 @@ vi.mock("@/lib/prisma", () => ({
 }));
 
 import { prisma } from "@/lib/prisma";
-import { getEditorPreferences, updateEditorPreferences } from "@/lib/db/user";
+import {
+  getEditorPreferences,
+  isUserPro,
+  updateEditorPreferences,
+} from "@/lib/db/user";
 import { DEFAULT_EDITOR_PREFERENCES } from "@/types/editor-preferences";
 
 const findUnique = prisma.user.findUnique as ReturnType<typeof vi.fn>;
@@ -71,5 +75,29 @@ describe("updateEditorPreferences", () => {
       data: { editorPreferences: SAVED },
       select: { editorPreferences: true },
     });
+  });
+});
+
+describe("isUserPro", () => {
+  it("reports a Pro user", async () => {
+    findUnique.mockResolvedValue({ isPro: true });
+
+    await expect(isUserPro("user_1")).resolves.toBe(true);
+    expect(findUnique).toHaveBeenCalledWith({
+      where: { id: "user_1" },
+      select: { isPro: true },
+    });
+  });
+
+  it("reports a free user", async () => {
+    findUnique.mockResolvedValue({ isPro: false });
+
+    await expect(isUserPro("user_1")).resolves.toBe(false);
+  });
+
+  it("defaults to free when the user row is missing", async () => {
+    findUnique.mockResolvedValue(null);
+
+    await expect(isUserPro("ghost")).resolves.toBe(false);
   });
 });
