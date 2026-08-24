@@ -151,8 +151,8 @@ export const PREVIEW_CARDS: PreviewCard[] = [
 
 /** The marketing nav's in-page links, shared by the desktop nav and the mobile menu. */
 export const NAV_LINKS = [
-  { label: "Features", href: "#features" },
-  { label: "Pricing", href: "#pricing" },
+  { label: "Features", href: "/#features" },
+  { label: "Pricing", href: "/#pricing" },
 ];
 
 /**

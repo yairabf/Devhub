@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Bookmark, ChevronLeft, ChevronRight, Star } from "lucide-react";
+import { LogoMark } from "@/components/home/Logo";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
@@ -34,6 +35,26 @@ interface SidebarInnerProps {
 
 const PRO_TYPE_IDS = new Set(["type_file", "type_image"]);
 
+function DashboardLogo({ collapsed }: { collapsed: boolean }) {
+  return (
+    <Link
+      href="/dashboard"
+      aria-label="DevHub dashboard"
+      className={cn(
+        "inline-flex items-center gap-2 rounded-md font-bold tracking-tight text-sidebar-foreground transition-colors hover:text-sidebar-foreground/80 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none",
+        collapsed ? "justify-center" : "min-w-0",
+      )}
+    >
+      <LogoMark />
+      {!collapsed && (
+        <span className="truncate text-sm">
+          Dev<span className="text-muted-foreground">Hub</span>
+        </span>
+      )}
+    </Link>
+  );
+}
+
 function SidebarInner({
   collapsed,
   onToggleCollapsed,
@@ -54,23 +75,16 @@ function SidebarInner({
       {/* Header */}
       <div
         className={cn(
-          "flex h-14 shrink-0 items-center border-b border-sidebar-border px-3",
-          collapsed ? "justify-center" : "justify-between"
+          "flex shrink-0 items-center border-b border-sidebar-border px-3",
+          collapsed ? "h-20 flex-col justify-center gap-1" : "h-14 justify-between"
         )}
       >
-        {!collapsed && (
-          <Link
-            href="/dashboard"
-            className="text-sm font-semibold text-sidebar-foreground hover:text-sidebar-foreground/80 transition-colors"
-          >
-            DevHub
-          </Link>
-        )}
+        <DashboardLogo collapsed={collapsed} />
         {showToggle && (
           <button
             onClick={onToggleCollapsed}
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            className="rounded-md p-1.5 text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+            className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
           >
             {collapsed ? (
               <ChevronRight className="h-4 w-4" />
