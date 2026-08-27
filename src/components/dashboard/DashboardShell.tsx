@@ -67,8 +67,8 @@ export function DashboardShell({
               data={sidebarData}
               user={user}
             />
-            <main className="flex-1 overflow-auto bg-background p-6">
-              {children}
+            <main className="relative flex-1 overflow-hidden bg-background">
+              <div className="h-full overflow-auto p-6">{children}</div>
             </main>
           </div>
         </div>
