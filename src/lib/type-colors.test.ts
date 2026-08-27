@@ -10,8 +10,13 @@ import {
 
 describe("getTypeLeftBorderClass", () => {
   it("returns the mapped class for a known type id", () => {
-    expect(getTypeLeftBorderClass("type_snippet")).toBe("border-l-blue-500");
-    expect(getTypeLeftBorderClass("type_image")).toBe("border-l-pink-500");
+    expect(getTypeLeftBorderClass("type_snippet")).toBe(
+      "border-l-blue-600 dark:border-l-blue-500"
+    );
+    expect(getTypeLeftBorderClass("type_image")).toBe(
+      "border-l-pink-600 dark:border-l-pink-500"
+    );
+    expect(getTypeLeftBorderClass("type_file")).toBe("border-l-gray-500");
   });
 
   it("falls back to the border class for an unknown type id", () => {
@@ -25,8 +30,12 @@ describe("getTypeLeftBorderClass", () => {
 
 describe("getTypeDotClass", () => {
   it("returns the mapped class for a known type id", () => {
-    expect(getTypeDotClass("type_command")).toBe("bg-orange-500");
-    expect(getTypeDotClass("type_note")).toBe("bg-yellow-400");
+    expect(getTypeDotClass("type_command")).toBe(
+      "bg-orange-700 dark:bg-orange-500"
+    );
+    expect(getTypeDotClass("type_note")).toBe(
+      "bg-yellow-700 dark:bg-yellow-400"
+    );
   });
 
   it("falls back to the muted class for an unknown type id", () => {
@@ -40,8 +49,13 @@ describe("getTypeDotClass", () => {
 
 describe("getTypeTextClass", () => {
   it("returns the mapped class for a known type id", () => {
-    expect(getTypeTextClass("type_snippet")).toBe("text-blue-500");
-    expect(getTypeTextClass("type_prompt")).toBe("text-purple-500");
+    expect(getTypeTextClass("type_snippet")).toBe(
+      "text-blue-600 dark:text-blue-500"
+    );
+    expect(getTypeTextClass("type_prompt")).toBe(
+      "text-purple-600 dark:text-purple-500"
+    );
+    expect(getTypeTextClass("type_file")).toBe("text-gray-500");
   });
 
   it("falls back to the muted class for an unknown type id", () => {
@@ -56,10 +70,13 @@ describe("getTypeTextClass", () => {
 describe("getTypeBadgeClass", () => {
   it("returns the mapped border+text classes for a known type id", () => {
     expect(getTypeBadgeClass("type_snippet")).toBe(
-      "border-blue-500/40 text-blue-500"
+      "border-blue-600/40 text-blue-600 dark:border-blue-500/40 dark:text-blue-500"
     );
     expect(getTypeBadgeClass("type_command")).toBe(
-      "border-orange-500/40 text-orange-500"
+      "border-orange-700/40 text-orange-700 dark:border-orange-500/40 dark:text-orange-500"
+    );
+    expect(getTypeBadgeClass("type_file")).toBe(
+      "border-gray-500/40 text-gray-500"
     );
   });
 
@@ -76,7 +93,9 @@ describe("getTypeBadgeClass", () => {
 
 describe("getTypeTopBorderClass", () => {
   it("returns the mapped class for a known type id", () => {
-    expect(getTypeTopBorderClass("type_snippet")).toBe("border-t-blue-500");
+    expect(getTypeTopBorderClass("type_snippet")).toBe(
+      "border-t-blue-600 dark:border-t-blue-500"
+    );
     expect(getTypeTopBorderClass("type_file")).toBe("border-t-gray-500");
   });
 

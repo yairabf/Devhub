@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { CtaLink } from "@/components/home/CtaLink";
 import { Logo } from "@/components/home/Logo";
 import { MobileNav } from "@/components/home/MobileNav";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import type { HomeViewer } from "@/lib/home-cta";
 import { NAV_LINKS } from "@/lib/home-content";
 import { cn } from "@/lib/utils";
@@ -55,6 +56,7 @@ export function SiteNav({ viewer }: { viewer: HomeViewer }) {
               <CtaLink href="/register">Get Started</CtaLink>
             </>
           )}
+          <ThemeToggle />
           <MobileNav viewer={viewer} />
         </div>
       </div>

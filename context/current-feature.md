@@ -1,54 +1,30 @@
-# Current Feature: UI Review Fixes
+# Current Feature: System-Wide Light & Dark Theme
 
 ## Status
 
-In Progress — P1 + P2 implemented and verified; awaiting review + permission to commit.
+In Progress
 
 ## Goals
 
-Spec: `context/features/ui-review-fixes-spec.md` (23 findings, tiered P1-P5). Recommended scope for this pass: **P1 + P2**.
+Feature request (verbatim): "I want to add a light theme and a dark theme to my whole system, even on the landing page and in the dashboard itself."
 
-**P1 — Verified defects**
-
-- Make homepage body CTAs session-aware — `src/app/page.tsx:27` passes the session only to `SiteNav`, so a signed-in visitor is invited to create an account five times on one page (hero, both pricing CTAs, closing CTA, two footer links, all hardcoded `/register`)
-
-- Remove the dead sidebar "Recent" link (`SidebarNav.tsx:11` → `/dashboard/recent`, no such route) — it lands on Next's unstyled 404 and Next prefetches it on every sidebar render, producing a console 404 per page load. Building the route is a separate backlog item, not this pass
-
-- Add a mobile menu to the homepage nav — `SiteNav.tsx:36` is `hidden … md:flex`, so Features/Pricing vanish below 768px with no hamburger and no substitute
-
-- Fix `ItemCard`'s content preview clipping text mid-glyph (`ItemCard.tsx:64`) — the most-repeated component in the app slices glyphs horizontally instead of ellipsing. Reproduce and confirm the mechanism first; the review's stated cause is probably a mis-measurement of the wrapper
-
-**P2 — Accessibility**
-
-- Name the 17 collapsed sidebar links (`SidebarLink.tsx:31`) — currently anonymous to keyboard and screen-reader users; WCAG 2.4.4 / 4.1.2
-
-- Stop leaking raw type ids into `aria-label`/`title` (`CollectionCard.tsx:53-54` announces `type_prompt`)
-
-- Fix the theme switch's contradictory name/state (`ThemeToggle.tsx:42-44` reads "Switch to light theme, switch, on" while in dark mode)
-
-- Make focus rings consistent — the designed 3px ring is missing on the sidebar logo, Collapse, "All Items", and the homepage logo/Features/Pricing/billing toggle. Fix at the shared level
-
-- Drawer + mobile a11y nits: duplicate "Copy snippet" accessible name, read-only Monaco announced as an editable textbox, mobile nav drawer with no close button or accessible name, homepage footer h2 → h4 skip
-
-**Done this pass (all 12 P1 + P2 items)**
-
-- All twelve implemented, each verified in the browser at the width/theme the review recorded. `npm test` 309 → 328, `npm run build`, `npx eslint src e2e`, `npm run db:test`, and the full 88-spec Playwright suite (fresh dev server, cleared `.next`) all pass. Overflow sweep: 5 pages x 5 widths x signed-out/signed-in = 30 checks, 0 overflow, 0 console errors — the `/dashboard/recent` prefetch 404 is gone
-
-**Deferred (in the spec, not this pass)**
-
-- P3 responsive (6 findings), P4 craft (5 grouped), P5 search — tags are not in the search index (`search.ts:87`)
+- Add a way to switch between light and dark theme from **every** surface, not just the dashboard — right now the only toggle control (`ThemeToggle`, dashboard `TopBar`) isn't rendered on the homepage (`/`) or the auth pages (`/sign-in`, `/register`, `/forgot-password`, `/reset-password`). A visitor who never reaches the dashboard has no way to change the theme.
+- Audit every route (homepage, auth pages, dashboard, item drawer, Monaco/Markdown editors) in both themes for legibility/contrast issues, hardcoded colors that don't adapt, and anything still assuming dark-only.
+- Confirm the light theme is genuinely usable end-to-end, not just "doesn't crash" — check hover/focus states, borders, the type-color accents (`type-colors.ts`), and the homepage's decorative CSS (`.home-*` block in `globals.css`), which was designed and reviewed primarily against the dark hero.
+- Decide where the toggle lives on the homepage/auth nav (e.g. alongside Sign In / Get Started) and keep it visually and behaviorally consistent with the dashboard's `ThemeToggle`.
+- Preserve existing behavior: theme choice persists in `localStorage` (`devstash:theme`), applies pre-hydration via the root layout's inline script (no flash), and the Monaco/Markdown editors keep following it.
 
 ## Notes
 
-- **Decided 2026-08-20 — pricing CTAs branch on `isPro`.** A signed-in *free* user still sees "Go Pro" (upgrade path preserved); a signed-in *Pro* user gets a dashboard link instead. So `src/app/page.tsx` must pass both `isSignedIn` and `isPro` down, not just `isSignedIn`. Non-pricing CTAs (hero, closing CTA, footer) point at `/dashboard` for any signed-in visitor
-
-- Findings are tagged **[verified]** (confirmed against source during triage, cites file:line) or **[reported]** (browser review only — reproduce before fixing, do not trust the stated cause)
-
-- Source: 2026-08-20 browser-driven UI review at 1440 / 768 / 600 / 390px, both themes, homepage signed-out and signed-in. Read-only against the seeded demo user; no seed data mutated. Screenshots in `.playwright-mcp/` (gitignored)
-
-- Explicitly out of scope: free-tier limits, retuning the fuzzy scorer, `prototypes/homepage/`, rewriting `/favorites` away from its terminal-row style, and adding an `IntersectionObserver` feature check to `Reveal` (known and accepted limitation from Homepage)
-
-- Verification bar from the spec: reproduce each finding at its recorded width/theme before fixing; keep the two historical regression bands clean (hero preview <640, dashboard overflow <563); zero document overflow at all four widths in both themes; the `/dashboard/recent` console 404 count must reach zero; `npm test` / `npm run build` / `npm run lint`, and e2e on a **freshly restarted** dev server since findings 4, 5 and 23 touch markup existing specs locate against
+- **Most of the plumbing already exists** — this is closer to an audit-and-extend-the-toggle task than a from-scratch build:
+  - `src/app/layout.tsx` applies `.dark` / `color-scheme` to `<html>` before hydration, reading `devstash:theme` from `localStorage` (default `dark`). This runs at the root layout, so it already covers every route — homepage and auth pages included, not just `/dashboard`.
+  - `src/app/globals.css` already defines full `:root` (light) and `.dark` (dark) token sets (`--background`, `--foreground`, `--card`, `--sidebar`, etc.) that the whole app is built on.
+  - `src/components/theme/ThemeToggle.tsx` + `useAppTheme.ts` (`useSyncExternalStore`) already implement the switch and theme sync — but `ThemeToggle` is only rendered inside the dashboard `TopBar` (`src/components/dashboard/TopBar.tsx:67`). It is absent from `SiteNav` (homepage) and `AuthLayoutChrome` (auth pages).
+  - Monaco (`CodeEditor`) already reconciles with the app theme via `useAppTheme()` — `vs-dark` follows the toggle; user-selectable `monokai`/`github-dark` (Editor Preferences, Settings) override it regardless of app theme.
+  - `.markdown-preview` already pins `color-scheme` to match the app theme (fixes native GFM checkbox rendering).
+- Per `context/coding-standards.md`: "Dark mode first, light mode as option" — dark stays the default. This feature is about making light mode complete and reachable everywhere, not about flipping the default.
+- Known light-mode risk spots to check during implementation: `PricingToggle.tsx:64` hardcodes `bg-white/15 text-neutral-50` inside the Pro pricing card (may be intentional if that card is meant to stay a dark surface regardless of theme — verify, don't assume); the homepage's `.home-*` decorative CSS block in `globals.css` and `ChaosField`'s hero visuals.
+- Housekeeping observed while loading this spec: this file's previous content ("UI Review Fixes") still read "In Progress — awaiting review + permission to commit," even though git history confirms that work was already committed (`771d8d1 fix: address P1 and P2 findings from the UI review`, which landed *before* `9ba335e chore: reset current-feature.md after completing Auth and Nav Polish`). The "reset" commit's message didn't match what it actually left in the file. No work was lost — it's safely in git history — flagging only in case that status text was meant to track something else that never got recorded.
 
 ## History
 
